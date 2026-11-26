@@ -17,6 +17,26 @@ const ANCHOR_NOTES: AnchorNote[] = [
   { name: 'C5', midi: 72 },
 ];
 
+const SEMITONE_OFFSETS: Record<string, number> = {
+  C: -9,
+  'C#': -8,
+  Db: -8,
+  D: -7,
+  'D#': -6,
+  Eb: -6,
+  E: -5,
+  F: -4,
+  'F#': -3,
+  Gb: -3,
+  G: -2,
+  'G#': -1,
+  Ab: -1,
+  A: 0,
+  'A#': 1,
+  Bb: 1,
+  B: 2,
+};
+
 const bufferCache = new Map<string, AudioBuffer>();
 const pendingFetches = new Map<string, Promise<AudioBuffer | null>>();
 
@@ -33,6 +53,19 @@ export function getSharedAudioContext(): AudioContext {
     sharedAudioCtx.resume().catch(() => {});
   }
   return sharedAudioCtx;
+}
+
+/**
+ * Standard equal-temperament note-to-frequency conversion (A4 = 440 Hz).
+ */
+export function noteToFreq(note: string | null): number | null {
+  if (!note) return null;
+  const match = note.match(/^([A-G][#b]?)(-?\d)$/);
+  if (!match) return null;
+  const baseOffset = SEMITONE_OFFSETS[match[1]];
+  if (baseOffset === undefined) return null;
+  const semitonesFromA4 = baseOffset + (Number(match[2]) - 4) * 12;
+  return 440 * Math.pow(2, semitonesFromA4 / 12);
 }
 
 function freqToMidi(freq: number): number {
@@ -94,8 +127,7 @@ export async function preloadInstrument(instrument: InstrumentType): Promise<voi
 }
 
 /**
- * Play a real sampled acoustic instrument note (piano, strings, harpsichord, or organ)
- * pitched smoothly via Web Audio playbackRate from the nearest studio anchor recording.
+ * Play a real sampled acoustic instrument note immediately.
  */
 export async function playInstrumentSample(
   freq: number,
@@ -125,4 +157,68 @@ export async function playInstrumentSample(
   source.connect(gain).connect(ctx.destination);
   source.start(now);
   source.stop(now + playDur + 0.02);
+}
+
+export interface ScheduledSongEvent {
+  startSec: number;
+  durationSec: number;
+  freq: number | null;
+}
+
+/**
+ * Schedule an entire song onto the hardware Web Audio clock (`ctx.currentTime`)
+ * for sample-accurate BPM rhythm without setTimeout audio jitter.
+ * Returns a cleanup function that stops all scheduled notes immediately.
+ */
+export async function scheduleSongPlayback(
+  events: ScheduledSongEvent[],
+  instrument: InstrumentType = 'piano',
+  leadInSec = 0.35,
+  volume = 0.4
+): Promise<{ audioStartTime: number; stop: () => void }> {
+  await preloadInstrument(instrument);
+  const ctx = getSharedAudioContext();
+  const audioStartTime = ctx.currentTime + leadInSec;
+  const activeNodes: { source: AudioBufferSourceNode; gain: GainNode }[] = [];
+
+  for (const ev of events) {
+    if (!ev.freq) continue;
+    const targetMidi = freqToMidi(ev.freq);
+    const anchor = findClosestAnchor(targetMidi);
+    const buffer = bufferCache.get(`${instrument}:${anchor.name}`);
+    if (!buffer) continue;
+
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = Math.pow(2, (targetMidi - anchor.midi) / 12);
+
+    const gain = ctx.createGain();
+    const noteStart = audioStartTime + ev.startSec;
+    const playDur = Math.min(Math.max(0.2, ev.durationSec + 0.12), buffer.duration);
+
+    gain.gain.setValueAtTime(0.0001, noteStart);
+    gain.gain.linearRampToValueAtTime(volume, noteStart + 0.015);
+    gain.gain.setValueAtTime(volume, noteStart + Math.max(0.04, playDur - 0.12));
+    gain.gain.exponentialRampToValueAtTime(0.0001, noteStart + playDur);
+
+    source.connect(gain).connect(ctx.destination);
+    source.start(noteStart);
+    source.stop(noteStart + playDur + 0.02);
+    activeNodes.push({ source, gain });
+  }
+
+  return {
+    audioStartTime,
+    stop: () => {
+      activeNodes.forEach(({ source, gain }) => {
+        try {
+          gain.gain.cancelScheduledValues(ctx.currentTime);
+          gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+          source.stop();
+        } catch {
+          // already stopped
+        }
+      });
+    },
+  };
 }

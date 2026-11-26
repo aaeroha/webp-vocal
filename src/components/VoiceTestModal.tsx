@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AudioWaveform,
   CalendarCheck,
@@ -13,8 +13,18 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { VOICE_TEST_CONTENT, VOICE_TYPES, type VoiceTypeProfile } from '../data/content';
-import { playInstrumentSample, preloadInstrument } from '../utils/instrumentSampler';
+import {
+  VOICE_TEST_CONTENT,
+  VOICE_TYPES,
+  type KaraokeSong,
+  type VoiceTypeProfile,
+} from '../data/content';
+import {
+  noteToFreq,
+  preloadInstrument,
+  scheduleSongPlayback,
+  type ScheduledSongEvent,
+} from '../utils/instrumentSampler';
 
 interface VoiceTestModalProps {
   isOpen: boolean;
@@ -25,6 +35,79 @@ interface VoiceTestModalProps {
 type Gender = 'female' | 'male';
 type TaskMode = 'song' | 'phrase';
 type Step = 'gender' | 'mode' | 'record' | 'mic-error' | 'result';
+
+interface CompiledVisualSyllable {
+  id: number;
+  text: string;
+  sectionIdx: number;
+  hasSpace: boolean;
+  lineBreak?: boolean;
+}
+
+interface CompiledTimelineEvent extends ScheduledSongEvent {
+  visualIdx: number;
+  sectionIdx: number;
+}
+
+function compileSongScore(song: KaraokeSong, pitchScale: number) {
+  const visualSyllables: CompiledVisualSyllable[] = [];
+  const events: CompiledTimelineEvent[] = [];
+
+  let elapsedSec = 0;
+  let lastVisualIdx = -1;
+
+  song.sections.forEach((section, sectionIdx) => {
+    const secPerBeat = 60 / section.bpm;
+
+    section.notes.forEach((step) => {
+      const durationSec = secPerBeat * step.duration;
+      const baseFreq = noteToFreq(step.note);
+      const scaledFreq = baseFreq !== null ? baseFreq * pitchScale : null;
+
+      let eventVisualIdx = -1;
+
+      if (step.note === null) {
+        // Musical rest: pause highlight cleanly during silence
+        eventVisualIdx = -1;
+        // Preserve lineBreak if rest carries a phrase break
+        if (step.lineBreak && visualSyllables.length > 0) {
+          visualSyllables[visualSyllables.length - 1].lineBreak = true;
+        }
+      } else if (step.syllable === '') {
+        // Melisma: syllable continues across next musical note
+        eventVisualIdx = lastVisualIdx;
+        if (step.lineBreak && lastVisualIdx >= 0) {
+          visualSyllables[lastVisualIdx].lineBreak = true;
+        }
+      } else {
+        const hasSpace = step.syllable.endsWith(' ');
+        const cleanText = hasSpace ? step.syllable.trimEnd() : step.syllable;
+        const newIdx = visualSyllables.length;
+        visualSyllables.push({
+          id: newIdx,
+          text: cleanText,
+          sectionIdx,
+          hasSpace,
+          lineBreak: step.lineBreak,
+        });
+        lastVisualIdx = newIdx;
+        eventVisualIdx = newIdx;
+      }
+
+      events.push({
+        startSec: elapsedSec,
+        durationSec,
+        freq: scaledFreq,
+        visualIdx: eventVisualIdx,
+        sectionIdx,
+      });
+
+      elapsedSec += durationSec;
+    });
+  });
+
+  return { visualSyllables, events, totalDurationSec: elapsedSec };
+}
 
 const NOTE_NAMES_RU = ['До', 'До♯', 'Ре', 'Ми♭', 'Ми', 'Фа', 'Фа♯', 'Соль', 'Соль♯', 'Ля', 'Си♭', 'Си'];
 const NOTE_NAMES_EN = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'G#', 'A', 'Bb', 'B'];
@@ -263,7 +346,8 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
   const [isRecording, setIsRecording] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(10);
-  const [activeSyllableIdx, setActiveSyllableIdx] = useState<number>(-1);
+  const [activeVisualIdx, setActiveVisualIdx] = useState<number>(-1);
+  const [activeSectionIdx, setActiveSectionIdx] = useState<number>(0);
   const [currentHz, setCurrentHz] = useState<number | null>(null);
   const [hasVoiceDetected, setHasVoiceDetected] = useState(false);
 
@@ -273,11 +357,19 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
+  const micAudioCtxRef = useRef<AudioContext | null>(null);
+  const stopMelodyRef = useRef<(() => void) | null>(null);
   const animFrameRef = useRef<number>(0);
   const timerRef = useRef<number>(0);
-  const karaokeTimersRef = useRef<number[]>([]);
   const samplesRef = useRef<number[]>([]);
+
+  const selectedSong = VOICE_TEST_CONTENT.songs[selectedSongIdx];
+  const pitchScale = gender === 'male' ? 0.5 : 1;
+
+  const compiledScore = useMemo(
+    () => compileSongScore(selectedSong, pitchScale),
+    [selectedSong, pitchScale]
+  );
 
   const cleanupAudio = useCallback(() => {
     if (animFrameRef.current) {
@@ -288,18 +380,20 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       window.clearInterval(timerRef.current);
       timerRef.current = 0;
     }
-    karaokeTimersRef.current.forEach((t) => window.clearTimeout(t));
-    karaokeTimersRef.current = [];
+    if (stopMelodyRef.current) {
+      stopMelodyRef.current();
+      stopMelodyRef.current = null;
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
-    if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-      audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
+    if (micAudioCtxRef.current && micAudioCtxRef.current.state !== 'closed') {
+      micAudioCtxRef.current.close().catch(() => {});
+      micAudioCtxRef.current = null;
     }
     setIsRecording(false);
-    setActiveSyllableIdx(-1);
+    setActiveVisualIdx(-1);
   }, []);
 
   const resetAll = useCallback(() => {
@@ -320,7 +414,6 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       return;
     }
 
-    // Quietly preload real piano samples for karaoke guide melody
     preloadInstrument('piano').catch(() => {});
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -338,7 +431,6 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
     };
   }, [isOpen, onClose, cleanupAudio]);
 
-  // Smooth score bar counter animation when result appears
   useEffect(() => {
     if (step !== 'result' || !result) {
       setAnimatedScore(0);
@@ -376,12 +468,13 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
     setHasVoiceDetected(true);
     samplesRef.current = [];
     setCurrentHz(null);
-    setActiveSyllableIdx(-1);
+    setActiveVisualIdx(-1);
+    setActiveSectionIdx(0);
 
-    const activeSong = VOICE_TEST_CONTENT.songs[selectedSongIdx];
-    const songDurationMs = activeSong.syllables.reduce((acc, s) => acc + s.ms, 0);
     const totalSec =
-      taskMode === 'song' ? Math.max(9, Math.ceil(songDurationMs / 1000) + 1) : 10;
+      taskMode === 'song'
+        ? Math.max(10, Math.ceil(compiledScore.totalDurationSec) + 1)
+        : 10;
 
     setSecondsLeft(totalSec);
     setStep('record');
@@ -401,12 +494,14 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       });
       streamRef.current = stream;
 
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      const ctx = new AudioCtx();
-      audioCtxRef.current = ctx;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const micCtx = new AudioCtx();
+      micAudioCtxRef.current = micCtx;
 
-      const source = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
+      const source = micCtx.createMediaStreamSource(stream);
+      const analyser = micCtx.createAnalyser();
       analyser.fftSize = 2048;
       source.connect(analyser);
 
@@ -415,30 +510,49 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
       setIsRecording(true);
 
-      // Schedule karaoke melody + syllable highlight with real acoustic piano sample
-      if (taskMode === 'song') {
-        await preloadInstrument('piano').catch(() => {});
-        const pitchScale = gender === 'male' ? 0.5 : 1; // One octave lower for male comfort
-        let offsetMs = 350;
+      // Hardware audio-clock synchronized song playback & millisecond highlight tracker
+      let playbackClockStart = 0;
+      let sharedPlaybackCtx: AudioContext | null = null;
 
-        activeSong.syllables.forEach((syl, idx) => {
-          const timerId = window.setTimeout(() => {
-            setActiveSyllableIdx(idx);
-            playInstrumentSample(
-              syl.freq * pitchScale,
-              'piano',
-              Math.max(0.55, syl.ms / 1000 + 0.35),
-              0.38
-            ).catch(() => {});
-          }, offsetMs);
-          karaokeTimersRef.current.push(timerId);
-          offsetMs += syl.ms;
-        });
+      if (taskMode === 'song') {
+        const scheduled = await scheduleSongPlayback(
+          compiledScore.events,
+          'piano',
+          0.35,
+          0.42
+        );
+        stopMelodyRef.current = scheduled.stop;
+        playbackClockStart = scheduled.audioStartTime;
+        // Read time from the same shared audio clock that triggers the samples
+        const { getSharedAudioContext } = await import('../utils/instrumentSampler');
+        sharedPlaybackCtx = getSharedAudioContext();
       }
 
       let frameCounter = 0;
+      let lastVisualEmitted = -2;
+      let lastSectionEmitted = -1;
 
       const draw = () => {
+        // Exact millisecond synchronization of karaoke visual highlight against audio clock
+        if (taskMode === 'song' && sharedPlaybackCtx && playbackClockStart > 0) {
+          const elapsed = sharedPlaybackCtx.currentTime - playbackClockStart;
+          if (elapsed >= 0) {
+            const activeEv = compiledScore.events.find(
+              (ev) => elapsed >= ev.startSec && elapsed < ev.startSec + ev.durationSec
+            );
+            if (activeEv) {
+              if (activeEv.visualIdx !== lastVisualEmitted) {
+                lastVisualEmitted = activeEv.visualIdx;
+                setActiveVisualIdx(activeEv.visualIdx);
+              }
+              if (activeEv.sectionIdx !== lastSectionEmitted) {
+                lastSectionEmitted = activeEv.sectionIdx;
+                setActiveSectionIdx(activeEv.sectionIdx);
+              }
+            }
+          }
+        }
+
         const canvas = canvasRef.current;
         if (canvas) {
           const cctx = canvas.getContext('2d');
@@ -452,7 +566,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
             frameCounter++;
             if (frameCounter % 4 === 0) {
-              const hz = detectPitchHz(timeData, ctx.sampleRate);
+              const hz = detectPitchHz(timeData, micCtx.sampleRate);
               if (hz) {
                 samplesRef.current.push(hz);
                 setCurrentHz(hz);
@@ -516,7 +630,10 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
   if (!isOpen) return null;
 
-  const selectedSong = VOICE_TEST_CONTENT.songs[selectedSongIdx];
+  const activeSection = selectedSong.sections[activeSectionIdx] ?? selectedSong.sections[0];
+  const visibleSectionSyllables = compiledScore.visualSyllables.filter(
+    (s) => s.sectionIdx === activeSectionIdx
+  );
 
   return (
     <div
@@ -572,7 +689,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
         {step === 'gender' && (
           <div className="mt-6 space-y-5">
             <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-              Спойте отрывок знакомой народной песни под мягкий мотив-караоке или короткую распевку — мы измерим ваш частотный диапазон и определим тип голоса.
+              Спойте отрывок знакомой народной песни под точную мелодию-караоке или короткую распевку — мы измерим ваш частотный диапазон и определим тип голоса.
             </p>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -652,7 +769,12 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
             {taskMode === 'song' ? (
               <div className="custom-scrollbar space-y-2 max-h-[260px] overflow-y-auto pr-2">
                 {VOICE_TEST_CONTENT.songs.map((song, idx) => {
-                  const previewLine = song.syllables.map((s) => s.text).join('');
+                  const previewLine = song.sections[0].notes.map((n) => n.syllable).join('');
+                  const bpmLabel =
+                    song.sections.length > 1 && song.sections[0].bpm !== song.sections[1].bpm
+                      ? `${song.sections[0].bpm}–${song.sections[1].bpm} BPM`
+                      : `${song.sections[0].bpm} BPM`;
+
                   return (
                     <button
                       key={song.id}
@@ -664,10 +786,15 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                           : 'border-zinc-900/10 bg-[#F2EDE6]/60 hover:border-zinc-900/25 dark:border-white/10 dark:bg-[#0D0C10]/60'
                       }`}
                     >
-                      <p className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-[#F5F3EF]">
-                        <Music className="h-4 w-4 shrink-0 text-[#B45309] dark:text-[#E2A856]" />
-                        {song.title}
-                      </p>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-[#F5F3EF]">
+                          <Music className="h-4 w-4 shrink-0 text-[#B45309] dark:text-[#E2A856]" />
+                          {song.title}
+                        </p>
+                        <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                          {song.timeSignature} • {bpmLabel}
+                        </span>
+                      </div>
                       <p className="mt-1 line-clamp-1 text-xs italic text-zinc-600 dark:text-zinc-400">
                         {previewLine}
                       </p>
@@ -718,13 +845,15 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
           </div>
         )}
 
-        {/* STEP 3: LIVE RECORDING + SYNTHESIZED KARAOKE GUIDE */}
+        {/* STEP 3: HARDWARE-CLOCK KARAOKE RECORDING */}
         {step === 'record' && (
           <div className="mt-5 space-y-5">
             <div className="rounded-2xl border border-[#B45309]/25 bg-[#F2EDE6]/95 p-4 dark:border-[#E2A856]/25 dark:bg-[#0D0C10]/85">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
-                  {taskMode === 'song' ? selectedSong.title : 'Спойте распевку'}
+                  {taskMode === 'song'
+                    ? `${selectedSong.title} • ${activeSection.name} (${activeSection.bpm} BPM)`
+                    : 'Спойте распевку'}
                 </p>
 
                 <button
@@ -741,25 +870,23 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
               {taskMode === 'song' ? (
                 <div className="mt-3 font-serif text-xl sm:text-2xl font-semibold leading-relaxed">
-                  {selectedSong.syllables.map((syl, idx) => {
-                    const isCurrent = idx === activeSyllableIdx;
-                    const isPast = idx < activeSyllableIdx;
-                    const hasSpace = syl.text.endsWith(' ');
-                    const cleanText = hasSpace ? syl.text.trimEnd() : syl.text;
+                  {visibleSectionSyllables.map((syl) => {
+                    const isCurrent = syl.id === activeVisualIdx;
+                    const isPast = activeVisualIdx >= 0 && syl.id < activeVisualIdx;
                     return (
-                      <span key={idx}>
+                      <span key={syl.id}>
                         <span
-                          className={`inline-block transition-all duration-150 ${
-                            hasSpace ? 'mr-2 sm:mr-2.5' : ''
+                          className={`inline-block transition-all duration-100 ${
+                            syl.hasSpace ? 'mr-2 sm:mr-2.5' : ''
                           } ${
                             isCurrent
-                              ? 'scale-110 rounded-md bg-amber-400/30 px-1 text-[#B45309] underline decoration-2 underline-offset-4 dark:bg-amber-400/20 dark:text-[#FACC15]'
+                              ? 'scale-110 rounded-md bg-amber-400/30 px-1 text-[#B45309] underline decoration-2 underline-offset-4 dark:bg-amber-400/25 dark:text-[#FACC15]'
                               : isPast
-                              ? 'text-[#B45309] dark:text-[#E2A856]'
-                              : 'text-zinc-500 dark:text-zinc-400'
+                                ? 'text-[#B45309] dark:text-[#E2A856]'
+                                : 'text-zinc-500 dark:text-zinc-400'
                           }`}
                         >
-                          {cleanText}
+                          {syl.text}
                         </span>
                         {syl.lineBreak && <br />}
                       </span>
@@ -865,36 +992,34 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               </p>
             </div>
 
-            <div className="flex flex-col gap-2.5 sm:flex-row sm:justify-center">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => {
                   onClose();
                   onOpenBooking();
                 }}
-                className="btn-sheen inline-flex items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3 text-sm font-semibold text-white dark:bg-[#E2A856] dark:text-[#0D0C10] cursor-pointer"
+                className="btn-sheen inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-5 py-3 text-sm font-semibold text-white dark:bg-[#E2A856] dark:text-[#0D0C10] cursor-pointer"
               >
-                <CalendarCheck className="h-4 w-4" />
-                Записаться на занятие
+                <CalendarCheck className="h-4 w-4 shrink-0" />
+                <span>Записаться на занятие</span>
               </button>
               <button
                 type="button"
                 onClick={startRecording}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3 text-sm font-semibold text-zinc-800 dark:border-white/15 dark:text-zinc-200 cursor-pointer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3 text-sm font-semibold text-zinc-800 dark:border-white/15 dark:text-zinc-200 cursor-pointer"
               >
-                <RefreshCw className="h-4 w-4" />
-                Проверить снова
+                <RefreshCw className="h-4 w-4 shrink-0" />
+                <span>Проверить снова</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 4: COHESIVE SINGLE-CARD RESULT + INTERACTIVE DETAILS (HOVER ON DESKTOP / TAP ON MOBILE) */}
+        {/* STEP 4: COHESIVE SINGLE-CARD RESULT + COLOR-CODED NOTES */}
         {step === 'result' && result && (
           <div className="mt-5 space-y-5">
-            {/* Single unified rich vocal card */}
             <div className="relative overflow-hidden rounded-3xl border border-[#B45309]/35 bg-gradient-to-br from-[#F2EDE6] via-[#FAF8F5] to-[#EFE6D8] p-5 shadow-lg dark:border-[#E2A856]/40 dark:from-[#1D1B26] dark:via-[#15141B] dark:to-[#111016] sm:p-6">
-              {/* Highlighted Voice Type + Potential Bar */}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
@@ -916,7 +1041,6 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                 </div>
               </div>
 
-              {/* Animated Progress Track */}
               <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-zinc-900/10 dark:bg-white/10">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-[#B45309] via-[#E2A856] to-emerald-500 transition-[width] duration-700 ease-out"
@@ -924,12 +1048,10 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                 />
               </div>
 
-              {/* Praise integrated directly inside main card */}
               <p className="mt-4 text-sm font-medium leading-relaxed text-zinc-800 dark:text-zinc-100">
                 Вау, вы супер! У вас выразительный природный тембр и живая музыкальная интонация.
               </p>
 
-              {/* Unified clean 3-stat horizontal bar with color-highlighted notes & bigger typography */}
               <div className="mt-5 grid grid-cols-3 divide-x divide-zinc-900/10 border-y border-zinc-900/10 py-4 text-center dark:divide-white/10 dark:border-white/10">
                 <div className="px-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
@@ -968,7 +1090,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                 </div>
               </div>
 
-              {/* Interactive Description: opens on hover (desktop) OR tap (mobile/all) */}
+              {/* Interactive Description: Hover on desktop / Tap on mobile */}
               <div
                 onMouseEnter={() => {
                   if (window.matchMedia('(hover: hover)').matches) setDetailsOpen(true);
@@ -1004,7 +1126,10 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                     <div className="mt-2 space-y-2.5 px-2 pb-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
                       <p>{result.profile.description}</p>
                       <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                        Полный диапазон типа: <strong className="text-zinc-800 dark:text-zinc-200">{result.profile.rangeLabel}</strong>
+                        Полный диапазон типа:{' '}
+                        <strong className="text-zinc-800 dark:text-zinc-200">
+                          {result.profile.rangeLabel}
+                        </strong>
                       </p>
                       <div className="flex flex-wrap gap-1.5 pt-0.5">
                         {result.profile.subtypes.map((sub) => (
@@ -1022,30 +1147,29 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               </div>
             </div>
 
-            {/* Clear final call to action */}
             <p className="text-center font-serif text-lg font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF]">
               Вы в одном шаге от того, чтобы записаться на урок и раскрыть ваш потенциал!
             </p>
 
-            <div className="flex flex-col gap-2.5 sm:flex-row">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={() => {
                   onClose();
                   onOpenBooking();
                 }}
-                className="btn-sheen flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
+                className="btn-sheen inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-5 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
               >
-                <CalendarCheck className="h-4 w-4" />
-                Записаться на урок
+                <CalendarCheck className="h-4 w-4 shrink-0" />
+                <span>Записаться на урок</span>
               </button>
               <button
                 type="button"
                 onClick={resetAll}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3.5 text-sm font-semibold text-zinc-800 hover:border-[#B45309]/40 dark:border-white/15 dark:text-zinc-200 dark:hover:border-[#E2A856]/50 cursor-pointer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3.5 text-sm font-semibold text-zinc-800 hover:border-[#B45309]/40 dark:border-white/15 dark:text-zinc-200 dark:hover:border-[#E2A856]/50 cursor-pointer"
               >
-                <RefreshCw className="h-4 w-4" />
-                Пройти снова
+                <RefreshCw className="h-4 w-4 shrink-0" />
+                <span>Пройти снова</span>
               </button>
             </div>
           </div>
