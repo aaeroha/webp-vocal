@@ -55,6 +55,10 @@ export interface SocialLink {
   handle: string;
 }
 
+const BASE_URL = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+
 export const AVITO_REVIEWS_URL =
   'https://www.avito.ru/moskovskaya_oblast_troitsk/predlozheniya_uslug/pedagog_po_vokalu_3081109959?utm_campaign=native&utm_medium=item_page_android&utm_source=soc_sharing_seller#open-item-reviews-list';
 
@@ -92,7 +96,7 @@ export const HERO_CONTENT = {
     'Меня зовут Валерия Ерохина. Я педагог высшей категории с опытом более 10 лет, магистр педагогических наук и действующая вокалистка. Обучаю свободному, здоровому звучанию с нуля до сцены на основе современной вокальной механики и фонопедии — без зажимов, крика и скучной теории.',
   primaryCta: 'Записаться на занятие',
   secondaryCta: 'Написать в WhatsApp',
-  videoUrl: './media/video/hero-bg.webm',
+  videoUrl: `${BASE_URL}media/video/hero-bg.webm`,
 };
 
 export const STATS_CONTENT = {
@@ -179,97 +183,97 @@ export const CERTIFICATES_CONTENT = {
       id: 'cert-16',
       title: 'Диплом об окончании аспирантуры МПГУ («Преподаватель-исследователь»)',
       category: 'Аспирантура МПГУ',
-      imageUrl: './media/certificates/cert-16.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-16.webp`,
     },
     {
       id: 'cert-13',
       title: 'Диплом магистра с отличием МПГУ («Педагогическое образование»)',
       category: 'Высшее образование',
-      imageUrl: './media/certificates/cert-13.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-13.webp`,
     },
     {
       id: 'cert-14',
       title: 'Диплом с отличием: Артист-вокалист, преподаватель («Вокальное искусство»)',
       category: 'Профильное образование',
-      imageUrl: './media/certificates/cert-14.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-14.webp`,
     },
     {
       id: 'cert-15',
       title: 'Диплом бакалавра с отличием РАНХиГС при Президенте РФ',
       category: 'Высшее образование',
-      imageUrl: './media/certificates/cert-15.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-15.webp`,
     },
     {
       id: 'cert-08',
       title: 'Удостоверение РАМ им. Гнесиных: «Алгоритмы развития голоса вокалиста»',
       category: 'РАМ им. Гнесиных',
-      imageUrl: './media/certificates/cert-08.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-08.webp`,
     },
     {
       id: 'cert-10',
       title: 'Удостоверение РАМ им. Гнесиных: «Методики обучения эстрадных вокалистов»',
       category: 'РАМ им. Гнесиных',
-      imageUrl: './media/certificates/cert-10.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-10.webp`,
     },
     {
       id: 'cert-11',
       title: 'Удостоверение РАМ им. Гнесиных: «Комплексный подход в воспитании вокалистов»',
       category: 'РАМ им. Гнесиных',
-      imageUrl: './media/certificates/cert-11.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-11.webp`,
     },
     {
       id: 'cert-12',
       title: 'Удостоверение Саратовской консерватории им. Л.В. Собинова (Голососбережение)',
       category: 'Консерватория и фонопедия',
-      imageUrl: './media/certificates/cert-12.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-12.webp`,
     },
     {
       id: 'cert-04',
       title: 'Сертификат «Estill Voice and Myths About the Voice» (DivaIn, USA)',
       category: 'Вокальная механика EVT',
-      imageUrl: './media/certificates/cert-04.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-04.webp`,
     },
     {
       id: 'cert-05',
       title: 'Сертификат «Vocal Rehabilitation» — Вокальная реабилитология (DivaIn, USA)',
       category: 'Вокальная реабилитация',
-      imageUrl: './media/certificates/cert-05.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-05.webp`,
     },
     {
       id: 'cert-09',
       title: 'Сертификат Школы музыкального наставничества им. Елены Образцовой',
       category: 'Вокальная школа',
-      imageUrl: './media/certificates/cert-09.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-09.webp`,
     },
     {
       id: 'cert-01',
       title: 'Свидетельство о членстве в Федерации педагогов вокального искусства РФ',
       category: 'Профессиональный статус',
-      imageUrl: './media/certificates/cert-01.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-01.webp`,
     },
     {
       id: 'cert-03',
       title: 'Диплом лауреата конкурса педмастерства «Музыка – универсальный язык человечества»',
       category: 'Лауреат конкурса',
-      imageUrl: './media/certificates/cert-03.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-03.webp`,
     },
     {
       id: 'cert-06',
       title: 'Диплом лауреата фестиваля-конкурса «Играют преподаватели» (Минкульт МО)',
       category: 'Сценическое мастерство',
-      imageUrl: './media/certificates/cert-06.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-06.webp`,
     },
     {
       id: 'cert-07',
       title: 'Почётная грамота за вклад в музыкальное обучение и воспитание (г.о. Домодедово)',
       category: 'Награда',
-      imageUrl: './media/certificates/cert-07.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-07.webp`,
     },
     {
       id: 'cert-02',
       title: 'Благодарственное письмо Министерства культуры Саратовской области',
       category: 'Награда',
-      imageUrl: './media/certificates/cert-02.webp',
+      imageUrl: `${BASE_URL}media/certificates/cert-02.webp`,
     },
   ] satisfies CertificateItem[],
 };
