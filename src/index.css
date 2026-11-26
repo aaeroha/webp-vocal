@@ -109,26 +109,58 @@
 @keyframes capToss {
   0% {
     opacity: 0;
-    transform: translate3d(0, 110%, 0) rotate(var(--cap-r0, -25deg)) scale(0.8);
+    transform: translate3d(0, 80px, 0) rotate(var(--cap-r0, -25deg)) scale(0.85);
   }
   12% {
-    opacity: 0.92;
+    opacity: 0.72;
   }
   48% {
-    opacity: 0.95;
-    transform: translate3d(var(--cap-dx1, 20px), -340px, 0) rotate(var(--cap-r1, 165deg)) scale(1.06);
+    opacity: 0.8;
+    transform: translate3d(var(--cap-dx1, 24px), -540px, 0) rotate(var(--cap-r1, 165deg)) scale(1.06);
   }
   88% {
-    opacity: 0.85;
+    opacity: 0.65;
   }
   100% {
     opacity: 0;
-    transform: translate3d(var(--cap-dx2, 40px), 120px, 0) rotate(var(--cap-r2, 355deg)) scale(0.85);
+    transform: translate3d(var(--cap-dx2, 48px), 90px, 0) rotate(var(--cap-r2, 355deg)) scale(0.9);
   }
 }
 
 .animate-cap-toss {
-  animation: capToss var(--cap-dur, 4.5s) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  animation: capToss var(--cap-dur, 4.8s) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+}
+
+/* Custom sleek thin scrollbar for song picker & modals */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180, 83, 9, 0.45) transparent;
+}
+
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(226, 168, 86, 0.45) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(24, 24, 27, 0.05);
+  border-radius: 9999px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #B45309, #D97706);
+  border-radius: 9999px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #E2A856, #F3C884);
 }
 
 /* Elegant flowing waveform keyframes (Dark mode) */

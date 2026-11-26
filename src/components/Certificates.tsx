@@ -4,18 +4,15 @@ import { CERTIFICATES_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
 const GRADUATION_CAPS = [
-  { left: '4%', delay: '0s', dur: '4.1s', dx1: '18px', dx2: '38px', r0: '-25deg', r1: '160deg', r2: '350deg', size: 28 },
-  { left: '11%', delay: '1.4s', dur: '5.2s', dx1: '-24px', dx2: '-42px', r0: '15deg', r1: '-145deg', r2: '-315deg', size: 42 },
-  { left: '19%', delay: '0.5s', dur: '4.6s', dx1: '26px', dx2: '48px', r0: '-18deg', r1: '185deg', r2: '370deg', size: 34 },
-  { left: '27%', delay: '2.3s', dur: '3.9s', dx1: '-16px', dx2: '-30px', r0: '20deg', r1: '-165deg', r2: '-345deg', size: 24 },
-  { left: '35%', delay: '0.9s', dur: '5.6s', dx1: '22px', dx2: '42px', r0: '-30deg', r1: '140deg', r2: '320deg', size: 46 },
-  { left: '43%', delay: '1.9s', dur: '4.3s', dx1: '-28px', dx2: '-46px', r0: '12deg', r1: '-170deg', r2: '-355deg', size: 32 },
-  { left: '52%', delay: '0.2s', dur: '4.9s', dx1: '20px', dx2: '35px', r0: '-22deg', r1: '175deg', r2: '360deg', size: 38 },
-  { left: '60%', delay: '2.7s', dur: '4.4s', dx1: '-20px', dx2: '-38px', r0: '25deg', r1: '-150deg', r2: '-330deg', size: 26 },
-  { left: '68%', delay: '1.1s', dur: '5.4s', dx1: '24px', dx2: '40px', r0: '-14deg', r1: '190deg', r2: '380deg', size: 44 },
-  { left: '76%', delay: '0.7s', dur: '3.8s', dx1: '-18px', dx2: '-32px', r0: '18deg', r1: '-160deg', r2: '-340deg', size: 30 },
-  { left: '84%', delay: '2.1s', dur: '4.7s', dx1: '15px', dx2: '28px', r0: '-26deg', r1: '150deg', r2: '335deg', size: 36 },
-  { left: '92%', delay: '1.6s', dur: '5.1s', dx1: '-22px', dx2: '-36px', r0: '14deg', r1: '-175deg', r2: '-360deg', size: 40 },
+  { left: '3%', delay: '0s', dur: '4.5s', dx1: '20px', dx2: '44px', r0: '-25deg', r1: '160deg', r2: '350deg', size: 64 },
+  { left: '12%', delay: '1.6s', dur: '5.5s', dx1: '-26px', dx2: '-48px', r0: '15deg', r1: '-145deg', r2: '-315deg', size: 84 },
+  { left: '22%', delay: '0.6s', dur: '4.9s', dx1: '28px', dx2: '52px', r0: '-18deg', r1: '185deg', r2: '370deg', size: 72 },
+  { left: '33%', delay: '2.5s', dur: '4.3s', dx1: '-18px', dx2: '-36px', r0: '20deg', r1: '-165deg', r2: '-345deg', size: 58 },
+  { left: '44%', delay: '1.0s', dur: '5.9s', dx1: '24px', dx2: '46px', r0: '-30deg', r1: '140deg', r2: '320deg', size: 90 },
+  { left: '55%', delay: '2.1s', dur: '4.7s', dx1: '-30px', dx2: '-52px', r0: '12deg', r1: '-170deg', r2: '-355deg', size: 68 },
+  { left: '66%', delay: '0.3s', dur: '5.2s', dx1: '22px', dx2: '40px', r0: '-22deg', r1: '175deg', r2: '360deg', size: 78 },
+  { left: '77%', delay: '2.9s', dur: '4.6s', dx1: '-22px', dx2: '-42px', r0: '25deg', r1: '-150deg', r2: '-330deg', size: 62 },
+  { left: '87%', delay: '1.2s', dur: '5.6s', dx1: '-24px', dx2: '-44px', r0: '-14deg', r1: '190deg', r2: '380deg', size: 86 },
 ];
 
 function GraduationCapSvg({ size }: { size: number }) {
@@ -73,16 +70,16 @@ export function Certificates() {
 
   return (
     <section id="certificates" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
-      {/* Continuous Infinite Graduation Cap Toss across the entire height of the section */}
+      {/* Giant Background Graduation Caps soaring to the top & falling infinitely */}
       {isVisible && (
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-20 overflow-hidden"
+          className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-60 dark:opacity-55"
         >
           {GRADUATION_CAPS.map((cap, idx) => (
             <div
               key={idx}
-              className="animate-cap-toss absolute bottom-[12%]"
+              className="animate-cap-toss absolute bottom-2"
               style={
                 {
                   left: cap.left,
@@ -147,7 +144,7 @@ export function Certificates() {
                   key={`${cert.id}-${idx}`}
                   type="button"
                   onClick={() => setSelectedIndex(realIndex)}
-                  className="group relative flex w-[220px] shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/90 p-2.5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#B45309]/45 hover:shadow-lg dark:border-white/10 dark:bg-[#16151C]/95 dark:hover:border-[#E2A856]/50 dark:gold-glow-hover sm:w-[255px] lg:w-[275px] cursor-pointer"
+                  className="group relative flex w-[220px] shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/95 p-2.5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#B45309]/45 hover:shadow-lg dark:border-white/10 dark:bg-[#16151C]/95 dark:hover:border-[#E2A856]/50 dark:gold-glow-hover sm:w-[255px] lg:w-[275px] cursor-pointer"
                 >
                   <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-zinc-200/70 dark:bg-[#0D0C10]">
                     <img

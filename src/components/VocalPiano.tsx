@@ -57,8 +57,9 @@ const PIANO_KEYS_LOW: PianoKey[] = [
   { note: 'A3', labelRu: 'Ля', sciLabel: 'a', freq: 220.0, isBlack: false },
 ];
 
-// 10 curated 5-note vocal warmup sequences for High Register (c1-c2)
+// 10 existing 5-note sequences + 5 new 7-note sequences (High Register c1-c2)
 const WARMUP_PATTERNS_HIGH: string[][] = [
+  // 5-note classics
   ['C4', 'E4', 'G4', 'E4', 'C4'],
   ['C4', 'D4', 'E4', 'F4', 'G4'],
   ['G4', 'F4', 'E4', 'D4', 'C4'],
@@ -69,10 +70,17 @@ const WARMUP_PATTERNS_HIGH: string[][] = [
   ['F4', 'A4', 'C5', 'A4', 'F4'],
   ['A4', 'G4', 'E4', 'D4', 'C4'],
   ['C4', 'D4', 'F4', 'G4', 'A4'],
+  // 5 new 7-note vocal warmups
+  ['C4', 'D4', 'E4', 'F4', 'G4', 'F4', 'E4'],
+  ['C4', 'E4', 'G4', 'C5', 'G4', 'E4', 'C4'],
+  ['D4', 'E4', 'F#4', 'A4', 'F#4', 'E4', 'D4'],
+  ['G4', 'A4', 'B4', 'C5', 'B4', 'A4', 'G4'],
+  ['C4', 'E4', 'F4', 'G4', 'A4', 'G4', 'C4'],
 ];
 
-// 10 curated 5-note vocal warmup sequences for Low Register (F-a)
+// 10 existing 5-note sequences + 5 new 7-note sequences (Low Register F-a)
 const WARMUP_PATTERNS_LOW: string[][] = [
+  // 5-note classics
   ['F2', 'A2', 'C3', 'A2', 'F2'],
   ['A2', 'B2', 'C3', 'D3', 'E3'],
   ['E3', 'D3', 'C3', 'B2', 'A2'],
@@ -83,6 +91,12 @@ const WARMUP_PATTERNS_LOW: string[][] = [
   ['D3', 'F3', 'A3', 'F3', 'D3'],
   ['G2', 'C3', 'E3', 'C3', 'G2'],
   ['A2', 'C3', 'D3', 'E3', 'A3'],
+  // 5 new 7-note vocal warmups
+  ['F2', 'G2', 'A2', 'C3', 'D3', 'C3', 'A2'],
+  ['A2', 'C#3', 'E3', 'A3', 'E3', 'C#3', 'A2'],
+  ['C3', 'D3', 'E3', 'F3', 'G3', 'F3', 'C3'],
+  ['G2', 'A2', 'B2', 'D3', 'B2', 'A2', 'G2'],
+  ['A2', 'B2', 'C3', 'E3', 'G3', 'E3', 'A2'],
 ];
 
 type ChallengePhase = 'idle' | 'demo' | 'practice' | 'completed';
@@ -94,7 +108,6 @@ export function VocalPiano() {
   const [selectedProfileId, setSelectedProfileId] = useState<string>('mezzo');
   const [activeNote, setActiveNote] = useState<string | null>(null);
 
-  // Interactive 5-note Warmup Game State
   const [phase, setPhase] = useState<ChallengePhase>('idle');
   const [patternIdx, setPatternIdx] = useState<number>(0);
   const [demoStepIdx, setDemoStepIdx] = useState<number>(-1);
@@ -115,7 +128,6 @@ export function VocalPiano() {
     [keys]
   );
 
-  // Build marquee summary text from the 10 sequences
   const tickerItems = patterns.map((seq) =>
     seq
       .map((n) => {
@@ -143,7 +155,7 @@ export function VocalPiano() {
     setWrongFlash(false);
   }, [clearTimers]);
 
-  const triggerKeyVisual = useCallback((noteCode: string, highlightMs = 480) => {
+  const triggerKeyVisual = useCallback((noteCode: string, highlightMs = 680) => {
     if (activeTimeoutRef.current) {
       window.clearTimeout(activeTimeoutRef.current);
     }
@@ -156,7 +168,7 @@ export function VocalPiano() {
   const handleUserPressKey = useCallback(
     (key: PianoKey) => {
       playInstrumentSample(key.freq, instrument, 1.5, 0.8).catch(() => {});
-      triggerKeyVisual(key.note, 420);
+      triggerKeyVisual(key.note, 450);
 
       if (phase === 'practice') {
         const expectedNote = activeSequenceNotes[userStepIdx];
@@ -180,8 +192,8 @@ export function VocalPiano() {
     await preloadInstrument(instrument).catch(() => {});
     clearTimers();
 
-    // Pick a random sequence different from the current one
-    const nextIdx = (patternIdx + 1 + Math.floor(Math.random() * 8)) % patterns.length;
+    const nextIdx =
+      (patternIdx + 1 + Math.floor(Math.random() * (patterns.length - 1))) % patterns.length;
     const seq = patterns[nextIdx];
 
     setPatternIdx(nextIdx);
@@ -190,22 +202,24 @@ export function VocalPiano() {
     setUserStepIdx(0);
     setWrongFlash(false);
 
+    // 1.5x slower unhurried playback (870ms per note)
+    const noteStepMs = 870;
     seq.forEach((noteCode, idx) => {
       const targetKey = keys.find((k) => k.note === noteCode);
       if (!targetKey) return;
       const timer = window.setTimeout(() => {
         setDemoStepIdx(idx);
-        playInstrumentSample(targetKey.freq, instrument, 0.95, 0.8).catch(() => {});
-        triggerKeyVisual(targetKey.note, 520);
+        playInstrumentSample(targetKey.freq, instrument, 1.35, 0.82).catch(() => {});
+        triggerKeyVisual(targetKey.note, 760);
 
         if (idx === seq.length - 1) {
           const switchTimer = window.setTimeout(() => {
             setDemoStepIdx(-1);
             setPhase('practice');
-          }, 680);
+          }, 920);
           warmupTimersRef.current.push(switchTimer);
         }
-      }, 220 + idx * 580);
+      }, 260 + idx * noteStepMs);
       warmupTimersRef.current.push(timer);
     });
   };
@@ -251,13 +265,12 @@ export function VocalPiano() {
               Вокальное пианино для распевки и настройки слуха
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-base">
-              Нажмите «Сыграть распевку» — пианино проиграет 5 нот, а затем повторите их по порядку на клавишах, подпевая голосом.
+              Нажмите «Сыграть распевку» — пианино неспешно проиграет 5 или 7 нот, а затем повторите их по порядку на клавишах, подпевая голосом.
             </p>
           </div>
 
           {/* Clean Unified Console Toolbar */}
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-900/8 bg-[#FAF8F5]/80 p-3 dark:border-white/8 dark:bg-[#0D0C10]/70 sm:p-4">
-            {/* Left: Register Switch + Timbres */}
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="inline-flex rounded-full border border-zinc-900/12 bg-[#F2EDE6] p-1 dark:border-white/12 dark:bg-[#16151C]">
                 <button
@@ -302,7 +315,6 @@ export function VocalPiano() {
               </div>
             </div>
 
-            {/* Right: Play Warmup CTA */}
             <div className="flex items-center gap-2">
               {phase !== 'idle' && (
                 <button
@@ -368,7 +380,7 @@ export function VocalPiano() {
             {phase === 'idle' ? (
               <div className="overflow-hidden">
                 <div className="mb-1.5 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
-                  <span>Варианты вокальных распевок (нажмите «Сыграть распевку»):</span>
+                  <span>15 распевок по 5 и 7 нот (нажмите «Сыграть распевку»):</span>
                 </div>
                 <div className="relative overflow-hidden whitespace-nowrap py-1">
                   <div className="animate-piano-ticker gap-8 text-sm font-medium text-zinc-700 dark:text-zinc-200">
@@ -386,26 +398,32 @@ export function VocalPiano() {
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
                     {phase === 'demo' && 'Шаг 1: Слушайте и запоминайте последовательность'}
-                    {phase === 'practice' && 'Шаг 2: Нажмите эти 5 нот по порядку и пропойте!'}
+                    {phase === 'practice' &&
+                      `Шаг 2: Нажмите эти ${activeSequenceNotes.length} нот по порядку и пропойте!`}
                     {phase === 'completed' && (
                       <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                         <Sparkles className="h-4 w-4" />
-                        Браво! Все 5 нот сыграны точно!
+                        Браво! Все {activeSequenceNotes.length} нот сыграны точно!
                       </span>
                     )}
                   </span>
 
                   <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
                     {phase === 'completed'
-                      ? '5 / 5 готово'
+                      ? `${activeSequenceNotes.length} / ${activeSequenceNotes.length} готово`
                       : phase === 'practice'
-                        ? `Прогресс: ${userStepIdx} / 5`
+                        ? `Прогресс: ${userStepIdx} / ${activeSequenceNotes.length}`
                         : 'Автопоказ...'}
                   </span>
                 </div>
 
-                {/* 5-Note Interactive Board */}
-                <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                {/* Dynamic 5-Note or 7-Note Interactive Board */}
+                <div
+                  className="grid gap-1.5 sm:gap-2.5"
+                  style={{
+                    gridTemplateColumns: `repeat(${activeSequenceNotes.length}, minmax(0, 1fr))`,
+                  }}
+                >
                   {activeSequenceNotes.map((noteCode, idx) => {
                     const k = keyLookup(noteCode);
                     const isMatched =
@@ -416,7 +434,7 @@ export function VocalPiano() {
                     return (
                       <div
                         key={`${noteCode}-${idx}`}
-                        className={`flex flex-col items-center justify-center rounded-xl border px-2 py-2.5 text-center transition-all duration-200 ${
+                        className={`flex flex-col items-center justify-center rounded-xl border px-1.5 py-2 sm:px-2 sm:py-2.5 text-center transition-all duration-200 ${
                           isMatched
                             ? 'border-emerald-500 bg-emerald-500/18 text-emerald-700 shadow-[0_0_16px_rgba(16,185,129,0.28)] dark:border-emerald-400 dark:bg-emerald-500/20 dark:text-emerald-300'
                             : isDemoActive
@@ -428,13 +446,13 @@ export function VocalPiano() {
                                 : 'border-zinc-900/10 bg-[#F2EDE6]/80 text-zinc-500 dark:border-white/10 dark:bg-[#16151C] dark:text-zinc-400'
                         }`}
                       >
-                        <div className="flex items-center gap-1">
-                          {isMatched && <Check className="h-3.5 w-3.5 shrink-0" />}
-                          <span className="text-sm sm:text-base font-bold leading-none">
+                        <div className="flex items-center gap-0.5 sm:gap-1">
+                          {isMatched && <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />}
+                          <span className="text-xs sm:text-base font-bold leading-none">
                             {k?.labelRu ?? noteCode}
                           </span>
                         </div>
-                        <span className="mt-1 text-[11px] sm:text-xs font-medium opacity-85">
+                        <span className="mt-1 text-[10px] sm:text-xs font-medium opacity-85">
                           {k?.sciLabel ?? ''}
                         </span>
                       </div>
@@ -445,8 +463,8 @@ export function VocalPiano() {
             )}
           </div>
 
-          {/* FULL-WIDTH Interactive Playable Piano Keyboard (larger keys & crisp fonts) */}
-          <div className="relative mt-5 overflow-x-auto pb-1">
+          {/* FULL-WIDTH Interactive Playable Piano Keyboard */}
+          <div className="relative mt-5 overflow-x-auto pb-1 custom-scrollbar">
             <div className="relative flex h-56 w-full min-w-[560px] select-none rounded-2xl border border-zinc-900/20 bg-zinc-950 p-2.5 shadow-2xl dark:border-white/15 dark:bg-black/90 sm:h-68">
               {whiteKeys.map((wKey) => {
                 const isPressed = activeNote === wKey.note;

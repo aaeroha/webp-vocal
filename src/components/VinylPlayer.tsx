@@ -49,48 +49,46 @@ export function VinylPlayer() {
   );
   const allLedsLit = litLeds === ledCount;
 
-  // Tonearm kinematics (record center 50,55; pivot 100,21)
-  const armAngle = (progress / 100) * 39.5;
+  // Exact calibrated tonearm kinematics:
+  // Record center (50, 55), Pivot (100, 21), distance Pivot->Center = 60.465
+  // Stylus sits at (88, 63.8) at 0 deg -> R = 39.0 (exact outer edge of vinyl track!)
+  // Rotating 35.5 deg clockwise brings stylus to R = 17.5 (cleanly outside the 15.5 orange label!)
+  // Normalized from 10%..100% scroll so at 10% it sits right on the outer groove edge.
+  const trackProgress = Math.max(0, Math.min(1, (progress - 10) / 90));
+  const armAngle = trackProgress * 35.5;
 
   return (
     <aside
       aria-label="Виниловый Hi-Fi проигрыватель навигации"
-      className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 select-none flex flex-col items-end gap-1.5 transition-all duration-500 ease-out ${
+      className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 select-none flex flex-col items-center gap-1.5 transition-all duration-500 ease-out ${
         isVisible
           ? 'translate-y-0 opacity-100 pointer-events-auto'
           : 'translate-y-8 opacity-0 pointer-events-none'
       }`}
     >
-      {/* Isolated Hi-Fi Mini Digital OLED Display neatly aligned above the turntable */}
+      {/* Centered "НАВЕРХ ↑" Display Pill directly above center of turntable */}
       <button
         type="button"
         onClick={handleScrollToTop}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        aria-label={`Прокручено ${roundedPercent}%. Нажмите, чтобы вернуться наверх`}
-        className={`relative flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-[11px] sm:text-xs font-bold tracking-widest shadow-inner transition-all duration-300 cursor-pointer focus:outline-none ${
-          allLedsLit
-            ? 'border-amber-400/90 bg-[#0A090E] text-amber-300 shadow-[0_0_16px_rgba(251,191,36,0.5)] animate-pulse'
-            : 'border-zinc-700/90 bg-[#0D0C10]/95 text-amber-400 shadow-[0_4px_12px_rgba(0,0,0,0.45)] dark:border-[#B45309]/45 dark:bg-[#1B1920]'
-        }`}
+        aria-label={`Наверх. Прокручено ${roundedPercent}%`}
+        className={`relative flex items-center justify-center gap-1.5 rounded-full border px-3 py-0.5 text-[11px] font-bold tracking-wider shadow-lg transition-all duration-300 cursor-pointer focus:outline-none ${
+          allLedsLit || isHovered
+            ? 'opacity-100 translate-y-0 border-amber-400/90 bg-[#0A090E] text-amber-300 shadow-[0_0_16px_rgba(251,191,36,0.48)]'
+            : 'opacity-0 translate-y-1 pointer-events-none border-transparent'
+        } ${allLedsLit ? 'animate-pulse' : ''}`}
       >
         <span
           aria-hidden="true"
           className={`h-1.5 w-1.5 rounded-full ${
-            allLedsLit ? 'bg-emerald-400 shadow-[0_0_6px_#34D399]' : 'bg-amber-400/85'
+            allLedsLit ? 'bg-emerald-400 shadow-[0_0_6px_#34D399]' : 'bg-amber-400'
           }`}
         />
-        <span className="tabular-nums">
-          {String(roundedPercent).padStart(2, '0')}%
-        </span>
-        {(allLedsLit || isHovered) && (
-          <span className="text-[10px] font-sans font-semibold tracking-normal text-amber-200 whitespace-nowrap">
-            • НАВЕРХ ↑
-          </span>
-        )}
+        <span>НАВЕРХ ↑</span>
       </button>
 
-      {/* Large Hi-Fi Turntable with Right-Side Vertical 10-LED VU Level Scale */}
+      {/* Large Hi-Fi Turntable with Right-Side Vertical VU Scale & Built-In Bottom % Readout */}
       <button
         type="button"
         onClick={handleScrollToTop}
@@ -101,15 +99,15 @@ export function VinylPlayer() {
             ? 'Все индикаторы горят — нажмите, чтобы вернуться наверх'
             : 'Нажмите, чтобы вернуться наверх'
         }
-        aria-label={`Прокрутка наверх. Заполнено ${litLeds} из 10 индикаторов`}
-        className={`group relative block w-[136px] h-[112px] sm:w-[184px] sm:h-[152px] p-1.5 rounded-2xl cursor-pointer transition-all duration-300 transform-gpu active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+        aria-label={`Прокрутка наверх. Пройдено ${roundedPercent}%`}
+        className={`group relative block w-[144px] h-[116px] sm:w-[196px] sm:h-[158px] p-1.5 rounded-2xl cursor-pointer transition-all duration-300 transform-gpu active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
           allLedsLit
             ? 'ring-2 ring-amber-500/95 shadow-2xl shadow-amber-500/40 scale-105 bg-[#121216] border border-amber-500/55 dark:bg-[#F5F0E6] dark:border-amber-600/65'
             : 'hover:scale-105 shadow-2xl bg-[#121216]/95 border border-white/15 hover:border-amber-500/60 dark:bg-[#F5F0E6]/95 dark:border-[#B45309]/30 dark:hover:border-[#B45309]/75'
         }`}
       >
         <svg
-          viewBox="0 0 134 110"
+          viewBox="0 0 140 112"
           className="w-full h-full overflow-visible"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -121,7 +119,7 @@ export function VinylPlayer() {
               <stop offset="100%" stopColor="#7C2D12" />
             </linearGradient>
 
-            <linearGradient id="tonearmChromeVu" x1="100" y1="21" x2="85" y2="64.5" gradientUnits="userSpaceOnUse">
+            <linearGradient id="tonearmChromeVu" x1="100" y1="21" x2="88" y2="63.8" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stopColor="#F4F4F5" />
               <stop offset="50%" stopColor="#A1A1AA" />
               <stop offset="100%" stopColor="#71717A" />
@@ -194,10 +192,10 @@ export function VinylPlayer() {
 
           {/* RIGHT-SIDE VERTICAL 10-LED VU LEVEL SCALE */}
           <rect
-            x="116"
-            y="10"
-            width="12"
-            height="90"
+            x="118"
+            y="8"
+            width="14"
+            height="79"
             rx="3.5"
             fill="#0A0A0E"
             stroke="#3F3F46"
@@ -205,24 +203,47 @@ export function VinylPlayer() {
             className="dark:fill-[#1C1917] dark:stroke-[#A89F91]"
           />
           {Array.from({ length: ledCount }).map((_, idx) => {
-            // Segment 0 is bottom (10%), segment 9 is top (100%)
             const isLit = idx < litLeds;
-            const yPos = 89 - idx * 8.2;
+            const yPos = 77.5 - idx * 7.2;
             const activeColor =
               idx >= 8 ? '#EF4444' : idx >= 6 ? '#F59E0B' : '#10B981';
             return (
               <rect
                 key={idx}
-                x="118.6"
+                x="120.8"
                 y={yPos}
-                width="6.8"
-                height="5.2"
-                rx="1.2"
+                width="8.4"
+                height="4.6"
+                rx="1.1"
                 fill={isLit ? activeColor : '#27272A'}
                 opacity={isLit ? 1 : 0.45}
               />
             );
           })}
+
+          {/* INTEGRATED % DIGITAL READOUT RIGHT NEXT TO / BELOW VU SCALE */}
+          <rect
+            x="105"
+            y="91"
+            width="30"
+            height="14"
+            rx="3"
+            fill="#09090B"
+            stroke={allLedsLit ? '#F59E0B' : '#3F3F46'}
+            strokeWidth="0.8"
+            className="dark:fill-[#1C1917]"
+          />
+          <text
+            x="120"
+            y="101"
+            textAnchor="middle"
+            fontSize="7.4"
+            fontFamily="monospace"
+            fontWeight="700"
+            fill={allLedsLit ? '#FACC15' : '#E2A856'}
+          >
+            {roundedPercent}%
+          </text>
 
           {/* Tonearm Gimbal Pivot & Counterweight */}
           <circle
@@ -248,7 +269,7 @@ export function VinylPlayer() {
             className="dark:fill-zinc-600 dark:stroke-zinc-800"
           />
 
-          {/* TONEARM */}
+          {/* CALIBRATED TONEARM (starts at outer vinyl rim R=39, stops cleanly at R=17.5 outside label) */}
           <g
             style={{
               transformOrigin: '100px 21px',
@@ -257,14 +278,14 @@ export function VinylPlayer() {
             }}
           >
             <path
-              d="M 100 21 C 101.5 34, 93 47, 85 64.5"
+              d="M 100 21 C 101 32, 94.5 44, 89.5 57.5"
               fill="none"
               stroke="url(#tonearmChromeVu)"
-              strokeWidth="2.5"
+              strokeWidth="2.4"
               strokeLinecap="round"
             />
             <path
-              d="M 100 21 C 101.5 34, 93 47, 85 64.5"
+              d="M 100 21 C 101 32, 94.5 44, 89.5 57.5"
               fill="none"
               stroke="#FFFFFF"
               strokeWidth="0.8"
@@ -272,19 +293,21 @@ export function VinylPlayer() {
               opacity="0.55"
             />
 
-            <g transform="translate(85, 64.5) rotate(-18)">
+            {/* Headshell ending cleanly so needle point lands right at (88, 63.8) */}
+            <g transform="translate(89.5, 57.5) rotate(-14)">
               <rect
-                x="-2.4"
+                x="-2.3"
                 y="-1"
-                width="4.8"
-                height="8.5"
+                width="4.6"
+                height="7.5"
                 rx="1"
                 fill="#18181B"
                 stroke="#D4D4D8"
                 strokeWidth="0.7"
               />
-              <circle cx="0" cy="7.2" r="1.05" fill="#F59E0B" />
-              <circle cx="0" cy="2.6" r="0.8" fill="#F59E0B" className="animate-pulse" />
+              {/* Stylus tip */}
+              <circle cx="0" cy="6.2" r="1.05" fill="#F59E0B" />
+              <circle cx="0" cy="2.4" r="0.75" fill="#F59E0B" className="animate-pulse" />
             </g>
           </g>
         </svg>

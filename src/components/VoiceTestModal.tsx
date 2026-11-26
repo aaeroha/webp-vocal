@@ -11,8 +11,6 @@ import {
   Sparkles,
   Square,
   User,
-  Volume2,
-  VolumeX,
   X,
 } from 'lucide-react';
 import { VOICE_TEST_CONTENT, VOICE_TYPES, type VoiceTypeProfile } from '../data/content';
@@ -263,10 +261,6 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
   const [selectedSongIdx, setSelectedSongIdx] = useState(0);
   const [phraseIdx, setPhraseIdx] = useState(0);
 
-  const [guideAudioEnabled, setGuideAudioEnabled] = useState(true);
-  const guideAudioRef = useRef(true);
-  guideAudioRef.current = guideAudioEnabled;
-
   const [isRecording, setIsRecording] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(10);
   const [activeSyllableIdx, setActiveSyllableIdx] = useState<number>(-1);
@@ -430,14 +424,12 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
         activeSong.syllables.forEach((syl, idx) => {
           const timerId = window.setTimeout(() => {
             setActiveSyllableIdx(idx);
-            if (guideAudioRef.current) {
-              playInstrumentSample(
-                syl.freq * pitchScale,
-                'piano',
-                Math.max(0.35, syl.ms / 1000 + 0.18),
-                0.34
-              ).catch(() => {});
-            }
+            playInstrumentSample(
+              syl.freq * pitchScale,
+              'piano',
+              Math.max(0.55, syl.ms / 1000 + 0.35),
+              0.38
+            ).catch(() => {});
           }, offsetMs);
           karaokeTimersRef.current.push(timerId);
           offsetMs += syl.ms;
@@ -543,7 +535,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
         className="absolute inset-0 bg-black/75 backdrop-blur-sm"
       />
 
-      <div className="animate-modal-enter relative z-10 max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-zinc-900/12 bg-[#FAF8F5] p-5 shadow-2xl dark:border-white/15 dark:bg-[#16151C] sm:p-7">
+      <div className="custom-scrollbar animate-modal-enter relative z-10 max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-zinc-900/12 bg-[#FAF8F5] p-5 shadow-2xl dark:border-white/15 dark:bg-[#16151C] sm:p-7">
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -658,7 +650,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
             </div>
 
             {taskMode === 'song' ? (
-              <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+              <div className="custom-scrollbar space-y-2 max-h-[260px] overflow-y-auto pr-2">
                 {VOICE_TEST_CONTENT.songs.map((song, idx) => {
                   const previewLine = song.syllables.map((s) => s.text).join('');
                   return (
@@ -735,36 +727,31 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                   {taskMode === 'song' ? selectedSong.title : 'Спойте распевку'}
                 </p>
 
-                {taskMode === 'song' && (
-                  <button
-                    type="button"
-                    onClick={() => setGuideAudioEnabled((prev) => !prev)}
-                    className="inline-flex items-center gap-1 rounded-full border border-zinc-900/10 bg-[#FAF8F5] px-2.5 py-0.5 text-[11px] font-medium text-zinc-700 hover:text-[#B45309] dark:border-white/10 dark:bg-[#16151C] dark:text-zinc-300 cursor-pointer"
-                  >
-                    {guideAudioEnabled ? (
-                      <>
-                        <Volume2 className="h-3 w-3 text-emerald-500" />
-                        <span>Мелодия вкл</span>
-                      </>
-                    ) : (
-                      <>
-                        <VolumeX className="h-3 w-3 text-zinc-400" />
-                        <span>Без звука</span>
-                      </>
-                    )}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    cleanupAudio();
+                    setStep('mode');
+                  }}
+                  className="text-[11px] font-semibold text-zinc-500 transition-colors hover:text-[#B45309] dark:text-zinc-400 dark:hover:text-[#E2A856] cursor-pointer"
+                >
+                  ← Сменить песню
+                </button>
               </div>
 
               {taskMode === 'song' ? (
-                <div className="mt-2.5 font-serif text-xl sm:text-2xl font-semibold leading-relaxed">
+                <div className="mt-3 font-serif text-xl sm:text-2xl font-semibold leading-relaxed">
                   {selectedSong.syllables.map((syl, idx) => {
                     const isCurrent = idx === activeSyllableIdx;
                     const isPast = idx < activeSyllableIdx;
+                    const hasSpace = syl.text.endsWith(' ');
+                    const cleanText = hasSpace ? syl.text.trimEnd() : syl.text;
                     return (
                       <span key={idx}>
                         <span
                           className={`inline-block transition-all duration-150 ${
+                            hasSpace ? 'mr-2 sm:mr-2.5' : ''
+                          } ${
                             isCurrent
                               ? 'scale-110 rounded-md bg-amber-400/30 px-1 text-[#B45309] underline decoration-2 underline-offset-4 dark:bg-amber-400/20 dark:text-[#FACC15]'
                               : isPast
@@ -772,7 +759,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                               : 'text-zinc-500 dark:text-zinc-400'
                           }`}
                         >
-                          {syl.text}
+                          {cleanText}
                         </span>
                         {syl.lineBreak && <br />}
                       </span>
@@ -780,7 +767,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                   })}
                 </div>
               ) : (
-                <p className="mt-1.5 font-serif text-xl font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF]">
+                <p className="mt-2 font-serif text-xl font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF]">
                   {VOICE_TEST_CONTENT.randomPhrases[phraseIdx]}
                 </p>
               )}
@@ -795,27 +782,39 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               />
 
               <div className="mt-3 flex items-center justify-between text-xs text-zinc-300">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 animate-ping rounded-full bg-emerald-400" />
-                  <span>
-                    {currentHz
-                      ? `Нота: ${hzToNoteLabel(currentHz)} (${Math.round(currentHz)} Гц)`
-                      : 'Спойте в такт или протяните звук...'}
-                  </span>
-                </div>
-                <span className="font-mono font-semibold text-amber-400">
+                {isRecording ? (
+                  <div className="flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 animate-ping rounded-full bg-emerald-400" />
+                    <span>
+                      {currentHz
+                        ? `Нота: ${hzToNoteLabel(currentHz)} (${Math.round(currentHz)} Гц)`
+                        : 'Спойте в такт или протяните звук...'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-rose-400 font-semibold">
+                    <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+                    <span>Микрофон был слишком тихим — голос не распознан</span>
+                  </div>
+                )}
+
+                <span
+                  className={`font-mono font-semibold ${
+                    !isRecording ? 'text-rose-400' : 'text-amber-400'
+                  }`}
+                >
                   {secondsLeft} сек
                 </span>
               </div>
             </div>
 
             {!hasVoiceDetected && !isRecording && (
-              <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-900 dark:text-amber-200">
-                Почти не слышно голоса — проверьте громкость микрофона и попробуйте спеть чуть громче.
+              <div className="rounded-2xl border-2 border-rose-500/75 bg-rose-500/15 p-3.5 text-xs sm:text-sm font-semibold leading-relaxed text-rose-800 dark:text-rose-200">
+                Сигнал с микрофона был слишком слабым. Попробуйте поднести микрофон ближе или спойте чуть громче — можно повторить эту же песню или выбрать другую.
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-col gap-2.5 sm:flex-row">
               {isRecording ? (
                 <button
                   type="button"
@@ -826,14 +825,26 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                   Завершить и узнать результат
                 </button>
               ) : (
-                <button
-                  type="button"
-                  onClick={startRecording}
-                  className="btn-sheen inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Попробовать ещё раз
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    className="btn-sheen flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                    Спеть эту же песню ещё раз
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      cleanupAudio();
+                      setStep('mode');
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3.5 text-sm font-semibold text-zinc-800 hover:border-[#B45309]/40 dark:border-white/15 dark:text-zinc-200 cursor-pointer"
+                  >
+                    Выбрать другую
+                  </button>
+                </>
               )}
             </div>
           </div>
