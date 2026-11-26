@@ -69,6 +69,20 @@ export interface VoiceTypeProfile {
   pianoNotes: string[];
 }
 
+export interface KaraokeSyllable {
+  text: string;
+  freq: number;
+  ms: number;
+  lineBreak?: boolean;
+}
+
+export interface KaraokeSong {
+  id: string;
+  title: string;
+  hint: string;
+  syllables: KaraokeSyllable[];
+}
+
 export const AVITO_REVIEWS_URL =
   'https://www.avito.ru/moskovskaya_oblast_troitsk/predlozheniya_uslug/pedagog_po_vokalu_3081109959?utm_campaign=native&utm_medium=item_page_android&utm_source=soc_sharing_seller#open-item-reviews-list';
 
@@ -435,24 +449,135 @@ export const VOICE_TYPES: VoiceTypeProfile[] = [
 export const VOICE_TEST_CONTENT = {
   songs: [
     {
-      id: 'song-1',
-      title: 'Лирическая поп-баллада',
-      hint: 'Пропойте протяжно, на мягком дыхании',
-      lines: '«Тихо падает свет на ночное окно, / В сердце музыка дышит свободно...»',
+      id: 'kalinka',
+      title: 'Калинка-малинка',
+      hint: 'Подпевайте под знакомый припев — слоги подскажут темп',
+      syllables: [
+        { text: 'Ка-', freq: 440.0, ms: 520 },
+        { text: 'лин-', freq: 392.0, ms: 260 },
+        { text: 'ка, ', freq: 329.63, ms: 260 },
+        { text: 'ка-', freq: 349.23, ms: 260 },
+        { text: 'лин-', freq: 392.0, ms: 260 },
+        { text: 'ка, ', freq: 329.63, ms: 260 },
+        { text: 'ка-', freq: 349.23, ms: 260 },
+        { text: 'лин-', freq: 392.0, ms: 260 },
+        { text: 'ка ', freq: 349.23, ms: 260 },
+        { text: 'мо-', freq: 329.63, ms: 260 },
+        { text: 'я!', freq: 293.66, ms: 650, lineBreak: true },
+        { text: 'В са-', freq: 440.0, ms: 300 },
+        { text: 'ду ', freq: 440.0, ms: 280 },
+        { text: 'я-', freq: 392.0, ms: 260 },
+        { text: 'го-', freq: 329.63, ms: 260 },
+        { text: 'да ', freq: 349.23, ms: 260 },
+        { text: 'ма-', freq: 392.0, ms: 260 },
+        { text: 'лин-', freq: 329.63, ms: 260 },
+        { text: 'ка, ', freq: 349.23, ms: 260 },
+        { text: 'ма-', freq: 392.0, ms: 260 },
+        { text: 'лин-', freq: 349.23, ms: 260 },
+        { text: 'ка ', freq: 329.63, ms: 260 },
+        { text: 'мо-', freq: 329.63, ms: 260 },
+        { text: 'я!', freq: 293.66, ms: 700 },
+      ],
     },
     {
-      id: 'song-2',
-      title: 'Драйвовый рок / поп-припев',
-      hint: 'Дайте больше опоры и яркости в голос',
-      lines: '«Выше неба летит этот чистый аккорд, / Я пою — и не страшен ни ветер, ни шторм!»',
+      id: 'bereza',
+      title: 'Во поле берёза стояла',
+      hint: 'Спойте плавно, распевно, на ровном дыхании',
+      syllables: [
+        { text: 'Во ', freq: 440.0, ms: 420 },
+        { text: 'по-', freq: 440.0, ms: 420 },
+        { text: 'ле ', freq: 440.0, ms: 420 },
+        { text: 'бе-', freq: 440.0, ms: 420 },
+        { text: 'рё-', freq: 392.0, ms: 280 },
+        { text: 'за ', freq: 349.23, ms: 280 },
+        { text: 'сто-', freq: 329.63, ms: 420 },
+        { text: 'я-', freq: 329.63, ms: 420 },
+        { text: 'ла,', freq: 293.66, ms: 720, lineBreak: true },
+        { text: 'Во ', freq: 440.0, ms: 420 },
+        { text: 'по-', freq: 440.0, ms: 420 },
+        { text: 'ле ', freq: 440.0, ms: 280 },
+        { text: 'куд-', freq: 440.0, ms: 280 },
+        { text: 'ря-', freq: 392.0, ms: 280 },
+        { text: 'ва-', freq: 349.23, ms: 280 },
+        { text: 'я ', freq: 329.63, ms: 420 },
+        { text: 'сто-', freq: 329.63, ms: 420 },
+        { text: 'я-', freq: 293.66, ms: 380 },
+        { text: 'ла!', freq: 293.66, ms: 750 },
+      ],
     },
     {
-      id: 'song-3',
-      title: 'Тёплый джаз / эстрада',
-      hint: 'Попробуйте мягкий субтон и плавные переходы',
-      lines: '«Среди огней большого города, / Поймаю ритм и ноту золотую...»',
+      id: 'moroz',
+      title: 'Ой, мороз, мороз',
+      hint: 'Широкий, тёплый распевный звук',
+      syllables: [
+        { text: 'Ой, ', freq: 261.63, ms: 500 },
+        { text: 'мо-', freq: 349.23, ms: 360 },
+        { text: 'роз, ', freq: 440.0, ms: 560 },
+        { text: 'мо-', freq: 392.0, ms: 360 },
+        { text: 'роз, ', freq: 349.23, ms: 680, lineBreak: true },
+        { text: 'не ', freq: 349.23, ms: 340 },
+        { text: 'мо-', freq: 392.0, ms: 340 },
+        { text: 'розь ', freq: 440.0, ms: 500 },
+        { text: 'ме-', freq: 392.0, ms: 360 },
+        { text: 'ня,', freq: 261.63, ms: 720, lineBreak: true },
+        { text: 'Не ', freq: 293.66, ms: 360 },
+        { text: 'мо-', freq: 349.23, ms: 360 },
+        { text: 'розь ', freq: 466.16, ms: 540 },
+        { text: 'ме-', freq: 440.0, ms: 360 },
+        { text: 'ня, ', freq: 392.0, ms: 620 },
+        { text: 'мо-', freq: 392.0, ms: 340 },
+        { text: 'е-', freq: 440.0, ms: 340 },
+        { text: 'го ', freq: 392.0, ms: 340 },
+        { text: 'ко-', freq: 349.23, ms: 420 },
+        { text: 'ня!', freq: 349.23, ms: 820 },
+      ],
     },
-  ],
+    {
+      id: 'voron',
+      title: 'Чёрный ворон',
+      hint: 'Глубокое и выразительное звучание',
+      syllables: [
+        { text: 'Чёр-', freq: 329.63, ms: 460 },
+        { text: 'ный ', freq: 329.63, ms: 340 },
+        { text: 'во-', freq: 440.0, ms: 580 },
+        { text: 'рон, ', freq: 392.0, ms: 480 },
+        { text: 'что ж ', freq: 349.23, ms: 340 },
+        { text: 'ты ', freq: 329.63, ms: 340 },
+        { text: 'вьёшь-', freq: 293.66, ms: 480 },
+        { text: 'ся', freq: 329.63, ms: 720, lineBreak: true },
+        { text: 'Над ', freq: 329.63, ms: 380 },
+        { text: 'мо-', freq: 349.23, ms: 380 },
+        { text: 'е-', freq: 392.0, ms: 540 },
+        { text: 'ю ', freq: 329.63, ms: 400 },
+        { text: 'го-', freq: 293.66, ms: 400 },
+        { text: 'ло-', freq: 261.63, ms: 400 },
+        { text: 'вой?', freq: 220.0, ms: 860 },
+      ],
+    },
+    {
+      id: 'valenki',
+      title: 'Валенки',
+      hint: 'Задорно, ритмично и с улыбкой',
+      syllables: [
+        { text: 'Ва-', freq: 440.0, ms: 380 },
+        { text: 'лен-', freq: 329.63, ms: 380 },
+        { text: 'ки, ', freq: 523.25, ms: 440 },
+        { text: 'да ', freq: 493.88, ms: 260 },
+        { text: 'ва-', freq: 440.0, ms: 380 },
+        { text: 'лен-', freq: 329.63, ms: 380 },
+        { text: 'ки,', freq: 440.0, ms: 600, lineBreak: true },
+        { text: 'Ой, ', freq: 392.0, ms: 340 },
+        { text: 'да ', freq: 392.0, ms: 260 },
+        { text: 'не ', freq: 392.0, ms: 340 },
+        { text: 'под-', freq: 349.23, ms: 300 },
+        { text: 'ши-', freq: 329.63, ms: 360 },
+        { text: 'ты ', freq: 293.66, ms: 360 },
+        { text: 'ста-', freq: 261.63, ms: 360 },
+        { text: 'рень-', freq: 246.94, ms: 320 },
+        { text: 'ки!', freq: 220.0, ms: 720 },
+      ],
+    },
+  ] satisfies KaraokeSong[],
   randomPhrases: [
     '«Ми-я-ма-мо-му» — протяните гласные ровно на одном удобном звуке вверх и вниз.',
     '«Ле-е-е-тит свободный звук от дыхания к небу!» — проговорите нараспев с улыбкой.',

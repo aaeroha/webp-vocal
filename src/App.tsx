@@ -1,20 +1,34 @@
-import { useEffect, useState } from 'react';
-import { About } from './components/About';
-import { BookingModal } from './components/BookingModal';
-import { Certificates } from './components/Certificates';
-import { Contacts } from './components/Contacts';
-import { FaqAccordion } from './components/FaqAccordion';
-import { Formats } from './components/Formats';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { MusicAmbience } from './components/MusicAmbience';
 import { RetroMicCursor } from './components/RetroMicCursor';
-import { Reviews } from './components/Reviews';
 import { VinylPlayer } from './components/VinylPlayer';
-import { VocalPiano } from './components/VocalPiano';
-import { VoiceTestModal } from './components/VoiceTestModal';
 import { VoiceTestTrigger } from './components/VoiceTestTrigger';
 import { SITE_CONFIG } from './data/content';
+
+// Lazy-load below-the-fold sections & modals for optimal initial page speed
+const About = lazy(() => import('./components/About').then((m) => ({ default: m.About })));
+const Formats = lazy(() => import('./components/Formats').then((m) => ({ default: m.Formats })));
+const VocalPiano = lazy(() =>
+  import('./components/VocalPiano').then((m) => ({ default: m.VocalPiano }))
+);
+const Certificates = lazy(() =>
+  import('./components/Certificates').then((m) => ({ default: m.Certificates }))
+);
+const Reviews = lazy(() => import('./components/Reviews').then((m) => ({ default: m.Reviews })));
+const FaqAccordion = lazy(() =>
+  import('./components/FaqAccordion').then((m) => ({ default: m.FaqAccordion }))
+);
+const Contacts = lazy(() =>
+  import('./components/Contacts').then((m) => ({ default: m.Contacts }))
+);
+const BookingModal = lazy(() =>
+  import('./components/BookingModal').then((m) => ({ default: m.BookingModal }))
+);
+const VoiceTestModal = lazy(() =>
+  import('./components/VoiceTestModal').then((m) => ({ default: m.VoiceTestModal }))
+);
 
 export function App() {
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -51,12 +65,18 @@ export function App() {
       <VinylPlayer />
       <VoiceTestTrigger onOpen={openVoiceTest} />
 
-      <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} />
-      <VoiceTestModal
-        isOpen={voiceTestOpen}
-        onClose={() => setVoiceTestOpen(false)}
-        onOpenBooking={openBooking}
-      />
+      <Suspense fallback={null}>
+        {bookingOpen && (
+          <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} />
+        )}
+        {voiceTestOpen && (
+          <VoiceTestModal
+            isOpen={voiceTestOpen}
+            onClose={() => setVoiceTestOpen(false)}
+            onOpenBooking={openBooking}
+          />
+        )}
+      </Suspense>
 
       <Header
         isDark={isDark}
@@ -67,13 +87,15 @@ export function App() {
 
       <main>
         <Hero onOpenBooking={openBooking} />
-        <About />
-        <Formats onOpenBooking={openBooking} />
-        <VocalPiano />
-        <Certificates />
-        <Reviews />
-        <FaqAccordion />
-        <Contacts isDark={isDark} onOpenBooking={openBooking} />
+        <Suspense fallback={null}>
+          <About />
+          <Formats onOpenBooking={openBooking} />
+          <VocalPiano />
+          <Certificates />
+          <Reviews />
+          <FaqAccordion />
+          <Contacts isDark={isDark} onOpenBooking={openBooking} />
+        </Suspense>
       </main>
 
       <footer className="relative z-10 border-t border-zinc-900/10 py-8 text-center text-sm text-zinc-500 dark:border-white/10 dark:text-zinc-400">

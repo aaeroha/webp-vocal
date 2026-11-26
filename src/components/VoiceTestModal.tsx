@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AudioWaveform,
   CalendarCheck,
+  ChevronDown,
+  Info,
   Mic,
   MicOff,
   Music,
@@ -9,6 +11,8 @@ import {
   Sparkles,
   Square,
   User,
+  Volume2,
+  VolumeX,
   X,
 } from 'lucide-react';
 import { VOICE_TEST_CONTENT, VOICE_TYPES, type VoiceTypeProfile } from '../data/content';
@@ -114,7 +118,7 @@ function classifyVoice(gender: Gender, samplesHz: number[]): {
       medianHz: gender === 'female' ? 245 : 135,
       minSampleHz: gender === 'female' ? 200 : 110,
       maxSampleHz: gender === 'female' ? 320 : 195,
-      score: 88,
+      score: 91,
     };
   }
 
@@ -135,14 +139,11 @@ function classifyVoice(gender: Gender, samplesHz: number[]): {
   }
 
   const richness = Math.min(8, Math.floor(samplesHz.length / 10));
-  const score = Math.min(98, 89 + richness);
+  const score = Math.min(98, 90 + richness);
 
   return { profile: matched, medianHz, minSampleHz, maxSampleHz, score };
 }
 
-/**
- * Celebratory canvas fireworks & confetti burst overlay for the Voice Test finale.
- */
 function ConfettiFireworksCanvas() {
   const confettiRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -205,7 +206,7 @@ function ConfettiFireworksCanvas() {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += 0.16; // Gravity
+        p.vy += 0.16;
         p.vx *= 0.985;
         p.rot += p.rotSpeed;
         p.alpha -= 0.011;
@@ -254,6 +255,45 @@ function ConfettiFireworksCanvas() {
   );
 }
 
+/**
+ * Play a soft filtered acoustic note for the karaoke guide melody.
+ */
+function playGuideNote(ctx: AudioContext, freq: number, ms: number) {
+  const now = ctx.currentTime;
+  const dur = Math.max(0.15, ms / 1000);
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.setValueAtTime(Math.min(3600, freq * 5), now);
+  filter.frequency.exponentialRampToValueAtTime(Math.max(400, freq * 1.6), now + dur);
+
+  const osc1 = ctx.createOscillator();
+  const osc2 = ctx.createOscillator();
+  const gain = ctx.createGain();
+
+  osc1.type = 'sine';
+  osc1.frequency.setValueAtTime(freq, now);
+
+  osc2.type = 'triangle';
+  osc2.frequency.setValueAtTime(freq * 2, now);
+
+  const g2 = ctx.createGain();
+  g2.gain.value = 0.16;
+
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.95);
+
+  osc1.connect(filter);
+  osc2.connect(g2).connect(filter);
+  filter.connect(gain).connect(ctx.destination);
+
+  osc1.start(now);
+  osc2.start(now);
+  osc1.stop(now + dur + 0.05);
+  osc2.stop(now + dur + 0.05);
+}
+
 export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModalProps) {
   const [step, setStep] = useState<Step>('gender');
   const [gender, setGender] = useState<Gender>('female');
@@ -261,18 +301,26 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
   const [selectedSongIdx, setSelectedSongIdx] = useState(0);
   const [phraseIdx, setPhraseIdx] = useState(0);
 
+  const [guideAudioEnabled, setGuideAudioEnabled] = useState(true);
+  const guideAudioRef = useRef(true);
+  guideAudioRef.current = guideAudioEnabled;
+
   const [isRecording, setIsRecording] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(10);
+  const [activeSyllableIdx, setActiveSyllableIdx] = useState<number>(-1);
   const [currentHz, setCurrentHz] = useState<number | null>(null);
   const [hasVoiceDetected, setHasVoiceDetected] = useState(false);
 
   const [result, setResult] = useState<ReturnType<typeof classifyVoice> | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [animatedScore, setAnimatedScore] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number>(0);
   const timerRef = useRef<number>(0);
+  const karaokeTimersRef = useRef<number[]>([]);
   const samplesRef = useRef<number[]>([]);
 
   const cleanupAudio = useCallback(() => {
@@ -284,6 +332,8 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       window.clearInterval(timerRef.current);
       timerRef.current = 0;
     }
+    karaokeTimersRef.current.forEach((t) => window.clearTimeout(t));
+    karaokeTimersRef.current = [];
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
@@ -293,6 +343,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       audioCtxRef.current = null;
     }
     setIsRecording(false);
+    setActiveSyllableIdx(-1);
   }, []);
 
   const resetAll = useCallback(() => {
@@ -302,6 +353,8 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
     setCurrentHz(null);
     setHasVoiceDetected(false);
     setResult(null);
+    setDetailsOpen(false);
+    setAnimatedScore(0);
     samplesRef.current = [];
   }, [cleanupAudio]);
 
@@ -326,6 +379,25 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
     };
   }, [isOpen, onClose, cleanupAudio]);
 
+  // Smooth score bar counter animation when result appears
+  useEffect(() => {
+    if (step !== 'result' || !result) {
+      setAnimatedScore(0);
+      return;
+    }
+    let rafId = 0;
+    const start = performance.now();
+    const duration = 900;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setAnimatedScore(Math.round(result.score * eased));
+      if (p < 1) rafId = window.requestAnimationFrame(tick);
+    };
+    rafId = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [step, result]);
+
   const finishRecording = useCallback(() => {
     const collected = [...samplesRef.current];
     cleanupAudio();
@@ -337,6 +409,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
     const finalAnalysis = classifyVoice(gender, collected);
     setResult(finalAnalysis);
+    setDetailsOpen(false);
     setStep('result');
   }, [cleanupAudio, gender]);
 
@@ -344,7 +417,14 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
     setHasVoiceDetected(true);
     samplesRef.current = [];
     setCurrentHz(null);
-    setSecondsLeft(10);
+    setActiveSyllableIdx(-1);
+
+    const activeSong = VOICE_TEST_CONTENT.songs[selectedSongIdx];
+    const songDurationMs = activeSong.syllables.reduce((acc, s) => acc + s.ms, 0);
+    const totalSec =
+      taskMode === 'song' ? Math.max(9, Math.ceil(songDurationMs / 1000) + 1) : 10;
+
+    setSecondsLeft(totalSec);
     setStep('record');
 
     try {
@@ -375,6 +455,23 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       const freqData = new Uint8Array(analyser.frequencyBinCount);
 
       setIsRecording(true);
+
+      // Schedule karaoke melody + syllable highlight if singing a song
+      if (taskMode === 'song') {
+        const pitchScale = gender === 'male' ? 0.5 : 1; // One octave lower for male comfort
+        let offsetMs = 350;
+
+        activeSong.syllables.forEach((syl, idx) => {
+          const timerId = window.setTimeout(() => {
+            setActiveSyllableIdx(idx);
+            if (guideAudioRef.current && audioCtxRef.current) {
+              playGuideNote(audioCtxRef.current, syl.freq * pitchScale, syl.ms);
+            }
+          }, offsetMs);
+          karaokeTimersRef.current.push(timerId);
+          offsetMs += syl.ms;
+        });
+      }
 
       let frameCounter = 0;
 
@@ -440,7 +537,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
       animFrameRef.current = window.requestAnimationFrame(draw);
 
-      let remaining = 10;
+      let remaining = totalSec;
       timerRef.current = window.setInterval(() => {
         remaining -= 1;
         setSecondsLeft(remaining);
@@ -456,14 +553,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
   if (!isOpen) return null;
 
-  const currentPromptText =
-    taskMode === 'song'
-      ? VOICE_TEST_CONTENT.songs[selectedSongIdx]
-      : {
-          title: 'Вокальная распевка',
-          hint: 'Спойте эту фразу в комфортном темпе',
-          lines: VOICE_TEST_CONTENT.randomPhrases[phraseIdx],
-        };
+  const selectedSong = VOICE_TEST_CONTENT.songs[selectedSongIdx];
 
   return (
     <div
@@ -495,10 +585,10 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               className="mt-2 font-serif text-2xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF] sm:text-3xl"
             >
               {step === 'gender' && 'Узнайте ваш тип и тембр голоса'}
-              {step === 'mode' && 'Что споём для анализа?'}
+              {step === 'mode' && 'Выберите песню или распевку'}
               {step === 'record' && 'Пойте в микрофон — идёт живой анализ'}
               {step === 'mic-error' && 'Микрофон не обнаружен'}
-              {step === 'result' && 'Отличный природный тембр! 🎉'}
+              {step === 'result' && 'Отличный природный тембр!'}
             </h3>
           </div>
 
@@ -519,7 +609,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
         {step === 'gender' && (
           <div className="mt-6 space-y-5">
             <p className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-              За 10 секунд проанализируем частотный диапазон вашего голоса и определим природный тип (Сопрано, Меццо, Контральто или Тенор, Баритон, Бас).
+              Спойте отрывок знакомой народной песни под мягкий мотив-караоке или короткую распевку — мы измерим ваш частотный диапазон и определим тип голоса.
             </p>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -568,9 +658,9 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
           </div>
         )}
 
-        {/* STEP 2: SONG OR RANDOM PHRASE */}
+        {/* STEP 2: 5 SONGS OR RANDOM PHRASE */}
         {step === 'mode' && (
-          <div className="mt-6 space-y-5">
+          <div className="mt-5 space-y-4">
             <div className="grid grid-cols-2 gap-2.5">
               <button
                 type="button"
@@ -581,7 +671,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                     : 'border-zinc-900/10 bg-[#F2EDE6]/70 text-zinc-700 dark:border-white/10 dark:bg-[#0D0C10]/70 dark:text-zinc-300'
                 }`}
               >
-                Спеть отрывок песни
+                Спеть песню под караоке
               </button>
               <button
                 type="button"
@@ -597,27 +687,30 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
             </div>
 
             {taskMode === 'song' ? (
-              <div className="space-y-2.5">
-                {VOICE_TEST_CONTENT.songs.map((song, idx) => (
-                  <button
-                    key={song.id}
-                    type="button"
-                    onClick={() => setSelectedSongIdx(idx)}
-                    className={`w-full rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
-                      selectedSongIdx === idx
-                        ? 'border-[#B45309]/60 bg-[#F2EDE6] shadow-sm dark:border-[#E2A856]/60 dark:bg-[#0D0C10]'
-                        : 'border-zinc-900/10 bg-[#F2EDE6]/60 hover:border-zinc-900/25 dark:border-white/10 dark:bg-[#0D0C10]/60'
-                    }`}
-                  >
-                    <p className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-[#F5F3EF]">
-                      <Music className="h-4 w-4 text-[#B45309] dark:text-[#E2A856]" />
-                      {song.title}
-                    </p>
-                    <p className="mt-1 text-xs italic text-zinc-600 dark:text-zinc-300">
-                      {song.lines}
-                    </p>
-                  </button>
-                ))}
+              <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                {VOICE_TEST_CONTENT.songs.map((song, idx) => {
+                  const previewLine = song.syllables.map((s) => s.text).join('');
+                  return (
+                    <button
+                      key={song.id}
+                      type="button"
+                      onClick={() => setSelectedSongIdx(idx)}
+                      className={`w-full rounded-2xl border p-3 text-left transition-all cursor-pointer ${
+                        selectedSongIdx === idx
+                          ? 'border-[#B45309]/70 bg-[#F2EDE6] shadow-sm dark:border-[#E2A856]/70 dark:bg-[#0D0C10]'
+                          : 'border-zinc-900/10 bg-[#F2EDE6]/60 hover:border-zinc-900/25 dark:border-white/10 dark:bg-[#0D0C10]/60'
+                      }`}
+                    >
+                      <p className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-[#F5F3EF]">
+                        <Music className="h-4 w-4 shrink-0 text-[#B45309] dark:text-[#E2A856]" />
+                        {song.title}
+                      </p>
+                      <p className="mt-1 line-clamp-1 text-xs italic text-zinc-600 dark:text-zinc-400">
+                        {previewLine}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/90 p-5 dark:border-white/10 dark:bg-[#0D0C10]/85">
@@ -653,7 +746,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               <button
                 type="button"
                 onClick={startRecording}
-                className="btn-sheen inline-flex items-center gap-2 rounded-full bg-[#B45309] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] cursor-pointer"
+                className="btn-sheen inline-flex items-center gap-2 rounded-full bg-[#B45309] px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
               >
                 <Mic className="h-4 w-4" />
                 Включить микрофон и спеть
@@ -662,16 +755,64 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
           </div>
         )}
 
-        {/* STEP 3: LIVE RECORDING & WAVEFORM CANVAS */}
+        {/* STEP 3: LIVE RECORDING + SYNTHESIZED KARAOKE GUIDE */}
         {step === 'record' && (
           <div className="mt-5 space-y-5">
-            <div className="rounded-2xl border border-[#B45309]/25 bg-[#F2EDE6]/90 p-4 dark:border-[#E2A856]/25 dark:bg-[#0D0C10]/85">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
-                {currentPromptText.hint}
-              </p>
-              <p className="mt-1.5 font-serif text-xl font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF]">
-                {currentPromptText.lines}
-              </p>
+            <div className="rounded-2xl border border-[#B45309]/25 bg-[#F2EDE6]/95 p-4 dark:border-[#E2A856]/25 dark:bg-[#0D0C10]/85">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
+                  {taskMode === 'song' ? selectedSong.title : 'Спойте распевку'}
+                </p>
+
+                {taskMode === 'song' && (
+                  <button
+                    type="button"
+                    onClick={() => setGuideAudioEnabled((prev) => !prev)}
+                    className="inline-flex items-center gap-1 rounded-full border border-zinc-900/10 bg-[#FAF8F5] px-2.5 py-0.5 text-[11px] font-medium text-zinc-700 hover:text-[#B45309] dark:border-white/10 dark:bg-[#16151C] dark:text-zinc-300 cursor-pointer"
+                  >
+                    {guideAudioEnabled ? (
+                      <>
+                        <Volume2 className="h-3 w-3 text-emerald-500" />
+                        <span>Мелодия вкл</span>
+                      </>
+                    ) : (
+                      <>
+                        <VolumeX className="h-3 w-3 text-zinc-400" />
+                        <span>Без звука</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {taskMode === 'song' ? (
+                <div className="mt-2.5 font-serif text-xl sm:text-2xl font-semibold leading-relaxed">
+                  {selectedSong.syllables.map((syl, idx) => {
+                    const isCurrent = idx === activeSyllableIdx;
+                    const isPast = idx < activeSyllableIdx;
+                    return (
+                      <span key={idx}>
+                        <span
+                          className={`inline-block transition-all duration-150 ${
+                            isCurrent
+                              ? 'scale-110 rounded-md bg-amber-400/30 px-1 text-[#B45309] underline decoration-2 underline-offset-4 dark:bg-amber-400/20 dark:text-[#FACC15]'
+                              : isPast
+                              ? 'text-[#B45309] dark:text-[#E2A856]'
+                              : 'text-zinc-500 dark:text-zinc-400'
+                          }`}
+                        >
+                          {syl.text}
+                        </span>
+                        {syl.lineBreak && <br />}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-1.5 font-serif text-xl font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF]">
+                  {VOICE_TEST_CONTENT.randomPhrases[phraseIdx]}
+                </p>
+              )}
             </div>
 
             <div className="relative overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#0D0C10] p-4 shadow-inner dark:border-white/10">
@@ -688,7 +829,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                   <span>
                     {currentHz
                       ? `Нота: ${hzToNoteLabel(currentHz)} (${Math.round(currentHz)} Гц)`
-                      : 'Спойте любой звук, я слушаю...'}
+                      : 'Спойте в такт или протяните звук...'}
                   </span>
                 </div>
                 <span className="font-mono font-semibold text-amber-400">
@@ -708,7 +849,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                 <button
                   type="button"
                   onClick={finishRecording}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-zinc-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-[#E2A856] dark:text-[#0D0C10] cursor-pointer"
+                  className="btn-sheen inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
                 >
                   <Square className="h-4 w-4 fill-current" />
                   Завершить и узнать результат
@@ -717,7 +858,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                 <button
                   type="button"
                   onClick={startRecording}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3 text-sm font-semibold text-white cursor-pointer"
+                  className="btn-sheen inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
                 >
                   <RefreshCw className="h-4 w-4" />
                   Попробовать ещё раз
@@ -767,86 +908,141 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
           </div>
         )}
 
-        {/* STEP 4: FINALE & CLEAR VOCAL STATS */}
+        {/* STEP 4: COHESIVE SINGLE-CARD RESULT + INTERACTIVE DETAILS (HOVER ON DESKTOP / TAP ON MOBILE) */}
         {step === 'result' && result && (
-          <div className="mt-5 space-y-4">
-            {/* Main Result Card with integrated encouraging summary */}
-            <div className="rounded-2xl border border-[#B45309]/35 bg-gradient-to-br from-[#F2EDE6] to-[#FAF8F5] p-5 dark:border-[#E2A856]/40 dark:from-[#1B1924] dark:to-[#121117]">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309] px-3.5 py-1 text-xs font-semibold text-white dark:bg-[#E2A856] dark:text-[#0D0C10]">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Ваш тип голоса: {result.profile.name}
-                </span>
-                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                  Вокальный потенциал: {result.score}%
-                </span>
+          <div className="mt-5 space-y-5">
+            {/* Single unified rich vocal card */}
+            <div className="relative overflow-hidden rounded-3xl border border-[#B45309]/35 bg-gradient-to-br from-[#F2EDE6] via-[#FAF8F5] to-[#EFE6D8] p-5 shadow-lg dark:border-[#E2A856]/40 dark:from-[#1D1B26] dark:via-[#15141B] dark:to-[#111016] sm:p-6">
+              {/* Highlighted Voice Type + Potential Bar */}
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <p className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Ваш тип голоса
+                  </p>
+                  <h4 className="mt-1 font-serif text-3xl font-bold tracking-tight text-zinc-950 dark:text-[#F5F3EF] sm:text-4xl">
+                    {result.profile.name}
+                  </h4>
+                </div>
+
+                <div className="sm:text-right">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+                    Вокальный потенциал
+                  </p>
+                  <p className="font-serif text-3xl font-bold leading-none text-emerald-600 dark:text-emerald-400 sm:text-4xl">
+                    {animatedScore}%
+                  </p>
+                </div>
               </div>
 
-              <p className="mt-3 text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                Вау, вы супер! У вас выразительный природный голос и живая музыкальная интонация.
+              {/* Animated Progress Track */}
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-zinc-900/10 dark:bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-[#B45309] via-[#E2A856] to-emerald-500 transition-[width] duration-700 ease-out"
+                  style={{ width: `${animatedScore}%` }}
+                />
+              </div>
+
+              {/* Praise integrated directly inside main card */}
+              <p className="mt-4 text-sm font-medium leading-relaxed text-zinc-800 dark:text-zinc-100">
+                Вау, вы супер! У вас выразительный природный тембр и живая музыкальная интонация.
               </p>
 
-              <p className="mt-2 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">
-                {result.profile.description}
-              </p>
+              {/* Unified clean 3-stat horizontal bar (not fragmented boxes) */}
+              <div className="mt-5 grid grid-cols-3 divide-x divide-zinc-900/10 border-y border-zinc-900/10 py-3.5 text-center dark:divide-white/10 dark:border-white/10">
+                <div className="px-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Нижняя нота
+                  </p>
+                  <p className="mt-1 font-serif text-lg font-bold text-zinc-900 dark:text-[#F5F3EF] sm:text-xl">
+                    {hzToNoteLabel(result.minSampleHz).split(' ')[0]}
+                  </p>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {hzToNoteLabel(result.minSampleHz).split(' ')[1] ?? ''}
+                  </p>
+                </div>
 
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {result.profile.subtypes.map((sub) => (
-                  <span
-                    key={sub}
-                    className="rounded-full border border-zinc-900/10 bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-zinc-700 dark:border-white/10 dark:bg-black/35 dark:text-zinc-300"
-                  >
-                    {sub}
+                <div className="px-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Верхняя нота
+                  </p>
+                  <p className="mt-1 font-serif text-lg font-bold text-zinc-900 dark:text-[#F5F3EF] sm:text-xl">
+                    {hzToNoteLabel(result.maxSampleHz).split(' ')[0]}
+                  </p>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    {hzToNoteLabel(result.maxSampleHz).split(' ')[1] ?? ''}
+                  </p>
+                </div>
+
+                <div className="px-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    Опора тона
+                  </p>
+                  <p className="mt-1 font-serif text-lg font-bold text-[#B45309] dark:text-[#E2A856] sm:text-xl">
+                    {Math.round(result.medianHz)} Гц
+                  </p>
+                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Центр тембра
+                  </p>
+                </div>
+              </div>
+
+              {/* Interactive Description: opens on hover (desktop) OR tap (mobile/all) */}
+              <div
+                onMouseEnter={() => {
+                  if (window.matchMedia('(hover: hover)').matches) setDetailsOpen(true);
+                }}
+                onMouseLeave={() => {
+                  if (window.matchMedia('(hover: hover)').matches) setDetailsOpen(false);
+                }}
+                className="mt-3"
+              >
+                <button
+                  type="button"
+                  onClick={() => setDetailsOpen((prev) => !prev)}
+                  aria-expanded={detailsOpen}
+                  className="flex w-full items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left text-xs font-semibold text-[#B45309] transition-colors hover:bg-[#B45309]/8 dark:text-[#E2A856] dark:hover:bg-[#E2A856]/10 cursor-pointer"
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <Info className="h-3.5 w-3.5 shrink-0" />
+                    <span>Подробнее о типе «{result.profile.name}» и подтипах</span>
                   </span>
-                ))}
+                  <ChevronDown
+                    className={`h-4 w-4 shrink-0 transition-transform duration-300 ${
+                      detailsOpen ? 'rotate-180' : 'rotate-0'
+                    }`}
+                  />
+                </button>
+
+                <div
+                  className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out ${
+                    detailsOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="mt-2 space-y-2.5 px-2 pb-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+                      <p>{result.profile.description}</p>
+                      <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                        Полный диапазон типа: <strong className="text-zinc-800 dark:text-zinc-200">{result.profile.rangeLabel}</strong>
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {result.profile.subtypes.map((sub) => (
+                          <span
+                            key={sub}
+                            className="rounded-full border border-[#B45309]/25 bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-zinc-800 dark:border-[#E2A856]/25 dark:bg-black/40 dark:text-zinc-200"
+                          >
+                            {sub}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Clean Visual 3-Column Metrics */}
-            <div className="grid grid-cols-3 gap-2.5">
-              <div className="rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/85 p-3 text-center dark:border-white/10 dark:bg-[#0D0C10]/80">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Нижняя нота
-                </p>
-                <p className="mt-1 font-serif text-lg font-bold text-zinc-900 dark:text-[#F5F3EF]">
-                  {hzToNoteLabel(result.minSampleHz).split(' ')[0]}
-                </p>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {hzToNoteLabel(result.minSampleHz).split(' ')[1] ?? ''}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/85 p-3 text-center dark:border-white/10 dark:bg-[#0D0C10]/80">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Верхняя нота
-                </p>
-                <p className="mt-1 font-serif text-lg font-bold text-zinc-900 dark:text-[#F5F3EF]">
-                  {hzToNoteLabel(result.maxSampleHz).split(' ')[0]}
-                </p>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {hzToNoteLabel(result.maxSampleHz).split(' ')[1] ?? ''}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/85 p-3 text-center dark:border-white/10 dark:bg-[#0D0C10]/80">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  Опора тона
-                </p>
-                <p className="mt-1 font-serif text-lg font-bold text-[#B45309] dark:text-[#E2A856]">
-                  {Math.round(result.medianHz)} Гц
-                </p>
-                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  Центр тембра
-                </p>
-              </div>
-            </div>
-
-            <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
-              Ориентировочный диапазон типа «{result.profile.name}»: {result.profile.rangeLabel}
-            </p>
 
             {/* Clear final call to action */}
-            <p className="pt-1 text-center font-serif text-lg font-semibold text-zinc-900 dark:text-[#F5F3EF]">
+            <p className="text-center font-serif text-lg font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF]">
               Вы в одном шаге от того, чтобы записаться на урок и раскрыть ваш потенциал!
             </p>
 
@@ -857,7 +1053,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                   onClose();
                   onOpenBooking();
                 }}
-                className="btn-sheen flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white shadow-md dark:bg-[#E2A856] dark:text-[#0D0C10] cursor-pointer"
+                className="btn-sheen flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white shadow-md hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
               >
                 <CalendarCheck className="h-4 w-4" />
                 Записаться на урок
@@ -865,7 +1061,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               <button
                 type="button"
                 onClick={resetAll}
-                className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3.5 text-sm font-semibold text-zinc-800 dark:border-white/15 dark:text-zinc-200 cursor-pointer"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3.5 text-sm font-semibold text-zinc-800 hover:border-[#B45309]/40 dark:border-white/15 dark:text-zinc-200 dark:hover:border-[#E2A856]/50 cursor-pointer"
               >
                 <RefreshCw className="h-4 w-4" />
                 Пройти снова
