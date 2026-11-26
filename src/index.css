@@ -105,30 +105,30 @@
   }
 }
 
-/* Graduation cap toss animation for Certificates & Diplomas */
+/* Graduation cap infinite continuous toss across full section height */
 @keyframes capToss {
   0% {
     opacity: 0;
-    transform: translate3d(0, 140px, 0) rotate(var(--cap-r0, -25deg)) scale(0.75);
+    transform: translate3d(0, 110%, 0) rotate(var(--cap-r0, -25deg)) scale(0.8);
   }
   12% {
-    opacity: 0.95;
+    opacity: 0.92;
   }
-  42% {
+  48% {
     opacity: 0.95;
-    transform: translate3d(var(--cap-dx1, 18px), -145px, 0) rotate(var(--cap-r1, 160deg)) scale(1.08);
+    transform: translate3d(var(--cap-dx1, 20px), -340px, 0) rotate(var(--cap-r1, 165deg)) scale(1.06);
   }
-  85% {
+  88% {
     opacity: 0.85;
   }
   100% {
     opacity: 0;
-    transform: translate3d(var(--cap-dx2, 36px), 170px, 0) rotate(var(--cap-r2, 340deg)) scale(0.85);
+    transform: translate3d(var(--cap-dx2, 40px), 120px, 0) rotate(var(--cap-r2, 355deg)) scale(0.85);
   }
 }
 
 .animate-cap-toss {
-  animation: capToss 2.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  animation: capToss var(--cap-dur, 4.5s) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
 }
 
 /* Elegant flowing waveform keyframes (Dark mode) */
@@ -188,11 +188,11 @@
 
 @keyframes voiceRipple {
   0% {
-    transform: scale(0.92);
-    opacity: 0.75;
+    transform: scale(0.95);
+    opacity: 0.8;
   }
   100% {
-    transform: scale(1.95);
+    transform: scale(1.38);
     opacity: 0;
   }
 }
@@ -202,8 +202,27 @@
     transform: translateY(0px);
   }
   50% {
-    transform: translateY(-5px);
+    transform: translateY(-6px);
   }
+}
+
+@keyframes pianoTicker {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-piano-ticker {
+  display: flex;
+  width: max-content;
+  animation: pianoTicker 34s linear infinite;
+}
+
+.animate-piano-ticker:hover {
+  animation-play-state: paused;
 }
 
 .animate-voice-ripple {

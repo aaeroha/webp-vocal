@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Music, Play, Volume2 } from 'lucide-react';
+import { Check, Music, Play, RotateCcw, Sparkles, Volume2 } from 'lucide-react';
 import { VOICE_TYPES } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 import {
@@ -57,101 +57,215 @@ const PIANO_KEYS_LOW: PianoKey[] = [
   { note: 'A3', labelRu: 'Ля', sciLabel: 'a', freq: 220.0, isBlack: false },
 ];
 
+// 10 curated 5-note vocal warmup sequences for High Register (c1-c2)
+const WARMUP_PATTERNS_HIGH: string[][] = [
+  ['C4', 'E4', 'G4', 'E4', 'C4'],
+  ['C4', 'D4', 'E4', 'F4', 'G4'],
+  ['G4', 'F4', 'E4', 'D4', 'C4'],
+  ['C4', 'F4', 'A4', 'F4', 'C4'],
+  ['D4', 'F#4', 'A4', 'F#4', 'D4'],
+  ['E4', 'G#4', 'B4', 'G#4', 'E4'],
+  ['C4', 'E4', 'C4', 'G4', 'C4'],
+  ['F4', 'A4', 'C5', 'A4', 'F4'],
+  ['A4', 'G4', 'E4', 'D4', 'C4'],
+  ['C4', 'D4', 'F4', 'G4', 'A4'],
+];
+
+// 10 curated 5-note vocal warmup sequences for Low Register (F-a)
+const WARMUP_PATTERNS_LOW: string[][] = [
+  ['F2', 'A2', 'C3', 'A2', 'F2'],
+  ['A2', 'B2', 'C3', 'D3', 'E3'],
+  ['E3', 'D3', 'C3', 'B2', 'A2'],
+  ['G2', 'B2', 'D3', 'B2', 'G2'],
+  ['C3', 'E3', 'G3', 'E3', 'C3'],
+  ['F2', 'G2', 'A2', 'C3', 'D3'],
+  ['A2', 'C#3', 'E3', 'C#3', 'A2'],
+  ['D3', 'F3', 'A3', 'F3', 'D3'],
+  ['G2', 'C3', 'E3', 'C3', 'G2'],
+  ['A2', 'C3', 'D3', 'E3', 'A3'],
+];
+
+type ChallengePhase = 'idle' | 'demo' | 'practice' | 'completed';
+
 export function VocalPiano() {
   const { ref, isVisible } = useReveal({ threshold: 0.08 });
   const [registerMode, setRegisterMode] = useState<'high' | 'low'>('high');
   const [instrument, setInstrument] = useState<InstrumentType>('piano');
   const [selectedProfileId, setSelectedProfileId] = useState<string>('mezzo');
   const [activeNote, setActiveNote] = useState<string | null>(null);
-  const [isPlayingWarmup, setIsPlayingWarmup] = useState(false);
+
+  // Interactive 5-note Warmup Game State
+  const [phase, setPhase] = useState<ChallengePhase>('idle');
+  const [patternIdx, setPatternIdx] = useState<number>(0);
+  const [demoStepIdx, setDemoStepIdx] = useState<number>(-1);
+  const [userStepIdx, setUserStepIdx] = useState<number>(0);
+  const [wrongFlash, setWrongFlash] = useState(false);
 
   const warmupTimersRef = useRef<number[]>([]);
+  const activeTimeoutRef = useRef<number>(0);
 
   const keys = registerMode === 'high' ? PIANO_KEYS_HIGH : PIANO_KEYS_LOW;
   const whiteKeys = keys.filter((k) => !k.isBlack);
+  const patterns = registerMode === 'high' ? WARMUP_PATTERNS_HIGH : WARMUP_PATTERNS_LOW;
+  const activeSequenceNotes = patterns[patternIdx % patterns.length];
   const selectedProfile = VOICE_TYPES.find((v) => v.id === selectedProfileId) ?? VOICE_TYPES[1];
 
-  // Quietly preload current instrument's real samples when piano becomes visible or instrument changes
+  const keyLookup = useCallback(
+    (noteCode: string) => keys.find((k) => k.note === noteCode),
+    [keys]
+  );
+
+  // Build marquee summary text from the 10 sequences
+  const tickerItems = patterns.map((seq) =>
+    seq
+      .map((n) => {
+        const k = keyLookup(n);
+        return k ? `${k.labelRu}-${k.sciLabel}` : n;
+      })
+      .join(' · ')
+  );
+
   useEffect(() => {
     if (!isVisible) return;
     preloadInstrument(instrument).catch(() => {});
   }, [isVisible, instrument]);
 
-  const playTone = useCallback(
-    (key: PianoKey, durationSec = 1.6) => {
-      playInstrumentSample(key.freq, instrument, durationSec, 0.78).catch(() => {});
-      setActiveNote(key.note);
-      window.setTimeout(() => {
-        setActiveNote((prev) => (prev === key.note ? null : prev));
-      }, 360);
-    },
-    [instrument]
-  );
-
-  const playWarmupScale = async () => {
-    await preloadInstrument(instrument).catch(() => {});
+  const clearTimers = useCallback(() => {
     warmupTimersRef.current.forEach((id) => window.clearTimeout(id));
     warmupTimersRef.current = [];
-    setIsPlayingWarmup(true);
+  }, []);
 
-    const sequenceIndices = [0, 2, 4, 2, 0];
-    sequenceIndices.forEach((wIdx, step) => {
-      const targetKey = whiteKeys[wIdx];
+  const resetWarmup = useCallback(() => {
+    clearTimers();
+    setPhase('idle');
+    setDemoStepIdx(-1);
+    setUserStepIdx(0);
+    setWrongFlash(false);
+  }, [clearTimers]);
+
+  const triggerKeyVisual = useCallback((noteCode: string, highlightMs = 480) => {
+    if (activeTimeoutRef.current) {
+      window.clearTimeout(activeTimeoutRef.current);
+    }
+    setActiveNote(noteCode);
+    activeTimeoutRef.current = window.setTimeout(() => {
+      setActiveNote((prev) => (prev === noteCode ? null : prev));
+    }, highlightMs);
+  }, []);
+
+  const handleUserPressKey = useCallback(
+    (key: PianoKey) => {
+      playInstrumentSample(key.freq, instrument, 1.5, 0.8).catch(() => {});
+      triggerKeyVisual(key.note, 420);
+
+      if (phase === 'practice') {
+        const expectedNote = activeSequenceNotes[userStepIdx];
+        if (key.note === expectedNote) {
+          const nextStep = userStepIdx + 1;
+          setUserStepIdx(nextStep);
+          setWrongFlash(false);
+          if (nextStep >= activeSequenceNotes.length) {
+            setPhase('completed');
+          }
+        } else {
+          setWrongFlash(true);
+          window.setTimeout(() => setWrongFlash(false), 380);
+        }
+      }
+    },
+    [instrument, phase, activeSequenceNotes, userStepIdx, triggerKeyVisual]
+  );
+
+  const playWarmupChallenge = async () => {
+    await preloadInstrument(instrument).catch(() => {});
+    clearTimers();
+
+    // Pick a random sequence different from the current one
+    const nextIdx = (patternIdx + 1 + Math.floor(Math.random() * 8)) % patterns.length;
+    const seq = patterns[nextIdx];
+
+    setPatternIdx(nextIdx);
+    setPhase('demo');
+    setDemoStepIdx(-1);
+    setUserStepIdx(0);
+    setWrongFlash(false);
+
+    seq.forEach((noteCode, idx) => {
+      const targetKey = keys.find((k) => k.note === noteCode);
       if (!targetKey) return;
       const timer = window.setTimeout(() => {
-        playTone(targetKey, 0.9);
-        if (step === sequenceIndices.length - 1) {
-          window.setTimeout(() => setIsPlayingWarmup(false), 750);
+        setDemoStepIdx(idx);
+        playInstrumentSample(targetKey.freq, instrument, 0.95, 0.8).catch(() => {});
+        triggerKeyVisual(targetKey.note, 520);
+
+        if (idx === seq.length - 1) {
+          const switchTimer = window.setTimeout(() => {
+            setDemoStepIdx(-1);
+            setPhase('practice');
+          }, 680);
+          warmupTimersRef.current.push(switchTimer);
         }
-      }, step * 440);
+      }, 220 + idx * 580);
       warmupTimersRef.current.push(timer);
     });
   };
 
   useEffect(() => {
     return () => {
-      warmupTimersRef.current.forEach((id) => window.clearTimeout(id));
+      clearTimers();
+      if (activeTimeoutRef.current) window.clearTimeout(activeTimeoutRef.current);
     };
-  }, []);
+  }, [clearTimers]);
 
   const handleSelectVoiceProfile = (id: string, gender: 'female' | 'male') => {
     setSelectedProfileId(id);
-    setRegisterMode(gender === 'male' ? 'low' : 'high');
+    const nextReg = gender === 'male' ? 'low' : 'high';
+    if (nextReg !== registerMode) {
+      setRegisterMode(nextReg);
+      resetWarmup();
+    }
+  };
+
+  const handleSwitchRegister = (mode: 'high' | 'low') => {
+    if (mode !== registerMode) {
+      setRegisterMode(mode);
+      resetWarmup();
+    }
   };
 
   return (
     <section id="vocal-piano" className="relative z-10 py-14 sm:py-20 lg:py-24">
-      <div
-        ref={ref}
-        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
-      >
+      <div ref={ref} className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
-          className={`reveal-scale overflow-hidden rounded-3xl border border-zinc-900/10 bg-[#F2EDE6]/92 p-6 dark:border-white/10 dark:bg-[#16151C]/95 sm:p-10 ${
+          className={`reveal-scale overflow-hidden rounded-3xl border border-zinc-900/10 bg-[#F2EDE6]/92 p-5 dark:border-white/10 dark:bg-[#16151C]/95 sm:p-8 lg:p-10 ${
             isVisible ? 'is-visible' : ''
           }`}
         >
-          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
-            <div className="max-w-2xl">
-              <p className="inline-flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
-                <Music className="h-3.5 w-3.5" />
-                Интерактивный тренажёр
-              </p>
-              <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF] sm:text-4xl">
-                Вокальное пианино для распевки и настройки слуха
-              </h2>
-              <p className="mt-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-base">
-                Нажимайте на клавиши, чтобы услышать живое студийное звучание выбранного инструмента и пропеть ноту в унисон.
-              </p>
-            </div>
+          {/* Section Header */}
+          <div className="max-w-3xl">
+            <p className="inline-flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
+              <Music className="h-3.5 w-3.5" />
+              Интерактивный тренажёр
+            </p>
+            <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF] sm:text-4xl">
+              Вокальное пианино для распевки и настройки слуха
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-base">
+              Нажмите «Сыграть распевку» — пианино проиграет 5 нот, а затем повторите их по порядку на клавишах, подпевая голосом.
+            </p>
+          </div>
 
+          {/* Clean Unified Console Toolbar */}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-900/8 bg-[#FAF8F5]/80 p-3 dark:border-white/8 dark:bg-[#0D0C10]/70 sm:p-4">
+            {/* Left: Register Switch + Timbres */}
             <div className="flex flex-wrap items-center gap-2.5">
-              <div className="inline-flex rounded-full border border-zinc-900/10 bg-[#FAF8F5] p-1 dark:border-white/10 dark:bg-[#0D0C10]">
+              <div className="inline-flex rounded-full border border-zinc-900/12 bg-[#F2EDE6] p-1 dark:border-white/12 dark:bg-[#16151C]">
                 <button
                   type="button"
-                  onClick={() => setRegisterMode('high')}
+                  onClick={() => handleSwitchRegister('high')}
                   className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                     registerMode === 'high'
-                      ? 'bg-[#B45309] text-white dark:bg-[#E2A856] dark:text-[#0D0C10]'
+                      ? 'bg-[#B45309] text-white shadow-xs dark:bg-[#E2A856] dark:text-[#0D0C10]'
                       : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
                   }`}
                 >
@@ -159,10 +273,10 @@ export function VocalPiano() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRegisterMode('low')}
+                  onClick={() => handleSwitchRegister('low')}
                   className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
                     registerMode === 'low'
-                      ? 'bg-[#B45309] text-white dark:bg-[#E2A856] dark:text-[#0D0C10]'
+                      ? 'bg-[#B45309] text-white shadow-xs dark:bg-[#E2A856] dark:text-[#0D0C10]'
                       : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
                   }`}
                 >
@@ -170,79 +284,170 @@ export function VocalPiano() {
                 </button>
               </div>
 
+              <div className="flex flex-wrap items-center gap-1.5">
+                {INSTRUMENTS.map((inst) => (
+                  <button
+                    key={inst.id}
+                    type="button"
+                    onClick={() => setInstrument(inst.id)}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                      instrument === inst.id
+                        ? 'border-[#B45309] bg-[#B45309]/15 text-[#B45309] dark:border-[#E2A856] dark:bg-[#E2A856]/20 dark:text-[#E2A856]'
+                        : 'border-zinc-900/10 bg-[#FAF8F5] text-zinc-700 hover:border-[#B45309]/40 dark:border-white/10 dark:bg-[#16151C] dark:text-zinc-300'
+                    }`}
+                  >
+                    {inst.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Play Warmup CTA */}
+            <div className="flex items-center gap-2">
+              {phase !== 'idle' && (
+                <button
+                  type="button"
+                  onClick={resetWarmup}
+                  title="Сбросить задание"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-900/12 bg-[#FAF8F5] text-zinc-700 hover:text-[#B45309] dark:border-white/12 dark:bg-[#16151C] dark:text-zinc-300 cursor-pointer"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
               <button
                 type="button"
-                onClick={playWarmupScale}
-                disabled={isPlayingWarmup}
-                className="btn-sheen inline-flex items-center gap-2 rounded-full bg-[#B45309] px-5 py-2.5 text-xs font-semibold text-white transition-all hover:bg-[#9A4407] disabled:opacity-65 dark:bg-[#E2A856] dark:text-[#0D0C10] cursor-pointer"
+                onClick={playWarmupChallenge}
+                disabled={phase === 'demo'}
+                className="btn-sheen inline-flex items-center gap-2 rounded-full bg-[#B45309] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#9A4407] disabled:opacity-70 dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
               >
-                <Play className="h-3.5 w-3.5 fill-current" />
-                <span>{isPlayingWarmup ? 'Звучит распевка...' : 'Сыграть распевку'}</span>
+                <Play className="h-4 w-4 fill-current" />
+                <span>
+                  {phase === 'demo'
+                    ? 'Слушаем ноты...'
+                    : phase === 'idle'
+                      ? 'Сыграть распевку'
+                      : 'Другая распевка'}
+                </span>
               </button>
             </div>
-          </div>
-
-          {/* 4 Real Sampled Studio Instruments */}
-          <div className="mt-5 flex flex-wrap items-center gap-2 border-b border-zinc-900/8 pb-4 dark:border-white/8">
-            <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-              Тембр:
-            </span>
-            {INSTRUMENTS.map((inst) => (
-              <button
-                key={inst.id}
-                type="button"
-                onClick={() => setInstrument(inst.id)}
-                className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                  instrument === inst.id
-                    ? 'border-[#B45309] bg-[#B45309] text-white shadow-xs dark:border-[#E2A856] dark:bg-[#E2A856] dark:text-[#0D0C10]'
-                    : 'border-zinc-900/12 bg-[#FAF8F5] text-zinc-700 hover:border-[#B45309]/40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-zinc-300'
-                }`}
-              >
-                {inst.label}
-              </button>
-            ))}
           </div>
 
           {/* Voice Types Reference Tabs */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            {VOICE_TYPES.map((vt) => {
-              const active = vt.id === selectedProfileId;
-              return (
-                <button
-                  key={vt.id}
-                  type="button"
-                  onClick={() => handleSelectVoiceProfile(vt.id, vt.gender)}
-                  className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                    active
-                      ? 'border-[#B45309] bg-[#B45309]/12 text-[#B45309] dark:border-[#E2A856] dark:bg-[#E2A856]/15 dark:text-[#E2A856]'
-                      : 'border-zinc-900/10 bg-[#FAF8F5]/80 text-zinc-700 hover:border-[#B45309]/35 dark:border-white/10 dark:bg-[#0D0C10]/70 dark:text-zinc-300'
-                  }`}
-                >
-                  {vt.name}
-                </button>
-              );
-            })}
-          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-1.5">
+              {VOICE_TYPES.map((vt) => {
+                const active = vt.id === selectedProfileId;
+                return (
+                  <button
+                    key={vt.id}
+                    type="button"
+                    onClick={() => handleSelectVoiceProfile(vt.id, vt.gender)}
+                    className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all cursor-pointer ${
+                      active
+                        ? 'border-[#B45309] bg-[#B45309]/12 text-[#B45309] dark:border-[#E2A856] dark:bg-[#E2A856]/15 dark:text-[#E2A856]'
+                        : 'border-zinc-900/10 bg-[#FAF8F5]/80 text-zinc-700 hover:border-[#B45309]/35 dark:border-white/10 dark:bg-[#0D0C10]/70 dark:text-zinc-300'
+                    }`}
+                  >
+                    {vt.name}
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Selected Voice Type Summary Strip */}
-          <div className="mt-4 flex flex-col gap-1.5 rounded-2xl border border-zinc-900/8 bg-[#FAF8F5]/85 px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between dark:border-white/8 dark:bg-[#0D0C10]/75">
-            <div className="flex flex-wrap items-center gap-2">
-              <Volume2 className="h-4 w-4 shrink-0 text-[#B45309] dark:text-[#E2A856]" />
-              <span className="font-semibold text-zinc-900 dark:text-[#F5F3EF]">
-                {selectedProfile.name}:
-              </span>
-              <span className="text-zinc-600 dark:text-zinc-300">
+            <div className="flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
+              <Volume2 className="h-3.5 w-3.5 shrink-0 text-[#B45309] dark:text-[#E2A856]" />
+              <span>
+                <strong className="text-zinc-900 dark:text-[#F5F3EF]">{selectedProfile.name}:</strong>{' '}
                 {selectedProfile.rangeLabel}
               </span>
             </div>
-            <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-              Подтипы: {selectedProfile.subtypes.join(', ')}
-            </span>
           </div>
 
-          {/* Interactive Playable Piano Keyboard */}
-          <div className="relative mt-6 overflow-x-auto pb-2">
-            <div className="relative mx-auto flex h-44 min-w-[540px] max-w-4xl select-none rounded-2xl border border-zinc-900/15 bg-zinc-900 p-2 shadow-xl dark:border-white/15 dark:bg-black/80 sm:h-52">
+          {/* Interactive Scoreboard / Marquee Ticker directly above the keys */}
+          <div className="mt-5 rounded-2xl border border-[#B45309]/25 bg-[#FAF8F5]/95 p-3.5 dark:border-[#E2A856]/25 dark:bg-[#0D0C10]/90 sm:p-4">
+            {phase === 'idle' ? (
+              <div className="overflow-hidden">
+                <div className="mb-1.5 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
+                  <span>Варианты вокальных распевок (нажмите «Сыграть распевку»):</span>
+                </div>
+                <div className="relative overflow-hidden whitespace-nowrap py-1">
+                  <div className="animate-piano-ticker gap-8 text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                    {[...tickerItems, ...tickerItems].map((line, i) => (
+                      <span key={i} className="inline-flex items-center gap-3">
+                        <span className="h-1.5 w-1.5 rounded-full bg-[#B45309] dark:bg-[#E2A856]" />
+                        <span>{line}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
+                    {phase === 'demo' && 'Шаг 1: Слушайте и запоминайте последовательность'}
+                    {phase === 'practice' && 'Шаг 2: Нажмите эти 5 нот по порядку и пропойте!'}
+                    {phase === 'completed' && (
+                      <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                        <Sparkles className="h-4 w-4" />
+                        Браво! Все 5 нот сыграны точно!
+                      </span>
+                    )}
+                  </span>
+
+                  <span className="text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                    {phase === 'completed'
+                      ? '5 / 5 готово'
+                      : phase === 'practice'
+                        ? `Прогресс: ${userStepIdx} / 5`
+                        : 'Автопоказ...'}
+                  </span>
+                </div>
+
+                {/* 5-Note Interactive Board */}
+                <div className="grid grid-cols-5 gap-2 sm:gap-3">
+                  {activeSequenceNotes.map((noteCode, idx) => {
+                    const k = keyLookup(noteCode);
+                    const isMatched =
+                      phase === 'completed' || (phase === 'practice' && idx < userStepIdx);
+                    const isDemoActive = phase === 'demo' && idx === demoStepIdx;
+                    const isCurrentTarget = phase === 'practice' && idx === userStepIdx;
+
+                    return (
+                      <div
+                        key={`${noteCode}-${idx}`}
+                        className={`flex flex-col items-center justify-center rounded-xl border px-2 py-2.5 text-center transition-all duration-200 ${
+                          isMatched
+                            ? 'border-emerald-500 bg-emerald-500/18 text-emerald-700 shadow-[0_0_16px_rgba(16,185,129,0.28)] dark:border-emerald-400 dark:bg-emerald-500/20 dark:text-emerald-300'
+                            : isDemoActive
+                              ? 'scale-105 border-amber-500 bg-amber-400/25 text-[#9A4407] shadow-[0_0_18px_rgba(245,158,11,0.45)] dark:border-[#FACC15] dark:bg-amber-400/25 dark:text-[#FDE047]'
+                              : isCurrentTarget
+                                ? `border-[#B45309] bg-[#B45309]/10 text-[#B45309] ring-2 ring-[#B45309]/35 dark:border-[#E2A856] dark:bg-[#E2A856]/15 dark:text-[#E2A856] ${
+                                    wrongFlash ? 'animate-pulse border-rose-500 text-rose-500' : ''
+                                  }`
+                                : 'border-zinc-900/10 bg-[#F2EDE6]/80 text-zinc-500 dark:border-white/10 dark:bg-[#16151C] dark:text-zinc-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          {isMatched && <Check className="h-3.5 w-3.5 shrink-0" />}
+                          <span className="text-sm sm:text-base font-bold leading-none">
+                            {k?.labelRu ?? noteCode}
+                          </span>
+                        </div>
+                        <span className="mt-1 text-[11px] sm:text-xs font-medium opacity-85">
+                          {k?.sciLabel ?? ''}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* FULL-WIDTH Interactive Playable Piano Keyboard (larger keys & crisp fonts) */}
+          <div className="relative mt-5 overflow-x-auto pb-1">
+            <div className="relative flex h-56 w-full min-w-[560px] select-none rounded-2xl border border-zinc-900/20 bg-zinc-950 p-2.5 shadow-2xl dark:border-white/15 dark:bg-black/90 sm:h-68">
               {whiteKeys.map((wKey) => {
                 const isPressed = activeNote === wKey.note;
                 const isHighlighted = selectedProfile.pianoNotes.includes(wKey.note);
@@ -255,21 +460,25 @@ export function VocalPiano() {
                   <div key={wKey.note} className="relative flex-1">
                     <button
                       type="button"
-                      onPointerDown={() => playTone(wKey)}
+                      onPointerDown={() => handleUserPressKey(wKey)}
                       aria-label={`Нота ${wKey.labelRu} (${wKey.sciLabel})`}
-                      className={`group relative flex h-full w-[calc(100%-3px)] flex-col items-center justify-end rounded-b-xl border-b-4 pb-3 transition-all duration-75 cursor-pointer ${
+                      className={`group relative flex h-full w-[calc(100%-3px)] flex-col items-center justify-end rounded-b-xl border-b-[5px] pb-3.5 transition-all duration-100 cursor-pointer ${
                         isPressed
-                          ? 'translate-y-0.5 border-amber-600 bg-amber-100 text-amber-950'
+                          ? 'translate-y-0.5 scale-[0.985] border-amber-600 bg-gradient-to-b from-amber-200 via-amber-300 to-amber-400 text-zinc-950 shadow-[0_0_26px_rgba(245,158,11,0.9)] ring-2 ring-amber-400 z-10'
                           : isHighlighted
-                          ? 'border-amber-300 bg-[#FFFDF7] text-zinc-900 hover:bg-amber-50'
-                          : 'border-zinc-300 bg-[#FAF8F5] text-zinc-700 hover:bg-white'
+                            ? 'border-amber-300 bg-[#FFFDF6] text-zinc-900 hover:bg-amber-50'
+                            : 'border-zinc-300 bg-[#FAF8F5] text-zinc-800 hover:bg-white'
                       }`}
                     >
-                      {isHighlighted && (
-                        <span className="mb-1.5 h-1.5 w-1.5 rounded-full bg-[#B45309]" />
+                      {isHighlighted && !isPressed && (
+                        <span className="mb-1.5 h-2 w-2 rounded-full bg-[#B45309]" />
                       )}
-                      <span className="text-xs font-bold leading-none">{wKey.labelRu}</span>
-                      <span className="mt-0.5 text-[10px] text-zinc-500">{wKey.sciLabel}</span>
+                      <span className="text-sm sm:text-base font-extrabold leading-none tracking-tight">
+                        {wKey.labelRu}
+                      </span>
+                      <span className="mt-1 text-[11px] sm:text-xs font-semibold text-zinc-500">
+                        {wKey.sciLabel}
+                      </span>
                     </button>
 
                     {hasBlackAfter && (
@@ -277,16 +486,21 @@ export function VocalPiano() {
                         type="button"
                         onPointerDown={(e) => {
                           e.stopPropagation();
-                          playTone(nextKey);
+                          handleUserPressKey(nextKey);
                         }}
                         aria-label={`Нота ${nextKey.labelRu} (${nextKey.sciLabel})`}
-                        className={`absolute -right-[32%] top-0 z-20 flex h-[60%] w-[62%] flex-col items-center justify-end rounded-b-lg border-b-4 pb-2 transition-all duration-75 cursor-pointer ${
+                        className={`absolute -right-[32%] top-0 z-20 flex h-[60%] w-[62%] flex-col items-center justify-end rounded-b-lg border-b-[5px] pb-2.5 transition-all duration-100 cursor-pointer ${
                           activeNote === nextKey.note
-                            ? 'translate-y-0.5 border-amber-500 bg-amber-500 text-zinc-950'
-                            : 'border-black bg-zinc-800 text-zinc-300 hover:bg-zinc-700'
+                            ? 'translate-y-0.5 scale-[0.97] border-amber-500 bg-gradient-to-b from-amber-300 to-amber-500 text-zinc-950 shadow-[0_0_22px_rgba(250,204,21,0.95)] ring-2 ring-amber-300'
+                            : 'border-black bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
                         }`}
                       >
-                        <span className="text-[9px] font-semibold">{nextKey.labelRu}</span>
+                        <span className="text-[11px] sm:text-xs font-bold leading-none">
+                          {nextKey.labelRu}
+                        </span>
+                        <span className="mt-0.5 text-[9px] sm:text-[10px] opacity-75">
+                          {nextKey.sciLabel}
+                        </span>
                       </button>
                     )}
                   </div>

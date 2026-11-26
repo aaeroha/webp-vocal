@@ -4,25 +4,25 @@ import { CERTIFICATES_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
 const GRADUATION_CAPS = [
-  { left: '6%', delay: '0s', dx1: '14px', dx2: '32px', r0: '-28deg', r1: '155deg', r2: '340deg', size: 32 },
-  { left: '16%', delay: '0.18s', dx1: '-22px', dx2: '-36px', r0: '18deg', r1: '-140deg', r2: '-310deg', size: 28 },
-  { left: '28%', delay: '0.08s', dx1: '24px', dx2: '44px', r0: '-15deg', r1: '180deg', r2: '365deg', size: 34 },
-  { left: '39%', delay: '0.32s', dx1: '-18px', dx2: '-28px', r0: '22deg', r1: '-165deg', r2: '-345deg', size: 26 },
-  { left: '51%', delay: '0.12s', dx1: '16px', dx2: '38px', r0: '-30deg', r1: '140deg', r2: '320deg', size: 36 },
-  { left: '63%', delay: '0.26s', dx1: '-25px', dx2: '-42px', r0: '12deg', r1: '-170deg', r2: '-355deg', size: 30 },
-  { left: '74%', delay: '0.05s', dx1: '20px', dx2: '30px', r0: '-20deg', r1: '165deg', r2: '350deg', size: 33 },
-  { left: '85%', delay: '0.22s', dx1: '-16px', dx2: '-34px', r0: '26deg', r1: '-150deg', r2: '-330deg', size: 29 },
-  { left: '93%', delay: '0.14s', dx1: '-14px', dx2: '-26px', r0: '-10deg', r1: '190deg', r2: '380deg', size: 31 },
+  { left: '4%', delay: '0s', dur: '4.1s', dx1: '18px', dx2: '38px', r0: '-25deg', r1: '160deg', r2: '350deg', size: 28 },
+  { left: '11%', delay: '1.4s', dur: '5.2s', dx1: '-24px', dx2: '-42px', r0: '15deg', r1: '-145deg', r2: '-315deg', size: 42 },
+  { left: '19%', delay: '0.5s', dur: '4.6s', dx1: '26px', dx2: '48px', r0: '-18deg', r1: '185deg', r2: '370deg', size: 34 },
+  { left: '27%', delay: '2.3s', dur: '3.9s', dx1: '-16px', dx2: '-30px', r0: '20deg', r1: '-165deg', r2: '-345deg', size: 24 },
+  { left: '35%', delay: '0.9s', dur: '5.6s', dx1: '22px', dx2: '42px', r0: '-30deg', r1: '140deg', r2: '320deg', size: 46 },
+  { left: '43%', delay: '1.9s', dur: '4.3s', dx1: '-28px', dx2: '-46px', r0: '12deg', r1: '-170deg', r2: '-355deg', size: 32 },
+  { left: '52%', delay: '0.2s', dur: '4.9s', dx1: '20px', dx2: '35px', r0: '-22deg', r1: '175deg', r2: '360deg', size: 38 },
+  { left: '60%', delay: '2.7s', dur: '4.4s', dx1: '-20px', dx2: '-38px', r0: '25deg', r1: '-150deg', r2: '-330deg', size: 26 },
+  { left: '68%', delay: '1.1s', dur: '5.4s', dx1: '24px', dx2: '40px', r0: '-14deg', r1: '190deg', r2: '380deg', size: 44 },
+  { left: '76%', delay: '0.7s', dur: '3.8s', dx1: '-18px', dx2: '-32px', r0: '18deg', r1: '-160deg', r2: '-340deg', size: 30 },
+  { left: '84%', delay: '2.1s', dur: '4.7s', dx1: '15px', dx2: '28px', r0: '-26deg', r1: '150deg', r2: '335deg', size: 36 },
+  { left: '92%', delay: '1.6s', dur: '5.1s', dx1: '-22px', dx2: '-36px', r0: '14deg', r1: '-175deg', r2: '-360deg', size: 40 },
 ];
 
 function GraduationCapSvg({ size }: { size: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Mortarboard top square diamond */}
       <path d="M20 7L37 15L20 23L3 15L20 7Z" fill="#18181B" stroke="#E2A856" strokeWidth="1.2" className="dark:fill-[#27272A]" />
-      {/* Cap skull base */}
       <path d="M11 19.2V26.5C11 28.8 15 30.8 20 30.8C25 30.8 29 28.8 29 26.5V19.2L20 23.6L11 19.2Z" fill="#27272A" stroke="#E2A856" strokeWidth="1" className="dark:fill-[#3F3F46]" />
-      {/* Gold tassel cord & fringe */}
       <path d="M20 15L32.5 20.5V28.5" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
       <circle cx="20" cy="15" r="1.4" fill="#FACC15" />
       <path d="M31 28.5H34L34.6 33H30.4L31 28.5Z" fill="#FACC15" />
@@ -33,15 +33,7 @@ function GraduationCapSvg({ size }: { size: number }) {
 export function Certificates() {
   const items = CERTIFICATES_CONTENT.items;
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const { ref, isVisible } = useReveal({ threshold: 0.08 });
-  const [tossGeneration, setTossGeneration] = useState(0);
-
-  // Trigger a fresh graduation cap toss whenever section enters viewport
-  useEffect(() => {
-    if (isVisible) {
-      setTossGeneration((g) => g + 1);
-    }
-  }, [isVisible]);
+  const { ref, isVisible } = useReveal({ threshold: 0.06 });
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
   const isModalOpen = selectedIndex !== null;
@@ -81,21 +73,21 @@ export function Certificates() {
 
   return (
     <section id="certificates" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
-      {/* University Graduation Cap Toss Layer */}
-      {isVisible && tossGeneration > 0 && (
+      {/* Continuous Infinite Graduation Cap Toss across the entire height of the section */}
+      {isVisible && (
         <div
-          key={tossGeneration}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-12 z-20 h-64 overflow-visible"
+          className="pointer-events-none absolute inset-0 z-20 overflow-hidden"
         >
           {GRADUATION_CAPS.map((cap, idx) => (
             <div
               key={idx}
-              className="animate-cap-toss absolute bottom-0"
+              className="animate-cap-toss absolute bottom-[12%]"
               style={
                 {
                   left: cap.left,
                   animationDelay: cap.delay,
+                  '--cap-dur': cap.dur,
                   '--cap-dx1': cap.dx1,
                   '--cap-dx2': cap.dx2,
                   '--cap-r0': cap.r0,

@@ -919,42 +919,42 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                 Вау, вы супер! У вас выразительный природный тембр и живая музыкальная интонация.
               </p>
 
-              {/* Unified clean 3-stat horizontal bar (not fragmented boxes) */}
-              <div className="mt-5 grid grid-cols-3 divide-x divide-zinc-900/10 border-y border-zinc-900/10 py-3.5 text-center dark:divide-white/10 dark:border-white/10">
+              {/* Unified clean 3-stat horizontal bar with color-highlighted notes & bigger typography */}
+              <div className="mt-5 grid grid-cols-3 divide-x divide-zinc-900/10 border-y border-zinc-900/10 py-4 text-center dark:divide-white/10 dark:border-white/10">
                 <div className="px-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     Нижняя нота
                   </p>
-                  <p className="mt-1 font-serif text-lg font-bold text-zinc-900 dark:text-[#F5F3EF] sm:text-xl">
+                  <p className="mt-1.5 font-serif text-2xl font-bold text-sky-600 dark:text-sky-400 sm:text-3xl">
                     {hzToNoteLabel(result.minSampleHz).split(' ')[0]}
                   </p>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    {hzToNoteLabel(result.minSampleHz).split(' ')[1] ?? ''}
-                  </p>
+                  <span className="mt-1 inline-block rounded-full bg-sky-500/12 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:bg-sky-400/15 dark:text-sky-300">
+                    {hzToNoteLabel(result.minSampleHz).split(' ')[1] ?? '—'}
+                  </span>
                 </div>
 
                 <div className="px-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     Верхняя нота
                   </p>
-                  <p className="mt-1 font-serif text-lg font-bold text-zinc-900 dark:text-[#F5F3EF] sm:text-xl">
+                  <p className="mt-1.5 font-serif text-2xl font-bold text-emerald-600 dark:text-emerald-400 sm:text-3xl">
                     {hzToNoteLabel(result.maxSampleHz).split(' ')[0]}
                   </p>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                    {hzToNoteLabel(result.maxSampleHz).split(' ')[1] ?? ''}
-                  </p>
+                  <span className="mt-1 inline-block rounded-full bg-emerald-500/12 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-300">
+                    {hzToNoteLabel(result.maxSampleHz).split(' ')[1] ?? '—'}
+                  </span>
                 </div>
 
                 <div className="px-2">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                     Опора тона
                   </p>
-                  <p className="mt-1 font-serif text-lg font-bold text-[#B45309] dark:text-[#E2A856] sm:text-xl">
+                  <p className="mt-1.5 font-serif text-2xl font-bold text-[#B45309] dark:text-[#E2A856] sm:text-3xl">
                     {Math.round(result.medianHz)} Гц
                   </p>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  <span className="mt-1 inline-block rounded-full bg-[#B45309]/10 px-2.5 py-0.5 text-xs font-semibold text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
                     Центр тембра
-                  </p>
+                  </span>
                 </div>
               </div>
 
