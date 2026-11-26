@@ -1,6 +1,35 @@
 import { Star } from 'lucide-react';
+import { type CSSProperties } from 'react';
 import { AVITO_REVIEWS_URL, REVIEWS_CONTENT, YANDEX_PROFILE_URL } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
+
+const FLOATING_CHAT_BUBBLES = [
+  { left: '5%', size: 42, dur: '9.5s', delay: '0s', dx: '22px', op: 0.24 },
+  { left: '16%', size: 58, dur: '12.5s', delay: '2.1s', dx: '-18px', op: 0.2 },
+  { left: '28%', size: 36, dur: '8.2s', delay: '1.0s', dx: '15px', op: 0.26 },
+  { left: '41%', size: 64, dur: '13.5s', delay: '3.4s', dx: '-24px', op: 0.18 },
+  { left: '55%', size: 46, dur: '10.2s', delay: '0.6s', dx: '20px', op: 0.24 },
+  { left: '68%', size: 54, dur: '11.8s', delay: '2.8s', dx: '-16px', op: 0.22 },
+  { left: '80%', size: 38, dur: '8.8s', delay: '1.5s', dx: '14px', op: 0.25 },
+  { left: '91%', size: 60, dur: '12.0s', delay: '4.0s', dx: '-20px', op: 0.2 },
+];
+
+function ChatBubbleSvg({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 48 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M8 6H40C43.3 6 46 8.7 46 12V28C46 31.3 43.3 34 40 34H19L10 41V34H8C4.7 34 2 31.3 2 28V12C2 8.7 4.7 6 8 6Z"
+        fill="currentColor"
+        fillOpacity="0.22"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <circle cx="16" cy="20" r="2.4" fill="currentColor" />
+      <circle cx="24" cy="20" r="2.4" fill="currentColor" />
+      <circle cx="32" cy="20" r="2.4" fill="currentColor" />
+    </svg>
+  );
+}
 
 function YandexLogo() {
   return (
@@ -40,10 +69,34 @@ export function Reviews() {
   const trackItems = [...REVIEWS_CONTENT.items, ...REVIEWS_CONTENT.items];
 
   return (
-    <section id="reviews" className="relative z-10 py-14 sm:py-20 lg:py-24">
+    <section id="reviews" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
+      {/* Infinite Rising Message Bubbles with 3 Dots in Background */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 overflow-hidden text-[#B45309] dark:text-[#E2A856]"
+      >
+        {FLOATING_CHAT_BUBBLES.map((b, idx) => (
+          <div
+            key={idx}
+            className="animate-bubble-rise absolute -bottom-16"
+            style={
+              {
+                left: b.left,
+                animationDelay: b.delay,
+                '--bubble-dur': b.dur,
+                '--bubble-dx': b.dx,
+                '--bubble-op': b.op,
+              } as CSSProperties
+            }
+          >
+            <ChatBubbleSvg size={b.size} />
+          </div>
+        ))}
+      </div>
+
       <div
         ref={sectionRef}
-        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+        className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
       >
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className={`reveal-left max-w-2xl ${isVisible ? 'is-visible' : ''}`}>
@@ -58,7 +111,7 @@ export function Reviews() {
             </p>
           </div>
 
-          {/* Twin 5.0 Profile Badges: Yandex & Avito (with green outline) */}
+          {/* Twin 5.0 Profile Badges: Yandex & Avito (with green outline and yellow stars) */}
           <div
             style={{ transitionDelay: '120ms' }}
             className={`reveal-right flex flex-wrap items-stretch gap-3 ${isVisible ? 'is-visible' : ''}`}
@@ -138,7 +191,6 @@ export function Reviews() {
                     : 'border-zinc-900/10 hover:border-[#B45309]/40 dark:border-white/10 dark:hover:border-[#E2A856]/45'
                 }`}
               >
-                {/* Top: Author & Date + Platform badge */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className="font-serif text-xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF]">
@@ -159,14 +211,12 @@ export function Reviews() {
                   </span>
                 </div>
 
-                {/* Middle: 5 stars */}
                 <div className="mt-3 flex items-center gap-0.5 text-[#D97706] dark:text-[#E2A856]">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-4 w-4 fill-current" />
                   ))}
                 </div>
 
-                {/* Bottom: Review text */}
                 <p className="mt-3 text-[14.5px] leading-[1.65] text-zinc-700 dark:text-zinc-300">
                   «{review.text}»
                 </p>

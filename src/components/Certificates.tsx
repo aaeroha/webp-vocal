@@ -79,7 +79,7 @@ export function Certificates() {
           {GRADUATION_CAPS.map((cap, idx) => (
             <div
               key={idx}
-              className="animate-cap-toss absolute bottom-2"
+              className="animate-cap-toss absolute -bottom-28"
               style={
                 {
                   left: cap.left,

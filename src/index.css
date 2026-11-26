@@ -109,26 +109,78 @@
 @keyframes capToss {
   0% {
     opacity: 0;
-    transform: translate3d(0, 80px, 0) rotate(var(--cap-r0, -25deg)) scale(0.85);
+    transform: translate3d(0, 60px, 0) rotate(var(--cap-r0, -25deg)) scale(0.85);
   }
   12% {
     opacity: 0.72;
   }
   48% {
     opacity: 0.8;
-    transform: translate3d(var(--cap-dx1, 24px), -540px, 0) rotate(var(--cap-r1, 165deg)) scale(1.06);
+    transform: translate3d(var(--cap-dx1, 24px), -720px, 0) rotate(var(--cap-r1, 165deg)) scale(1.06);
   }
   88% {
     opacity: 0.65;
   }
   100% {
     opacity: 0;
-    transform: translate3d(var(--cap-dx2, 48px), 90px, 0) rotate(var(--cap-r2, 355deg)) scale(0.9);
+    transform: translate3d(var(--cap-dx2, 48px), 80px, 0) rotate(var(--cap-r2, 355deg)) scale(0.9);
   }
 }
 
 .animate-cap-toss {
-  animation: capToss var(--cap-dur, 4.8s) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
+  opacity: 0;
+  animation: capToss var(--cap-dur, 4.8s) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite both;
+}
+
+/* Reviews section: infinite rising chat bubbles with 3 dots */
+@keyframes bubbleRise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 40px, 0) scale(0.85);
+  }
+  15% {
+    opacity: var(--bubble-op, 0.25);
+  }
+  82% {
+    opacity: var(--bubble-op, 0.25);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--bubble-dx, 18px), -620px, 0) scale(1.05);
+  }
+}
+
+.animate-bubble-rise {
+  opacity: 0;
+  animation: bubbleRise var(--bubble-dur, 10s) linear infinite both;
+}
+
+/* FAQ section: floating & mirror-flipping question marks */
+@keyframes questionMirrorFloat {
+  0% {
+    opacity: 0.16;
+    transform: translate3d(0, 0px, 0) perspective(400px) rotateY(0deg) rotate(-6deg);
+  }
+  25% {
+    opacity: 0.34;
+    transform: translate3d(8px, -18px, 0) perspective(400px) rotateY(90deg) rotate(4deg);
+  }
+  50% {
+    opacity: 0.28;
+    transform: translate3d(-6px, -28px, 0) perspective(400px) rotateY(180deg) rotate(8deg);
+  }
+  75% {
+    opacity: 0.34;
+    transform: translate3d(6px, -12px, 0) perspective(400px) rotateY(270deg) rotate(-2deg);
+  }
+  100% {
+    opacity: 0.16;
+    transform: translate3d(0, 0px, 0) perspective(400px) rotateY(360deg) rotate(-6deg);
+  }
+}
+
+.animate-question-mirror {
+  animation: questionMirrorFloat var(--q-dur, 7s) ease-in-out infinite;
 }
 
 /* Custom sleek thin scrollbar for song picker & modals */

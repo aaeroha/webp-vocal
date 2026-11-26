@@ -1,7 +1,17 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { FAQ_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
+
+const FLOATING_QUESTIONS = [
+  { top: '8%', left: '6%', size: 'text-5xl sm:text-6xl', dur: '6.2s', delay: '0s' },
+  { top: '16%', right: '7%', size: 'text-6xl sm:text-7xl', dur: '8.4s', delay: '1.2s' },
+  { top: '34%', left: '4%', size: 'text-4xl sm:text-5xl', dur: '7.1s', delay: '0.5s' },
+  { top: '48%', right: '5%', size: 'text-5xl sm:text-6xl', dur: '6.8s', delay: '2.1s' },
+  { top: '65%', left: '8%', size: 'text-6xl sm:text-7xl', dur: '9.0s', delay: '1.5s' },
+  { top: '76%', right: '8%', size: 'text-4xl sm:text-5xl', dur: '5.8s', delay: '0.8s' },
+  { top: '88%', left: '12%', size: 'text-5xl', dur: '7.6s', delay: '2.6s' },
+];
 
 export function FaqAccordion() {
   const [openId, setOpenId] = useState<string | null>(FAQ_CONTENT.items[0]?.id ?? null);
@@ -13,8 +23,32 @@ export function FaqAccordion() {
   };
 
   return (
-    <section id="faq" className="relative z-10 py-14 sm:py-20 lg:py-24">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <section id="faq" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
+      {/* Floating & Mirror-Flipping Question Marks in Background */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0 overflow-hidden select-none text-[#B45309] dark:text-[#E2A856]"
+      >
+        {FLOATING_QUESTIONS.map((q, idx) => (
+          <span
+            key={idx}
+            className={`animate-question-mirror absolute font-serif font-bold ${q.size}`}
+            style={
+              {
+                top: q.top,
+                left: q.left,
+                right: q.right,
+                animationDelay: q.delay,
+                '--q-dur': q.dur,
+              } as CSSProperties
+            }
+          >
+            ?
+          </span>
+        ))}
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div
           ref={headerRef}
           className={`reveal-item text-left sm:text-center ${headerVisible ? 'is-visible' : ''}`}
@@ -37,7 +71,7 @@ export function FaqAccordion() {
                 className={`reveal-item overflow-hidden rounded-2xl border transition-colors duration-300 ${
                   isOpen
                     ? 'border-[#B45309]/40 bg-[#F2EDE6] dark:border-[#E2A856]/45 dark:bg-[#191722]'
-                    : 'border-zinc-900/10 bg-[#F2EDE6]/75 hover:border-[#B45309]/25 dark:border-white/10 dark:bg-[#16151C]/90 dark:hover:border-[#E2A856]/30'
+                    : 'border-zinc-900/10 bg-[#F2EDE6]/80 hover:border-[#B45309]/25 dark:border-white/10 dark:bg-[#16151C]/90 dark:hover:border-[#E2A856]/30'
                 } ${isVisible ? 'is-visible' : ''}`}
               >
                 <button

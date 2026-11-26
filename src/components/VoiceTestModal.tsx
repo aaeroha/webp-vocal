@@ -814,39 +814,38 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               </div>
             )}
 
-            <div className="flex flex-col gap-2.5 sm:flex-row">
-              {isRecording ? (
+            {isRecording ? (
+              <button
+                type="button"
+                onClick={finishRecording}
+                className="btn-sheen inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
+              >
+                <Square className="h-4 w-4 fill-current" />
+                Завершить и узнать результат
+              </button>
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={finishRecording}
-                  className="btn-sheen inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
+                  onClick={startRecording}
+                  className="btn-sheen inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-5 py-3.5 text-sm font-semibold text-white hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
                 >
-                  <Square className="h-4 w-4 fill-current" />
-                  Завершить и узнать результат
+                  <RefreshCw className="h-4 w-4 shrink-0" />
+                  <span>Спеть ещё раз</span>
                 </button>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={startRecording}
-                    className="btn-sheen flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#F3C884] cursor-pointer"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                    Спеть эту же песню ещё раз
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      cleanupAudio();
-                      setStep('mode');
-                    }}
-                    className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3.5 text-sm font-semibold text-zinc-800 hover:border-[#B45309]/40 dark:border-white/15 dark:text-zinc-200 cursor-pointer"
-                  >
-                    Выбрать другую
-                  </button>
-                </>
-              )}
-            </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    cleanupAudio();
+                    setStep('mode');
+                  }}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-zinc-900/15 px-5 py-3.5 text-sm font-semibold text-zinc-800 hover:border-[#B45309]/40 dark:border-white/15 dark:text-zinc-200 cursor-pointer"
+                >
+                  <Music className="h-4 w-4 shrink-0" />
+                  <span>Выбрать другую</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 

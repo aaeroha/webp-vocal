@@ -188,40 +188,49 @@ export function VocalPiano() {
     [instrument, phase, activeSequenceNotes, userStepIdx, triggerKeyVisual]
   );
 
-  const playWarmupChallenge = async () => {
-    await preloadInstrument(instrument).catch(() => {});
-    clearTimers();
+  const startDemoSequence = useCallback(
+    async (seqIndex: number) => {
+      await preloadInstrument(instrument).catch(() => {});
+      clearTimers();
 
+      const seq = patterns[seqIndex % patterns.length];
+      setPatternIdx(seqIndex % patterns.length);
+      setPhase('demo');
+      setDemoStepIdx(-1);
+      setUserStepIdx(0);
+      setWrongFlash(false);
+
+      const noteStepMs = 870;
+      seq.forEach((noteCode, idx) => {
+        const targetKey = keys.find((k) => k.note === noteCode);
+        if (!targetKey) return;
+        const timer = window.setTimeout(() => {
+          setDemoStepIdx(idx);
+          playInstrumentSample(targetKey.freq, instrument, 1.35, 0.82).catch(() => {});
+          triggerKeyVisual(targetKey.note, 760);
+
+          if (idx === seq.length - 1) {
+            const switchTimer = window.setTimeout(() => {
+              setDemoStepIdx(-1);
+              setPhase('practice');
+            }, 920);
+            warmupTimersRef.current.push(switchTimer);
+          }
+        }, 260 + idx * noteStepMs);
+        warmupTimersRef.current.push(timer);
+      });
+    },
+    [clearTimers, instrument, keys, patterns, triggerKeyVisual]
+  );
+
+  const playWarmupChallenge = () => {
     const nextIdx =
       (patternIdx + 1 + Math.floor(Math.random() * (patterns.length - 1))) % patterns.length;
-    const seq = patterns[nextIdx];
+    startDemoSequence(nextIdx);
+  };
 
-    setPatternIdx(nextIdx);
-    setPhase('demo');
-    setDemoStepIdx(-1);
-    setUserStepIdx(0);
-    setWrongFlash(false);
-
-    // 1.5x slower unhurried playback (870ms per note)
-    const noteStepMs = 870;
-    seq.forEach((noteCode, idx) => {
-      const targetKey = keys.find((k) => k.note === noteCode);
-      if (!targetKey) return;
-      const timer = window.setTimeout(() => {
-        setDemoStepIdx(idx);
-        playInstrumentSample(targetKey.freq, instrument, 1.35, 0.82).catch(() => {});
-        triggerKeyVisual(targetKey.note, 760);
-
-        if (idx === seq.length - 1) {
-          const switchTimer = window.setTimeout(() => {
-            setDemoStepIdx(-1);
-            setPhase('practice');
-          }, 920);
-          warmupTimersRef.current.push(switchTimer);
-        }
-      }, 260 + idx * noteStepMs);
-      warmupTimersRef.current.push(timer);
-    });
+  const replayCurrentWarmup = () => {
+    startDemoSequence(patternIdx);
   };
 
   useEffect(() => {
@@ -315,15 +324,17 @@ export function VocalPiano() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {phase !== 'idle' && (
                 <button
                   type="button"
-                  onClick={resetWarmup}
-                  title="Сбросить задание"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-900/12 bg-[#FAF8F5] text-zinc-700 hover:text-[#B45309] dark:border-white/12 dark:bg-[#16151C] dark:text-zinc-300 cursor-pointer"
+                  onClick={replayCurrentWarmup}
+                  disabled={phase === 'demo'}
+                  title="Повторить проигрыш этой же распевки"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#B45309]/40 bg-[#FAF8F5] px-4 py-2.5 text-xs sm:text-sm font-semibold text-[#B45309] transition-all hover:bg-[#B45309]/10 disabled:opacity-60 dark:border-[#E2A856]/40 dark:bg-[#16151C] dark:text-[#E2A856] dark:hover:bg-[#E2A856]/15 cursor-pointer"
                 >
-                  <RotateCcw className="h-4 w-4" />
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  <span>Повторить</span>
                 </button>
               )}
               <button
