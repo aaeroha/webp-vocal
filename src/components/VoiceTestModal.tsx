@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import { VOICE_TEST_CONTENT, VOICE_TYPES, type VoiceTypeProfile } from '../data/content';
+import { playInstrumentSample, preloadInstrument } from '../utils/instrumentSampler';
 
 interface VoiceTestModalProps {
   isOpen: boolean;
@@ -255,45 +256,6 @@ function ConfettiFireworksCanvas() {
   );
 }
 
-/**
- * Play a soft filtered acoustic note for the karaoke guide melody.
- */
-function playGuideNote(ctx: AudioContext, freq: number, ms: number) {
-  const now = ctx.currentTime;
-  const dur = Math.max(0.15, ms / 1000);
-
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.setValueAtTime(Math.min(3600, freq * 5), now);
-  filter.frequency.exponentialRampToValueAtTime(Math.max(400, freq * 1.6), now + dur);
-
-  const osc1 = ctx.createOscillator();
-  const osc2 = ctx.createOscillator();
-  const gain = ctx.createGain();
-
-  osc1.type = 'sine';
-  osc1.frequency.setValueAtTime(freq, now);
-
-  osc2.type = 'triangle';
-  osc2.frequency.setValueAtTime(freq * 2, now);
-
-  const g2 = ctx.createGain();
-  g2.gain.value = 0.16;
-
-  gain.gain.setValueAtTime(0.0001, now);
-  gain.gain.linearRampToValueAtTime(0.12, now + 0.02);
-  gain.gain.exponentialRampToValueAtTime(0.001, now + dur * 0.95);
-
-  osc1.connect(filter);
-  osc2.connect(g2).connect(filter);
-  filter.connect(gain).connect(ctx.destination);
-
-  osc1.start(now);
-  osc2.start(now);
-  osc1.stop(now + dur + 0.05);
-  osc2.stop(now + dur + 0.05);
-}
-
 export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModalProps) {
   const [step, setStep] = useState<Step>('gender');
   const [gender, setGender] = useState<Gender>('female');
@@ -363,6 +325,9 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       cleanupAudio();
       return;
     }
+
+    // Quietly preload real piano samples for karaoke guide melody
+    preloadInstrument('piano').catch(() => {});
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -456,16 +421,22 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
       setIsRecording(true);
 
-      // Schedule karaoke melody + syllable highlight if singing a song
+      // Schedule karaoke melody + syllable highlight with real acoustic piano sample
       if (taskMode === 'song') {
+        await preloadInstrument('piano').catch(() => {});
         const pitchScale = gender === 'male' ? 0.5 : 1; // One octave lower for male comfort
         let offsetMs = 350;
 
         activeSong.syllables.forEach((syl, idx) => {
           const timerId = window.setTimeout(() => {
             setActiveSyllableIdx(idx);
-            if (guideAudioRef.current && audioCtxRef.current) {
-              playGuideNote(audioCtxRef.current, syl.freq * pitchScale, syl.ms);
+            if (guideAudioRef.current) {
+              playInstrumentSample(
+                syl.freq * pitchScale,
+                'piano',
+                Math.max(0.35, syl.ms / 1000 + 0.18),
+                0.34
+              ).catch(() => {});
             }
           }, offsetMs);
           karaokeTimersRef.current.push(timerId);

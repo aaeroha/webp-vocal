@@ -2,6 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Music, Play, Volume2 } from 'lucide-react';
 import { VOICE_TYPES } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
+import {
+  playInstrumentSample,
+  preloadInstrument,
+  type InstrumentType,
+} from '../utils/instrumentSampler';
 
 interface PianoKey {
   note: string;
@@ -10,8 +15,6 @@ interface PianoKey {
   freq: number;
   isBlack: boolean;
 }
-
-type InstrumentType = 'piano' | 'strings' | 'harpsichord' | 'organ';
 
 const INSTRUMENTS: { id: InstrumentType; label: string }[] = [
   { id: 'piano', label: 'Акустическое пианино' },
@@ -62,164 +65,31 @@ export function VocalPiano() {
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [isPlayingWarmup, setIsPlayingWarmup] = useState(false);
 
-  const audioCtxRef = useRef<AudioContext | null>(null);
   const warmupTimersRef = useRef<number[]>([]);
 
   const keys = registerMode === 'high' ? PIANO_KEYS_HIGH : PIANO_KEYS_LOW;
   const whiteKeys = keys.filter((k) => !k.isBlack);
   const selectedProfile = VOICE_TYPES.find((v) => v.id === selectedProfileId) ?? VOICE_TYPES[1];
 
-  const getAudioContext = useCallback(() => {
-    if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      audioCtxRef.current = new AudioCtx();
-    }
-    if (audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume().catch(() => {});
-    }
-    return audioCtxRef.current;
-  }, []);
+  // Quietly preload current instrument's real samples when piano becomes visible or instrument changes
+  useEffect(() => {
+    if (!isVisible) return;
+    preloadInstrument(instrument).catch(() => {});
+  }, [isVisible, instrument]);
 
-  /**
-   * Warm physical-inspired Web Audio synthesis for 4 distinct musical timbres:
-   * - Acoustic Piano (warm filtered multi-partial decay)
-   * - Strings (lush detuned bow ensemble)
-   * - Harpsichord (crisp baroque pluck)
-   * - Organ (drawbar cathedral pipes)
-   */
   const playTone = useCallback(
-    (key: PianoKey, durationSec = 1.1) => {
-      const ctx = getAudioContext();
-      const now = ctx.currentTime;
-      const masterGain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-
-      if (instrument === 'piano') {
-        // Acoustic Piano: warm fundamental + gentle 2nd & 3rd partials, struck hammer envelope
-        filter.frequency.setValueAtTime(Math.min(4800, key.freq * 7), now);
-        filter.frequency.exponentialRampToValueAtTime(Math.max(450, key.freq * 1.8), now + durationSec);
-
-        const osc1 = ctx.createOscillator();
-        const osc2 = ctx.createOscillator();
-        const osc3 = ctx.createOscillator();
-        const g1 = ctx.createGain();
-        const g2 = ctx.createGain();
-        const g3 = ctx.createGain();
-
-        osc1.type = 'sine';
-        osc1.frequency.setValueAtTime(key.freq, now);
-        g1.gain.value = 0.72;
-
-        osc2.type = 'triangle';
-        osc2.frequency.setValueAtTime(key.freq * 2, now);
-        osc2.detune.setValueAtTime(2.5, now);
-        g2.gain.value = 0.22;
-
-        osc3.type = 'sine';
-        osc3.frequency.setValueAtTime(key.freq * 3, now);
-        g3.gain.value = 0.08;
-
-        masterGain.gain.setValueAtTime(0.0001, now);
-        masterGain.gain.linearRampToValueAtTime(0.36, now + 0.015);
-        masterGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec + 0.25);
-
-        osc1.connect(g1).connect(filter);
-        osc2.connect(g2).connect(filter);
-        osc3.connect(g3).connect(filter);
-
-        [osc1, osc2, osc3].forEach((o) => {
-          o.start(now);
-          o.stop(now + durationSec + 0.3);
-        });
-      } else if (instrument === 'strings') {
-        // Lush Bowed String Ensemble: triple detuned sawtooth/triangle blend with slow attack
-        filter.frequency.setValueAtTime(Math.min(2600, key.freq * 4.5), now);
-        filter.Q.value = 0.7;
-
-        const detunes = [-8, 0, 8];
-        detunes.forEach((d) => {
-          const osc = ctx.createOscillator();
-          const g = ctx.createGain();
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(key.freq, now);
-          osc.detune.setValueAtTime(d, now);
-          g.gain.value = 0.16;
-          osc.connect(g).connect(filter);
-          osc.start(now);
-          osc.stop(now + durationSec + 0.35);
-        });
-
-        masterGain.gain.setValueAtTime(0.0001, now);
-        masterGain.gain.linearRampToValueAtTime(0.28, now + 0.16);
-        masterGain.gain.setValueAtTime(0.26, now + durationSec * 0.7);
-        masterGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec + 0.3);
-      } else if (instrument === 'harpsichord') {
-        // Baroque Harpsichord: crisp bright pluck with shimmering overtones
-        filter.frequency.setValueAtTime(5200, now);
-        filter.frequency.exponentialRampToValueAtTime(1100, now + durationSec * 0.75);
-
-        const osc1 = ctx.createOscillator();
-        const osc2 = ctx.createOscillator();
-        const g1 = ctx.createGain();
-        const g2 = ctx.createGain();
-
-        osc1.type = 'sawtooth';
-        osc1.frequency.setValueAtTime(key.freq, now);
-        g1.gain.value = 0.45;
-
-        osc2.type = 'square';
-        osc2.frequency.setValueAtTime(key.freq * 2, now);
-        g2.gain.value = 0.16;
-
-        masterGain.gain.setValueAtTime(0.0001, now);
-        masterGain.gain.linearRampToValueAtTime(0.3, now + 0.006);
-        masterGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec * 0.85);
-
-        osc1.connect(g1).connect(filter);
-        osc2.connect(g2).connect(filter);
-
-        [osc1, osc2].forEach((o) => {
-          o.start(now);
-          o.stop(now + durationSec);
-        });
-      } else {
-        // Concert Pipe Organ: pure drawbar sine ranks (8' + 4' + 2 2/3')
-        filter.frequency.setValueAtTime(3400, now);
-
-        const ranks = [
-          { mult: 1, vol: 0.55 },
-          { mult: 2, vol: 0.3 },
-          { mult: 3, vol: 0.14 },
-        ];
-        ranks.forEach((r) => {
-          const osc = ctx.createOscillator();
-          const g = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(key.freq * r.mult, now);
-          g.gain.value = r.vol;
-          osc.connect(g).connect(filter);
-          osc.start(now);
-          osc.stop(now + durationSec + 0.25);
-        });
-
-        masterGain.gain.setValueAtTime(0.0001, now);
-        masterGain.gain.linearRampToValueAtTime(0.28, now + 0.045);
-        masterGain.gain.setValueAtTime(0.27, now + durationSec * 0.75);
-        masterGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec + 0.22);
-      }
-
-      filter.connect(masterGain).connect(ctx.destination);
-
+    (key: PianoKey, durationSec = 1.6) => {
+      playInstrumentSample(key.freq, instrument, durationSec, 0.78).catch(() => {});
       setActiveNote(key.note);
       window.setTimeout(() => {
         setActiveNote((prev) => (prev === key.note ? null : prev));
-      }, Math.min(480, durationSec * 550));
+      }, 360);
     },
-    [getAudioContext, instrument]
+    [instrument]
   );
 
-  const playWarmupScale = () => {
+  const playWarmupScale = async () => {
+    await preloadInstrument(instrument).catch(() => {});
     warmupTimersRef.current.forEach((id) => window.clearTimeout(id));
     warmupTimersRef.current = [];
     setIsPlayingWarmup(true);
@@ -229,9 +99,9 @@ export function VocalPiano() {
       const targetKey = whiteKeys[wIdx];
       if (!targetKey) return;
       const timer = window.setTimeout(() => {
-        playTone(targetKey, 0.75);
+        playTone(targetKey, 0.9);
         if (step === sequenceIndices.length - 1) {
-          window.setTimeout(() => setIsPlayingWarmup(false), 650);
+          window.setTimeout(() => setIsPlayingWarmup(false), 750);
         }
       }, step * 440);
       warmupTimersRef.current.push(timer);
@@ -241,9 +111,6 @@ export function VocalPiano() {
   useEffect(() => {
     return () => {
       warmupTimersRef.current.forEach((id) => window.clearTimeout(id));
-      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-        audioCtxRef.current.close().catch(() => {});
-      }
     };
   }, []);
 
@@ -273,7 +140,7 @@ export function VocalPiano() {
                 Вокальное пианино для распевки и настройки слуха
               </h2>
               <p className="mt-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-base">
-                Нажимайте на клавиши, чтобы услышать чистую ноту и пропеть её в унисон. Выберите комфортный тембр инструмента и тип голоса.
+                Нажимайте на клавиши, чтобы услышать живое студийное звучание выбранного инструмента и пропеть ноту в унисон.
               </p>
             </div>
 
@@ -315,7 +182,7 @@ export function VocalPiano() {
             </div>
           </div>
 
-          {/* 4 Studio Instrument Timbres */}
+          {/* 4 Real Sampled Studio Instruments */}
           <div className="mt-5 flex flex-wrap items-center gap-2 border-b border-zinc-900/8 pb-4 dark:border-white/8">
             <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
               Тембр:
