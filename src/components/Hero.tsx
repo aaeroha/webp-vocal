@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CalendarCheck, ChevronDown } from 'lucide-react';
 import { HERO_CONTENT, STATS_CONTENT, type StatCounter } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
@@ -75,6 +75,33 @@ export function Hero({ onOpenBooking }: HeroProps) {
   const { ref: heroRef, isVisible: heroVisible } = useReveal({ threshold: 0.08 });
   const { ref: statsRef, isVisible: statsVisible } = useReveal({ threshold: 0.1 });
 
+  const [isDesktop, setIsDesktop] = useState<boolean>(() =>
+    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
+  );
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => setIsDesktop(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop || !videoRef.current) return;
+    const vid = videoRef.current;
+    vid.muted = true;
+    const attemptPlay = () => {
+      vid.play().catch(() => {
+        // Autoplay policy fallback handled silently
+      });
+    };
+    attemptPlay();
+    vid.addEventListener('canplay', attemptPlay);
+    return () => vid.removeEventListener('canplay', attemptPlay);
+  }, [isDesktop]);
+
   // H1 cycling typewriter
   const phrases = HERO_CONTENT.typewriterPhrases;
   const [phraseIndex, setPhraseIndex] = useState(0);
@@ -116,7 +143,6 @@ export function Hero({ onOpenBooking }: HeroProps) {
     if (subCount >= fullSubtitle.length) return;
 
     const timer = window.setTimeout(() => {
-      // Type smoothly ~2-3 chars per tick so the 280-char paragraph reads naturally in ~2.2s
       setSubCount((prev) => Math.min(fullSubtitle.length, prev + 2));
     }, 16);
 
@@ -133,19 +159,21 @@ export function Hero({ onOpenBooking }: HeroProps) {
       ref={heroRef}
       className="relative z-10 overflow-hidden pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-20 lg:pb-24"
     >
-      {/* Background video with fast poster preload */}
+      {/* Background video on desktop only; mobile shows clean ambient backdrop */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="metadata"
-          poster={HERO_CONTENT.posterUrl}
-          className="h-full w-full object-cover opacity-65 dark:opacity-72"
-        >
-          <source src={HERO_CONTENT.videoUrl} type="video/webm" />
-        </video>
+        {isDesktop && (
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            poster={HERO_CONTENT.posterUrl}
+            src={HERO_CONTENT.videoUrl}
+            className="h-full w-full object-cover opacity-68 dark:opacity-75"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/62 via-[#FAF8F5]/42 to-[#FAF8F5]/95 dark:from-[#0D0C10]/60 dark:via-[#0D0C10]/38 dark:to-[#0D0C10]/95" />
       </div>
 
@@ -166,7 +194,6 @@ export function Hero({ onOpenBooking }: HeroProps) {
 
           {/* Subtitle with height-reserved typewriter effect */}
           <div className="relative mt-4 max-w-2xl rounded-2xl bg-[#FAF8F5]/72 p-4 text-[15px] leading-[1.65] text-zinc-800 backdrop-blur-xs dark:bg-[#0D0C10]/62 dark:text-zinc-100 sm:p-5 sm:text-base lg:text-[1.0625rem]">
-            {/* Invisible spacer prevents any layout jump while typing */}
             <p aria-hidden="true" className="invisible select-none">
               {fullSubtitle}
             </p>

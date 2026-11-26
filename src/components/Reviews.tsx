@@ -96,7 +96,7 @@ export function Reviews() {
                 {REVIEWS_CONTENT.avitoRating}
               </span>
               <div className="leading-tight">
-                <div className="flex items-center gap-0.5 text-[#049A40] dark:text-[#04E061]">
+                <div className="flex items-center gap-0.5 text-[#F59E0B] dark:text-[#FACC15]">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star key={i} className="h-3.5 w-3.5 fill-current" />
                   ))}

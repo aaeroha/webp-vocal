@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CalendarCheck, Menu, X } from 'lucide-react';
+import { AudioWaveform, CalendarCheck, Menu, Mic, X } from 'lucide-react';
 import { NAV_LINKS, SITE_CONFIG } from '../data/content';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -7,9 +7,10 @@ interface HeaderProps {
   isDark: boolean;
   onToggleTheme: () => void;
   onOpenBooking: () => void;
+  onOpenVoiceTest: () => void;
 }
 
-export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
+export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -44,7 +45,7 @@ export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
             : 'bg-[#FAF8F5]/75 backdrop-blur-sm dark:bg-[#0D0C10]/75'
         }`}
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-18 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:h-18 sm:px-6 lg:px-8">
           {/* Left: Brand */}
           <a
             href="#top"
@@ -66,7 +67,7 @@ export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
           {/* Center: Desktop anchor links (> 1024px) */}
           <nav
             aria-label="Основная навигация"
-            className="hidden lg:flex items-center gap-6"
+            className="hidden xl:flex items-center gap-5"
           >
             {NAV_LINKS.map((link) => (
               <a
@@ -79,14 +80,28 @@ export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
             ))}
           </nav>
 
-          {/* Right: ThemeToggle, Unified Booking CTA, and Mobile/Tablet Burger */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          {/* Right: Prominent Voice Test CTA + ThemeToggle + Booking CTA + Mobile Burger */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            <button
+              type="button"
+              onClick={onOpenVoiceTest}
+              className="group relative inline-flex h-10 items-center gap-1.5 rounded-full border border-[#B45309]/35 bg-[#F2EDE6]/95 px-3 text-xs font-semibold text-[#B45309] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309] hover:bg-[#FAF8F5] dark:border-[#E2A856]/40 dark:bg-[#16151C] dark:text-[#E2A856] dark:hover:border-[#E2A856] sm:px-3.5 sm:text-sm cursor-pointer"
+            >
+              <span className="relative flex h-2 w-2 shrink-0">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#B45309] dark:bg-[#E2A856]" />
+              </span>
+              <Mic className="h-3.5 w-3.5 shrink-0" />
+              <span className="hidden sm:inline">Тест голоса</span>
+              <span className="sm:hidden">Тест</span>
+            </button>
+
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 
             <button
               type="button"
               onClick={onOpenBooking}
-              className="btn-sheen inline-flex h-10 items-center gap-2 rounded-full bg-[#B45309] px-3.5 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow sm:px-4 sm:text-sm cursor-pointer"
+              className="btn-sheen inline-flex h-10 items-center gap-1.5 rounded-full bg-[#B45309] px-3 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow sm:px-4 sm:text-sm cursor-pointer"
             >
               <CalendarCheck className="h-3.5 w-3.5 shrink-0" />
               <span>Записаться</span>
@@ -97,7 +112,7 @@ export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
               onClick={() => setMenuOpen(true)}
               aria-label="Открыть меню навигации"
               aria-expanded={menuOpen}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:border-[#B45309]/40 hover:text-[#B45309] dark:border-white/10 dark:bg-[#16151C] dark:text-[#F5F3EF] dark:hover:border-[#E2A856]/50 dark:hover:text-[#E2A856] lg:hidden cursor-pointer"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:border-[#B45309]/40 hover:text-[#B45309] dark:border-white/10 dark:bg-[#16151C] dark:text-[#F5F3EF] dark:hover:border-[#E2A856]/50 dark:hover:text-[#E2A856] xl:hidden cursor-pointer"
             >
               <Menu className="h-5 w-5" />
             </button>
@@ -105,10 +120,10 @@ export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
         </div>
       </header>
 
-      {/* Slide-out drawer for tablet & mobile (< 1024px) */}
+      {/* Slide-out drawer for tablet & mobile (< 1280px) */}
       <div
         aria-hidden={!menuOpen}
-        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 z-50 xl:hidden transition-opacity duration-300 ${
           menuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
       >
@@ -122,7 +137,7 @@ export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
             menuOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
         >
-          <div>
+          <div className="overflow-y-auto">
             <div className="flex items-center justify-between border-b border-zinc-900/10 pb-4 dark:border-white/10">
               <div>
                 <p className="font-serif text-xl font-semibold text-zinc-900 dark:text-[#F5F3EF]">
@@ -142,13 +157,13 @@ export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
               </button>
             </div>
 
-            <nav aria-label="Мобильная навигация" className="mt-6 flex flex-col gap-2">
+            <nav aria-label="Мобильная навигация" className="mt-5 flex flex-col gap-1.5">
               {NAV_LINKS.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="rounded-xl px-4 py-3 text-base font-medium text-zinc-800 transition-colors hover:bg-[#F2EDE6] hover:text-[#B45309] dark:text-[#F5F3EF] dark:hover:bg-[#16151C] dark:hover:text-[#E2A856]"
+                  className="rounded-xl px-4 py-2.5 text-base font-medium text-zinc-800 transition-colors hover:bg-[#F2EDE6] hover:text-[#B45309] dark:text-[#F5F3EF] dark:hover:bg-[#16151C] dark:hover:text-[#E2A856]"
                 >
                   {link.label}
                 </a>
@@ -156,7 +171,19 @@ export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
             </nav>
           </div>
 
-          <div className="border-t border-zinc-900/10 pt-5 dark:border-white/10">
+          <div className="space-y-2.5 border-t border-zinc-900/10 pt-4 dark:border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onOpenVoiceTest();
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-[#B45309]/40 bg-[#F2EDE6] px-5 py-3 text-sm font-semibold text-[#B45309] dark:border-[#E2A856]/40 dark:bg-[#16151C] dark:text-[#E2A856] cursor-pointer"
+            >
+              <AudioWaveform className="h-4 w-4" />
+              Пройти тест голоса
+            </button>
+
             <button
               type="button"
               onClick={() => {

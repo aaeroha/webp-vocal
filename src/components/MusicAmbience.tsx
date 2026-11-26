@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 
 const LIGHT_NOTES = [
-  { top: '14%', left: '4%', size: 'w-7 h-7', parallax: -0.06, variant: 'single', reverse: false, delay: '0s' },
-  { top: '24%', right: '5%', size: 'w-8 h-8', parallax: -0.05, variant: 'double', reverse: true, delay: '0.6s' },
-  { top: '39%', left: '7%', size: 'w-6 h-6', parallax: -0.08, variant: 'double', reverse: false, delay: '1.1s' },
-  { top: '52%', right: '4%', size: 'w-9 h-9', parallax: -0.06, variant: 'single', reverse: true, delay: '0.3s' },
-  { top: '65%', left: '5%', size: 'w-8 h-8', parallax: -0.07, variant: 'single', reverse: false, delay: '1.5s' },
-  { top: '76%', right: '7%', size: 'w-7 h-7', parallax: -0.05, variant: 'double', reverse: true, delay: '0.9s' },
-  { top: '88%', left: '8%', size: 'w-6 h-6', parallax: -0.06, variant: 'single', reverse: false, delay: '1.8s' },
-  { top: '91%', right: '9%', size: 'w-7 h-7', parallax: -0.04, variant: 'double', reverse: true, delay: '0.4s' },
+  { top: '12%', left: '3%', size: 'w-8 h-8', parallax: -0.08, variant: 'single', reverse: false, delay: '0s' },
+  { top: '21%', right: '4%', size: 'w-9 h-9', parallax: -0.06, variant: 'double', reverse: true, delay: '0.4s' },
+  { top: '34%', left: '5%', size: 'w-7 h-7', parallax: -0.1, variant: 'double', reverse: false, delay: '0.8s' },
+  { top: '45%', right: '3%', size: 'w-10 h-10', parallax: -0.07, variant: 'single', reverse: true, delay: '0.2s' },
+  { top: '57%', left: '4%', size: 'w-9 h-9', parallax: -0.09, variant: 'single', reverse: false, delay: '1.1s' },
+  { top: '68%', right: '5%', size: 'w-8 h-8', parallax: -0.06, variant: 'double', reverse: true, delay: '0.6s' },
+  { top: '79%', left: '6%', size: 'w-7 h-7', parallax: -0.08, variant: 'double', reverse: false, delay: '1.4s' },
+  { top: '87%', right: '6%', size: 'w-8 h-8', parallax: -0.05, variant: 'single', reverse: true, delay: '0.3s' },
 ];
 
 export function MusicAmbience() {
@@ -60,31 +60,31 @@ export function MusicAmbience() {
         <div className="absolute -top-32 right-[10%] h-[420px] w-[420px] rounded-full bg-[#C26D3A]/[0.06] blur-3xl dark:bg-[#E2A856]/[0.08]" />
         <div className="absolute top-[45%] -left-32 h-[380px] w-[380px] rounded-full bg-[#B45309]/[0.05] blur-3xl dark:bg-[#E2A856]/[0.06]" />
 
-        {/* LIGHT MODE: Musical staff, treble clef & drifting notes */}
+        {/* LIGHT MODE: Lively, clearly visible dancing musical notes & treble clef */}
         <div className="block dark:hidden">
           <svg
             viewBox="0 0 1440 220"
             fill="none"
-            className="absolute top-28 left-0 w-full opacity-[0.09] text-[#B45309]"
+            className="animate-wave-flow absolute top-28 left-0 w-full opacity-[0.14] text-[#B45309]"
             style={{ transform: `translateY(${scrollY * -0.04}px)` }}
           >
-            <path d="M-40 60 C 320 20, 680 100, 1480 45" stroke="currentColor" strokeWidth="1" />
-            <path d="M-40 74 C 320 34, 680 114, 1480 59" stroke="currentColor" strokeWidth="1" />
-            <path d="M-40 88 C 320 48, 680 128, 1480 73" stroke="currentColor" strokeWidth="1" />
-            <path d="M-40 102 C 320 62, 680 142, 1480 87" stroke="currentColor" strokeWidth="1" />
-            <path d="M-40 116 C 320 76, 680 156, 1480 101" stroke="currentColor" strokeWidth="1" />
+            <path d="M-40 60 C 320 20, 680 100, 1480 45" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M-40 74 C 320 34, 680 114, 1480 59" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M-40 88 C 320 48, 680 128, 1480 73" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M-40 102 C 320 62, 680 142, 1480 87" stroke="currentColor" strokeWidth="1.2" />
+            <path d="M-40 116 C 320 76, 680 156, 1480 101" stroke="currentColor" strokeWidth="1.2" />
           </svg>
 
           <svg
             viewBox="0 0 120 240"
             fill="none"
-            className="hidden lg:block absolute top-40 right-12 w-24 opacity-[0.11] text-[#B45309]"
+            className="animate-float-note hidden lg:block absolute top-40 right-12 w-24 opacity-[0.18] text-[#B45309]"
             style={{ transform: `translateY(${scrollY * 0.06}px)` }}
           >
             <path
               d="M62 215 C 40 215, 28 198, 35 182 C 42 167, 63 172, 63 188 C 63 198, 53 203, 47 200 M62 215 C 76 215, 80 198, 76 175 L 57 42 C 55 24, 69 14, 78 24 C 87 34, 77 56, 56 76 C 32 98, 22 122, 34 146 C 46 169, 82 168, 92 142 C 100 121, 84 101, 63 105 C 46 108, 41 126, 52 138"
               stroke="currentColor"
-              strokeWidth="2.2"
+              strokeWidth="2.4"
               strokeLinecap="round"
             />
           </svg>
@@ -92,7 +92,7 @@ export function MusicAmbience() {
           {LIGHT_NOTES.map((note, index) => (
             <div
               key={index}
-              className="absolute text-[#B45309]/28"
+              className="absolute text-[#B45309]/55 drop-shadow-[0_2px_6px_rgba(180,83,9,0.18)]"
               style={{
                 top: note.top,
                 left: note.left,
@@ -118,7 +118,6 @@ export function MusicAmbience() {
 
         {/* DARK MODE: Elegant flowing multi-layer SVG Waveform */}
         <div className="hidden dark:block">
-          {/* Upper-mid flowing acoustic waveform */}
           <svg
             viewBox="0 0 1600 240"
             fill="none"
@@ -154,7 +153,6 @@ export function MusicAmbience() {
             />
           </svg>
 
-          {/* Lower flowing harmonic waveform */}
           <svg
             viewBox="0 0 1600 220"
             fill="none"

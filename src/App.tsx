@@ -42,13 +42,14 @@ export function App() {
   }, [isDark]);
 
   const openBooking = () => setBookingOpen(true);
+  const openVoiceTest = () => setVoiceTestOpen(true);
 
   return (
     <div className="relative min-h-screen bg-[#FAF8F5] text-[#18181B] transition-colors duration-300 dark:bg-[#0D0C10] dark:text-[#F5F3EF]">
       <RetroMicCursor />
       <MusicAmbience />
       <VinylPlayer />
-      <VoiceTestTrigger onOpen={() => setVoiceTestOpen(true)} />
+      <VoiceTestTrigger onOpen={openVoiceTest} />
 
       <BookingModal isOpen={bookingOpen} onClose={() => setBookingOpen(false)} />
       <VoiceTestModal
@@ -61,14 +62,15 @@ export function App() {
         isDark={isDark}
         onToggleTheme={() => setIsDark((prev) => !prev)}
         onOpenBooking={openBooking}
+        onOpenVoiceTest={openVoiceTest}
       />
 
       <main>
         <Hero onOpenBooking={openBooking} />
         <About />
-        <Certificates />
         <Formats onOpenBooking={openBooking} />
         <VocalPiano />
+        <Certificates />
         <Reviews />
         <FaqAccordion />
         <Contacts isDark={isDark} onOpenBooking={openBooking} />

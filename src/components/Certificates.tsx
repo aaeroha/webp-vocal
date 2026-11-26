@@ -1,12 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Award, ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
 import { CERTIFICATES_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
+
+const GRADUATION_CAPS = [
+  { left: '6%', delay: '0s', dx1: '14px', dx2: '32px', r0: '-28deg', r1: '155deg', r2: '340deg', size: 32 },
+  { left: '16%', delay: '0.18s', dx1: '-22px', dx2: '-36px', r0: '18deg', r1: '-140deg', r2: '-310deg', size: 28 },
+  { left: '28%', delay: '0.08s', dx1: '24px', dx2: '44px', r0: '-15deg', r1: '180deg', r2: '365deg', size: 34 },
+  { left: '39%', delay: '0.32s', dx1: '-18px', dx2: '-28px', r0: '22deg', r1: '-165deg', r2: '-345deg', size: 26 },
+  { left: '51%', delay: '0.12s', dx1: '16px', dx2: '38px', r0: '-30deg', r1: '140deg', r2: '320deg', size: 36 },
+  { left: '63%', delay: '0.26s', dx1: '-25px', dx2: '-42px', r0: '12deg', r1: '-170deg', r2: '-355deg', size: 30 },
+  { left: '74%', delay: '0.05s', dx1: '20px', dx2: '30px', r0: '-20deg', r1: '165deg', r2: '350deg', size: 33 },
+  { left: '85%', delay: '0.22s', dx1: '-16px', dx2: '-34px', r0: '26deg', r1: '-150deg', r2: '-330deg', size: 29 },
+  { left: '93%', delay: '0.14s', dx1: '-14px', dx2: '-26px', r0: '-10deg', r1: '190deg', r2: '380deg', size: 31 },
+];
+
+function GraduationCapSvg({ size }: { size: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Mortarboard top square diamond */}
+      <path d="M20 7L37 15L20 23L3 15L20 7Z" fill="#18181B" stroke="#E2A856" strokeWidth="1.2" className="dark:fill-[#27272A]" />
+      {/* Cap skull base */}
+      <path d="M11 19.2V26.5C11 28.8 15 30.8 20 30.8C25 30.8 29 28.8 29 26.5V19.2L20 23.6L11 19.2Z" fill="#27272A" stroke="#E2A856" strokeWidth="1" className="dark:fill-[#3F3F46]" />
+      {/* Gold tassel cord & fringe */}
+      <path d="M20 15L32.5 20.5V28.5" stroke="#F59E0B" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="20" cy="15" r="1.4" fill="#FACC15" />
+      <path d="M31 28.5H34L34.6 33H30.4L31 28.5Z" fill="#FACC15" />
+    </svg>
+  );
+}
 
 export function Certificates() {
   const items = CERTIFICATES_CONTENT.items;
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const { ref, isVisible } = useReveal({ threshold: 0.08 });
+  const [tossGeneration, setTossGeneration] = useState(0);
+
+  // Trigger a fresh graduation cap toss whenever section enters viewport
+  useEffect(() => {
+    if (isVisible) {
+      setTossGeneration((g) => g + 1);
+    }
+  }, [isVisible]);
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
   const isModalOpen = selectedIndex !== null;
@@ -45,10 +80,39 @@ export function Certificates() {
   const trackItems = [...items, ...items];
 
   return (
-    <section id="certificates" className="relative z-10 py-14 sm:py-20 lg:py-24">
+    <section id="certificates" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
+      {/* University Graduation Cap Toss Layer */}
+      {isVisible && tossGeneration > 0 && (
+        <div
+          key={tossGeneration}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-12 z-20 h-64 overflow-visible"
+        >
+          {GRADUATION_CAPS.map((cap, idx) => (
+            <div
+              key={idx}
+              className="animate-cap-toss absolute bottom-0"
+              style={
+                {
+                  left: cap.left,
+                  animationDelay: cap.delay,
+                  '--cap-dx1': cap.dx1,
+                  '--cap-dx2': cap.dx2,
+                  '--cap-r0': cap.r0,
+                  '--cap-r1': cap.r1,
+                  '--cap-r2': cap.r2,
+                } as CSSProperties
+              }
+            >
+              <GraduationCapSvg size={cap.size} />
+            </div>
+          ))}
+        </div>
+      )}
+
       <div
         ref={ref}
-        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+        className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
       >
         <div className={`reveal-left max-w-2xl ${isVisible ? 'is-visible' : ''}`}>
           <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
@@ -69,7 +133,6 @@ export function Certificates() {
             isVisible ? 'is-visible' : ''
           }`}
         >
-          {/* Soft edge fade gradients inside container */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"

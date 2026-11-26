@@ -34,14 +34,7 @@
 /* Custom 1950s Retro Vocal Microphone Cursor on Precision Pointer Devices */
 @media (hover: hover) and (pointer: fine) {
   html.mic-cursor-active,
-  html.mic-cursor-active body,
-  html.mic-cursor-active a,
-  html.mic-cursor-active button,
-  html.mic-cursor-active [role="button"],
-  html.mic-cursor-active summary,
-  html.mic-cursor-active input,
-  html.mic-cursor-active select,
-  html.mic-cursor-active label {
+  html.mic-cursor-active * {
     cursor: none !important;
   }
 }
@@ -87,23 +80,55 @@
   transform: translate3d(0, 0, 0) scale(1);
 }
 
-/* Floating musical notes keyframes (Light mode) */
+/* Lively floating & swaying musical notes keyframes (Light mode) */
 @keyframes floatNoteSlow {
   0%, 100% {
-    transform: translateY(0px) rotate(-4deg);
+    transform: translate3d(0px, 0px, 0) rotate(-10deg) scale(1);
   }
-  50% {
-    transform: translateY(-16px) rotate(6deg);
+  33% {
+    transform: translate3d(10px, -24px, 0) rotate(8deg) scale(1.1);
+  }
+  66% {
+    transform: translate3d(-8px, -12px, 0) rotate(-4deg) scale(0.96);
   }
 }
 
 @keyframes floatNoteReverse {
   0%, 100% {
-    transform: translateY(0px) rotate(4deg);
+    transform: translate3d(0px, 0px, 0) rotate(10deg) scale(1);
   }
-  50% {
-    transform: translateY(14px) rotate(-6deg);
+  33% {
+    transform: translate3d(-12px, 22px, 0) rotate(-10deg) scale(1.1);
   }
+  66% {
+    transform: translate3d(9px, 10px, 0) rotate(5deg) scale(0.95);
+  }
+}
+
+/* Graduation cap toss animation for Certificates & Diplomas */
+@keyframes capToss {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 140px, 0) rotate(var(--cap-r0, -25deg)) scale(0.75);
+  }
+  12% {
+    opacity: 0.95;
+  }
+  42% {
+    opacity: 0.95;
+    transform: translate3d(var(--cap-dx1, 18px), -145px, 0) rotate(var(--cap-r1, 160deg)) scale(1.08);
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--cap-dx2, 36px), 170px, 0) rotate(var(--cap-r2, 340deg)) scale(0.85);
+  }
+}
+
+.animate-cap-toss {
+  animation: capToss 2.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 }
 
 /* Elegant flowing waveform keyframes (Dark mode) */
@@ -147,7 +172,7 @@
 
 .animate-vinyl-spin {
   animation: vinylSpin 3.2s linear infinite;
-  transform-origin: 48px 54px;
+  transform-origin: 50px 55px;
 }
 
 @keyframes soundPulse {
@@ -186,11 +211,11 @@
 }
 
 .animate-float-note {
-  animation: floatNoteSlow 7s ease-in-out infinite;
+  animation: floatNoteSlow 4.2s ease-in-out infinite;
 }
 
 .animate-float-note-reverse {
-  animation: floatNoteReverse 8.5s ease-in-out infinite;
+  animation: floatNoteReverse 4.8s ease-in-out infinite;
 }
 
 .animate-wave-flow {
@@ -277,7 +302,8 @@
   .animate-wave-flow-reverse,
   .animate-cert-marquee,
   .animate-sound-bar,
-  .animate-vinyl-spin {
+  .animate-vinyl-spin,
+  .animate-cap-toss {
     animation: none;
   }
 }

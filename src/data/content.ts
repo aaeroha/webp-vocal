@@ -96,9 +96,9 @@ export const SITE_CONFIG = {
 
 export const NAV_LINKS: NavLink[] = [
   { label: 'Обо мне', href: '#about' },
-  { label: 'Сертификаты', href: '#certificates' },
   { label: 'Занятия', href: '#formats' },
   { label: 'Пианино', href: '#vocal-piano' },
+  { label: 'Сертификаты', href: '#certificates' },
   { label: 'Отзывы', href: '#reviews' },
   { label: 'Вопросы', href: '#faq' },
   { label: 'Контакты', href: '#contacts' },

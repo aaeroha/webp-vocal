@@ -6,8 +6,8 @@ interface VoiceTestTriggerProps {
 }
 
 /**
- * Appears gracefully in the bottom-left corner after scrolling past 1-2 blocks (~750px),
- * inviting the visitor to take the interactive Voice Type & Pitch Test modal.
+ * Appears gracefully in the bottom-left corner after scrolling past 1-2 blocks (~480px),
+ * catching attention with a pulsing mic indicator and acoustic wave animation.
  */
 export function VoiceTestTrigger({ onOpen }: VoiceTestTriggerProps) {
   const [visible, setVisible] = useState(false);
@@ -15,11 +15,7 @@ export function VoiceTestTrigger({ onOpen }: VoiceTestTriggerProps) {
 
   useEffect(() => {
     const onScroll = () => {
-      if (window.scrollY > 750) {
-        setVisible(true);
-      } else {
-        setVisible(false);
-      }
+      setVisible(window.scrollY > 480);
     };
 
     onScroll();
@@ -42,31 +38,29 @@ export function VoiceTestTrigger({ onOpen }: VoiceTestTriggerProps) {
           type="button"
           onClick={onOpen}
           aria-label="Пройти тест на вокальные способности"
-          className="btn-sheen flex items-center gap-2.5 rounded-full border border-[#B45309]/40 bg-[#FAF8F5]/95 pl-2.5 pr-4 py-2 text-left shadow-xl backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309] hover:shadow-amber-500/20 dark:border-[#E2A856]/40 dark:bg-[#16151C]/95 dark:hover:border-[#E2A856] dark:gold-glow cursor-pointer"
+          className="btn-sheen flex items-center gap-2.5 rounded-full border-2 border-[#B45309]/55 bg-[#FAF8F5]/95 pl-2 pr-4 py-2 text-left shadow-2xl shadow-amber-900/15 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309] dark:border-[#E2A856]/55 dark:bg-[#16151C]/95 dark:hover:border-[#E2A856] dark:gold-glow cursor-pointer"
         >
-          {/* Animated pulsing mic icon */}
-          <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#B45309] to-[#D97706] text-white shadow-sm dark:from-[#E2A856] dark:to-[#F3C884] dark:text-[#0D0C10]">
-            <span className="absolute inset-0 animate-ping rounded-full bg-amber-400/45 opacity-75" />
-            <Mic className="relative h-4 w-4" />
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#B45309] to-[#D97706] text-white shadow-sm dark:from-[#E2A856] dark:to-[#F3C884] dark:text-[#0D0C10]">
+            <span className="absolute inset-0 animate-ping rounded-full bg-amber-400/55 opacity-75" />
+            <Mic className="relative h-4.5 w-4.5" />
           </span>
 
           <div className="leading-tight">
             <span className="flex items-center gap-1.5 text-xs font-bold text-zinc-900 dark:text-[#F5F3EF] sm:text-sm">
-              <span>Тест голоса</span>
+              <span>Проверь свой голос</span>
               <AudioWaveform className="h-3.5 w-3.5 text-[#B45309] dark:text-[#E2A856] animate-pulse" />
             </span>
-            <span className="hidden text-[11px] text-zinc-500 dark:text-zinc-400 sm:block">
-              Узнайте ваш тембр за 10 сек
+            <span className="block text-[10.5px] font-medium text-[#B45309] dark:text-[#E2A856] sm:text-[11px]">
+              Бесплатный онлайн-тест за 10 сек
             </span>
           </div>
         </button>
 
-        {/* Subtle close/hide button */}
         <button
           type="button"
           onClick={() => setDismissed(true)}
           aria-label="Скрыть приглашение на тест голоса"
-          className="ml-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-900/10 bg-[#FAF8F5]/90 text-zinc-500 opacity-75 shadow-sm transition hover:opacity-100 hover:text-zinc-900 dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
+          className="ml-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/95 text-zinc-500 opacity-80 shadow-sm transition hover:opacity-100 hover:text-zinc-900 dark:border-white/15 dark:bg-[#16151C]/95 dark:text-zinc-400 dark:hover:text-white cursor-pointer"
         >
           <X className="h-3 w-3" />
         </button>

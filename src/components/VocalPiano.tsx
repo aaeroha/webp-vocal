@@ -9,23 +9,31 @@ interface PianoKey {
   sciLabel: string;
   freq: number;
   isBlack: boolean;
-  kbd?: string;
 }
 
+type InstrumentType = 'piano' | 'strings' | 'harpsichord' | 'organ';
+
+const INSTRUMENTS: { id: InstrumentType; label: string }[] = [
+  { id: 'piano', label: 'Акустическое пианино' },
+  { id: 'strings', label: 'Струнные' },
+  { id: 'harpsichord', label: 'Клавесин' },
+  { id: 'organ', label: 'Орган' },
+];
+
 const PIANO_KEYS_HIGH: PianoKey[] = [
-  { note: 'C4', labelRu: 'До', sciLabel: 'c1', freq: 261.63, isBlack: false, kbd: 'A' },
-  { note: 'C#4', labelRu: 'До♯', sciLabel: 'c#1', freq: 277.18, isBlack: true, kbd: 'W' },
-  { note: 'D4', labelRu: 'Ре', sciLabel: 'd1', freq: 293.66, isBlack: false, kbd: 'S' },
-  { note: 'D#4', labelRu: 'Ми♭', sciLabel: 'eb1', freq: 311.13, isBlack: true, kbd: 'E' },
-  { note: 'E4', labelRu: 'Ми', sciLabel: 'e1', freq: 329.63, isBlack: false, kbd: 'D' },
-  { note: 'F4', labelRu: 'Фа', sciLabel: 'f1', freq: 349.23, isBlack: false, kbd: 'F' },
-  { note: 'F#4', labelRu: 'Фа♯', sciLabel: 'f#1', freq: 369.99, isBlack: true, kbd: 'T' },
-  { note: 'G4', labelRu: 'Соль', sciLabel: 'g1', freq: 392.0, isBlack: false, kbd: 'G' },
-  { note: 'G#4', labelRu: 'Соль♯', sciLabel: 'g#1', freq: 415.3, isBlack: true, kbd: 'Y' },
-  { note: 'A4', labelRu: 'Ля', sciLabel: 'a1', freq: 440.0, isBlack: false, kbd: 'H' },
-  { note: 'A#4', labelRu: 'Си♭', sciLabel: 'bb1', freq: 466.16, isBlack: true, kbd: 'U' },
-  { note: 'B4', labelRu: 'Си', sciLabel: 'h1', freq: 493.88, isBlack: false, kbd: 'J' },
-  { note: 'C5', labelRu: 'До', sciLabel: 'c2', freq: 523.25, isBlack: false, kbd: 'K' },
+  { note: 'C4', labelRu: 'До', sciLabel: 'c1', freq: 261.63, isBlack: false },
+  { note: 'C#4', labelRu: 'До♯', sciLabel: 'c#1', freq: 277.18, isBlack: true },
+  { note: 'D4', labelRu: 'Ре', sciLabel: 'd1', freq: 293.66, isBlack: false },
+  { note: 'D#4', labelRu: 'Ми♭', sciLabel: 'eb1', freq: 311.13, isBlack: true },
+  { note: 'E4', labelRu: 'Ми', sciLabel: 'e1', freq: 329.63, isBlack: false },
+  { note: 'F4', labelRu: 'Фа', sciLabel: 'f1', freq: 349.23, isBlack: false },
+  { note: 'F#4', labelRu: 'Фа♯', sciLabel: 'f#1', freq: 369.99, isBlack: true },
+  { note: 'G4', labelRu: 'Соль', sciLabel: 'g1', freq: 392.0, isBlack: false },
+  { note: 'G#4', labelRu: 'Соль♯', sciLabel: 'g#1', freq: 415.3, isBlack: true },
+  { note: 'A4', labelRu: 'Ля', sciLabel: 'a1', freq: 440.0, isBlack: false },
+  { note: 'A#4', labelRu: 'Си♭', sciLabel: 'bb1', freq: 466.16, isBlack: true },
+  { note: 'B4', labelRu: 'Си', sciLabel: 'h1', freq: 493.88, isBlack: false },
+  { note: 'C5', labelRu: 'До', sciLabel: 'c2', freq: 523.25, isBlack: false },
 ];
 
 const PIANO_KEYS_LOW: PianoKey[] = [
@@ -33,22 +41,23 @@ const PIANO_KEYS_LOW: PianoKey[] = [
   { note: 'F#2', labelRu: 'Фа♯', sciLabel: 'F#', freq: 92.5, isBlack: true },
   { note: 'G2', labelRu: 'Соль', sciLabel: 'G', freq: 98.0, isBlack: false },
   { note: 'G#2', labelRu: 'Соль♯', sciLabel: 'G#', freq: 103.83, isBlack: true },
-  { note: 'A2', labelRu: 'Ля', sciLabel: 'A', freq: 110.0, isBlack: false, kbd: 'A' },
-  { note: 'A#2', labelRu: 'Си♭', sciLabel: 'B', freq: 116.54, isBlack: true, kbd: 'W' },
-  { note: 'B2', labelRu: 'Си', sciLabel: 'H', freq: 123.47, isBlack: false, kbd: 'S' },
-  { note: 'C3', labelRu: 'До', sciLabel: 'c', freq: 130.81, isBlack: false, kbd: 'D' },
-  { note: 'C#3', labelRu: 'До♯', sciLabel: 'c#', freq: 138.59, isBlack: true, kbd: 'R' },
-  { note: 'D3', labelRu: 'Ре', sciLabel: 'd', freq: 146.83, isBlack: false, kbd: 'F' },
-  { note: 'D#3', labelRu: 'Ми♭', sciLabel: 'eb', freq: 155.56, isBlack: true, kbd: 'T' },
-  { note: 'E3', labelRu: 'Ми', sciLabel: 'e', freq: 164.81, isBlack: false, kbd: 'G' },
-  { note: 'F3', labelRu: 'Фа', sciLabel: 'f', freq: 174.61, isBlack: false, kbd: 'H' },
-  { note: 'G3', labelRu: 'Соль', sciLabel: 'g', freq: 196.0, isBlack: false, kbd: 'J' },
-  { note: 'A3', labelRu: 'Ля', sciLabel: 'a', freq: 220.0, isBlack: false, kbd: 'K' },
+  { note: 'A2', labelRu: 'Ля', sciLabel: 'A', freq: 110.0, isBlack: false },
+  { note: 'A#2', labelRu: 'Си♭', sciLabel: 'B', freq: 116.54, isBlack: true },
+  { note: 'B2', labelRu: 'Си', sciLabel: 'H', freq: 123.47, isBlack: false },
+  { note: 'C3', labelRu: 'До', sciLabel: 'c', freq: 130.81, isBlack: false },
+  { note: 'C#3', labelRu: 'До♯', sciLabel: 'c#', freq: 138.59, isBlack: true },
+  { note: 'D3', labelRu: 'Ре', sciLabel: 'd', freq: 146.83, isBlack: false },
+  { note: 'D#3', labelRu: 'Ми♭', sciLabel: 'eb', freq: 155.56, isBlack: true },
+  { note: 'E3', labelRu: 'Ми', sciLabel: 'e', freq: 164.81, isBlack: false },
+  { note: 'F3', labelRu: 'Фа', sciLabel: 'f', freq: 174.61, isBlack: false },
+  { note: 'G3', labelRu: 'Соль', sciLabel: 'g', freq: 196.0, isBlack: false },
+  { note: 'A3', labelRu: 'Ля', sciLabel: 'a', freq: 220.0, isBlack: false },
 ];
 
 export function VocalPiano() {
   const { ref, isVisible } = useReveal({ threshold: 0.08 });
   const [registerMode, setRegisterMode] = useState<'high' | 'low'>('high');
+  const [instrument, setInstrument] = useState<InstrumentType>('piano');
   const [selectedProfileId, setSelectedProfileId] = useState<string>('mezzo');
   const [activeNote, setActiveNote] = useState<string | null>(null);
   const [isPlayingWarmup, setIsPlayingWarmup] = useState(false);
@@ -71,44 +80,143 @@ export function VocalPiano() {
     return audioCtxRef.current;
   }, []);
 
+  /**
+   * Warm physical-inspired Web Audio synthesis for 4 distinct musical timbres:
+   * - Acoustic Piano (warm filtered multi-partial decay)
+   * - Strings (lush detuned bow ensemble)
+   * - Harpsichord (crisp baroque pluck)
+   * - Organ (drawbar cathedral pipes)
+   */
   const playTone = useCallback(
-    (key: PianoKey, durationSec = 0.85) => {
+    (key: PianoKey, durationSec = 1.1) => {
       const ctx = getAudioContext();
       const now = ctx.currentTime;
+      const masterGain = ctx.createGain();
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
 
-      // Rich warm electric piano synthesis: fundamental + 2nd harmonic
-      const osc1 = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const harmonicGain = ctx.createGain();
+      if (instrument === 'piano') {
+        // Acoustic Piano: warm fundamental + gentle 2nd & 3rd partials, struck hammer envelope
+        filter.frequency.setValueAtTime(Math.min(4800, key.freq * 7), now);
+        filter.frequency.exponentialRampToValueAtTime(Math.max(450, key.freq * 1.8), now + durationSec);
 
-      osc1.type = 'triangle';
-      osc1.frequency.setValueAtTime(key.freq, now);
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const osc3 = ctx.createOscillator();
+        const g1 = ctx.createGain();
+        const g2 = ctx.createGain();
+        const g3 = ctx.createGain();
 
-      osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(key.freq * 2, now);
-      harmonicGain.gain.setValueAtTime(0.18, now);
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(key.freq, now);
+        g1.gain.value = 0.72;
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.28, now + 0.025);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + durationSec);
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(key.freq * 2, now);
+        osc2.detune.setValueAtTime(2.5, now);
+        g2.gain.value = 0.22;
 
-      osc1.connect(gain);
-      osc2.connect(harmonicGain);
-      harmonicGain.connect(gain);
-      gain.connect(ctx.destination);
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(key.freq * 3, now);
+        g3.gain.value = 0.08;
 
-      osc1.start(now);
-      osc2.start(now);
-      osc1.stop(now + durationSec + 0.05);
-      osc2.stop(now + durationSec + 0.05);
+        masterGain.gain.setValueAtTime(0.0001, now);
+        masterGain.gain.linearRampToValueAtTime(0.36, now + 0.015);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec + 0.25);
+
+        osc1.connect(g1).connect(filter);
+        osc2.connect(g2).connect(filter);
+        osc3.connect(g3).connect(filter);
+
+        [osc1, osc2, osc3].forEach((o) => {
+          o.start(now);
+          o.stop(now + durationSec + 0.3);
+        });
+      } else if (instrument === 'strings') {
+        // Lush Bowed String Ensemble: triple detuned sawtooth/triangle blend with slow attack
+        filter.frequency.setValueAtTime(Math.min(2600, key.freq * 4.5), now);
+        filter.Q.value = 0.7;
+
+        const detunes = [-8, 0, 8];
+        detunes.forEach((d) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(key.freq, now);
+          osc.detune.setValueAtTime(d, now);
+          g.gain.value = 0.16;
+          osc.connect(g).connect(filter);
+          osc.start(now);
+          osc.stop(now + durationSec + 0.35);
+        });
+
+        masterGain.gain.setValueAtTime(0.0001, now);
+        masterGain.gain.linearRampToValueAtTime(0.28, now + 0.16);
+        masterGain.gain.setValueAtTime(0.26, now + durationSec * 0.7);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec + 0.3);
+      } else if (instrument === 'harpsichord') {
+        // Baroque Harpsichord: crisp bright pluck with shimmering overtones
+        filter.frequency.setValueAtTime(5200, now);
+        filter.frequency.exponentialRampToValueAtTime(1100, now + durationSec * 0.75);
+
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const g1 = ctx.createGain();
+        const g2 = ctx.createGain();
+
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(key.freq, now);
+        g1.gain.value = 0.45;
+
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(key.freq * 2, now);
+        g2.gain.value = 0.16;
+
+        masterGain.gain.setValueAtTime(0.0001, now);
+        masterGain.gain.linearRampToValueAtTime(0.3, now + 0.006);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec * 0.85);
+
+        osc1.connect(g1).connect(filter);
+        osc2.connect(g2).connect(filter);
+
+        [osc1, osc2].forEach((o) => {
+          o.start(now);
+          o.stop(now + durationSec);
+        });
+      } else {
+        // Concert Pipe Organ: pure drawbar sine ranks (8' + 4' + 2 2/3')
+        filter.frequency.setValueAtTime(3400, now);
+
+        const ranks = [
+          { mult: 1, vol: 0.55 },
+          { mult: 2, vol: 0.3 },
+          { mult: 3, vol: 0.14 },
+        ];
+        ranks.forEach((r) => {
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(key.freq * r.mult, now);
+          g.gain.value = r.vol;
+          osc.connect(g).connect(filter);
+          osc.start(now);
+          osc.stop(now + durationSec + 0.25);
+        });
+
+        masterGain.gain.setValueAtTime(0.0001, now);
+        masterGain.gain.linearRampToValueAtTime(0.28, now + 0.045);
+        masterGain.gain.setValueAtTime(0.27, now + durationSec * 0.75);
+        masterGain.gain.exponentialRampToValueAtTime(0.001, now + durationSec + 0.22);
+      }
+
+      filter.connect(masterGain).connect(ctx.destination);
 
       setActiveNote(key.note);
       window.setTimeout(() => {
         setActiveNote((prev) => (prev === key.note ? null : prev));
-      }, Math.min(450, durationSec * 650));
+      }, Math.min(480, durationSec * 550));
     },
-    [getAudioContext]
+    [getAudioContext, instrument]
   );
 
   const playWarmupScale = () => {
@@ -116,17 +224,16 @@ export function VocalPiano() {
     warmupTimersRef.current = [];
     setIsPlayingWarmup(true);
 
-    // Gentle 5-note warmup ascending & descending pattern (1-2-3-2-1)
     const sequenceIndices = [0, 2, 4, 2, 0];
     sequenceIndices.forEach((wIdx, step) => {
       const targetKey = whiteKeys[wIdx];
       if (!targetKey) return;
       const timer = window.setTimeout(() => {
-        playTone(targetKey, 0.55);
+        playTone(targetKey, 0.75);
         if (step === sequenceIndices.length - 1) {
-          window.setTimeout(() => setIsPlayingWarmup(false), 550);
+          window.setTimeout(() => setIsPlayingWarmup(false), 650);
         }
-      }, step * 420);
+      }, step * 440);
       warmupTimersRef.current.push(timer);
     });
   };
@@ -166,7 +273,7 @@ export function VocalPiano() {
                 Вокальное пианино для распевки и настройки слуха
               </h2>
               <p className="mt-2.5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-base">
-                Нажимайте на клавиши, чтобы услышать чистую ноту и пропеть её в унисон. Выберите тип голоса, чтобы посмотреть ориентировочный диапазон.
+                Нажимайте на клавиши, чтобы услышать чистую ноту и пропеть её в унисон. Выберите комфортный тембр инструмента и тип голоса.
               </p>
             </div>
 
@@ -208,8 +315,29 @@ export function VocalPiano() {
             </div>
           </div>
 
+          {/* 4 Studio Instrument Timbres */}
+          <div className="mt-5 flex flex-wrap items-center gap-2 border-b border-zinc-900/8 pb-4 dark:border-white/8">
+            <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+              Тембр:
+            </span>
+            {INSTRUMENTS.map((inst) => (
+              <button
+                key={inst.id}
+                type="button"
+                onClick={() => setInstrument(inst.id)}
+                className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+                  instrument === inst.id
+                    ? 'border-[#B45309] bg-[#B45309] text-white shadow-xs dark:border-[#E2A856] dark:bg-[#E2A856] dark:text-[#0D0C10]'
+                    : 'border-zinc-900/12 bg-[#FAF8F5] text-zinc-700 hover:border-[#B45309]/40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-zinc-300'
+                }`}
+              >
+                {inst.label}
+              </button>
+            ))}
+          </div>
+
           {/* Voice Types Reference Tabs */}
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {VOICE_TYPES.map((vt) => {
               const active = vt.id === selectedProfileId;
               return (
@@ -252,7 +380,6 @@ export function VocalPiano() {
                 const isPressed = activeNote === wKey.note;
                 const isHighlighted = selectedProfile.pianoNotes.includes(wKey.note);
 
-                // Find if there is a sharp/black key right after this white key
                 const wIdx = keys.findIndex((k) => k.note === wKey.note);
                 const nextKey = keys[wIdx + 1];
                 const hasBlackAfter = nextKey && nextKey.isBlack;

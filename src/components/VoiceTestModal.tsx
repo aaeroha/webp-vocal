@@ -34,9 +34,6 @@ function hzToNoteLabel(hz: number): string {
   return `${NOTE_NAMES_RU[noteIdx]} (${NOTE_NAMES_EN[noteIdx]}${octave})`;
 }
 
-/**
- * Lightweight time-domain autocorrelation pitch estimator (Hz) for vocal range detection.
- */
 function detectPitchHz(buffer: Float32Array, sampleRate: number): number | null {
   const size = buffer.length;
   let rms = 0;
@@ -44,9 +41,8 @@ function detectPitchHz(buffer: Float32Array, sampleRate: number): number | null 
     rms += buffer[i] * buffer[i];
   }
   rms = Math.sqrt(rms / size);
-  if (rms < 0.015) return null; // Silence or background noise floor
+  if (rms < 0.015) return null;
 
-  // Trim low-amplitude edges
   let r1 = 0;
   let r2 = size - 1;
   const threshold = 0.2;
@@ -92,7 +88,6 @@ function detectPitchHz(buffer: Float32Array, sampleRate: number): number | null 
 
   if (maxPos <= 0 || maxVal <= 0) return null;
 
-  // Parabolic interpolation around peak
   const x1 = maxPos > 0 ? correlations[maxPos - 1] : correlations[maxPos];
   const x2 = correlations[maxPos];
   const x3 = maxPos < len - 1 ? correlations[maxPos + 1] : correlations[maxPos];
@@ -139,11 +134,124 @@ function classifyVoice(gender: Gender, samplesHz: number[]): {
     else matched = candidates.find((c) => c.id === 'bass') ?? matched;
   }
 
-  // Score calculation based on pitch stability and sample richness (always encouraging 89-98%)
   const richness = Math.min(8, Math.floor(samplesHz.length / 10));
   const score = Math.min(98, 89 + richness);
 
   return { profile: matched, medianHz, minSampleHz, maxSampleHz, score };
+}
+
+/**
+ * Celebratory canvas fireworks & confetti burst overlay for the Voice Test finale.
+ */
+function ConfettiFireworksCanvas() {
+  const confettiRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = confettiRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const colors = ['#FACC15', '#F59E0B', '#10B981', '#38BDF8', '#FB7185', '#E2A856', '#FFFFFF'];
+
+    interface Particle {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      size: number;
+      color: string;
+      alpha: number;
+      rot: number;
+      rotSpeed: number;
+      shape: 'rect' | 'circle';
+    }
+
+    const particles: Particle[] = [];
+
+    const launchBurst = (cx: number, cy: number, count: number) => {
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.4;
+        const speed = 3 + Math.random() * 8.5;
+        particles.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 2.5,
+          size: 4 + Math.random() * 5.5,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          rot: Math.random() * Math.PI * 2,
+          rotSpeed: (Math.random() - 0.5) * 0.25,
+          shape: Math.random() > 0.35 ? 'rect' : 'circle',
+        });
+      }
+    };
+
+    const w = canvas.width;
+    const h = canvas.height;
+    launchBurst(w * 0.5, h * 0.38, 65);
+    const t1 = window.setTimeout(() => launchBurst(w * 0.28, h * 0.3, 45), 220);
+    const t2 = window.setTimeout(() => launchBurst(w * 0.72, h * 0.32, 45), 420);
+
+    let rafId = 0;
+    const tick = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.16; // Gravity
+        p.vx *= 0.985;
+        p.rot += p.rotSpeed;
+        p.alpha -= 0.011;
+
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.fillStyle = p.color;
+
+        if (p.shape === 'rect') {
+          ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.65);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      if (particles.length > 0) {
+        rafId = window.requestAnimationFrame(tick);
+      }
+    };
+
+    rafId = window.requestAnimationFrame(tick);
+
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={confettiRef}
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 z-[60]"
+    />
+  );
 }
 
 export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModalProps) {
@@ -223,7 +331,6 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
     cleanupAudio();
 
     if (collected.length < 3) {
-      // User hasn't sung or mic captured only silence
       setHasVoiceDetected(false);
       return;
     }
@@ -283,7 +390,6 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
             analyser.getByteFrequencyData(freqData);
             analyser.getFloatTimeDomainData(timeData);
 
-            // Detect pitch every 4th frame to keep CPU ultra-light
             frameCounter++;
             if (frameCounter % 4 === 0) {
               const hz = detectPitchHz(timeData, ctx.sampleRate);
@@ -293,13 +399,11 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               }
             }
 
-            // Symmetric mirrored waveform style (inspired by reference screenshot)
             const midY = height / 2;
             const barCount = 56;
             const gap = 3;
             const barWidth = Math.max(2, (width - barCount * gap) / barCount);
 
-            // Center horizontal reference line
             cctx.strokeStyle = 'rgba(45, 212, 191, 0.45)';
             cctx.lineWidth = 1.5;
             cctx.beginPath();
@@ -308,7 +412,6 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
             cctx.stroke();
 
             for (let i = 0; i < barCount; i++) {
-              // Symmetric distribution concentrating vocal spectrum in the center
               const distFromCenter = Math.abs(i - barCount / 2) / (barCount / 2);
               const binIndex = Math.min(
                 freqData.length - 1,
@@ -369,6 +472,8 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       aria-labelledby="voice-test-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
     >
+      {step === 'result' && result && <ConfettiFireworksCanvas />}
+
       <div
         onClick={() => {
           cleanupAudio();
@@ -393,7 +498,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               {step === 'mode' && 'Что споём для анализа?'}
               {step === 'record' && 'Пойте в микрофон — идёт живой анализ'}
               {step === 'mic-error' && 'Микрофон не обнаружен'}
-              {step === 'result' && 'Ваш вокальный профиль готов!'}
+              {step === 'result' && 'Отличный природный тембр! 🎉'}
             </h3>
           </div>
 
@@ -569,7 +674,6 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               </p>
             </div>
 
-            {/* Live Symmetric Waveform Canvas */}
             <div className="relative overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#0D0C10] p-4 shadow-inner dark:border-white/10">
               <canvas
                 ref={canvasRef}
@@ -663,22 +767,23 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
           </div>
         )}
 
-        {/* STEP 4: RESULT */}
+        {/* STEP 4: FINALE & CLEAR VOCAL STATS */}
         {step === 'result' && result && (
-          <div className="mt-5 space-y-5">
+          <div className="mt-5 space-y-4">
+            {/* Main Result Card with integrated encouraging summary */}
             <div className="rounded-2xl border border-[#B45309]/35 bg-gradient-to-br from-[#F2EDE6] to-[#FAF8F5] p-5 dark:border-[#E2A856]/40 dark:from-[#1B1924] dark:to-[#121117]">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309] px-3 py-1 text-xs font-semibold text-white dark:bg-[#E2A856] dark:text-[#0D0C10]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309] px-3.5 py-1 text-xs font-semibold text-white dark:bg-[#E2A856] dark:text-[#0D0C10]">
                   <Sparkles className="h-3.5 w-3.5" />
                   Ваш тип голоса: {result.profile.name}
                 </span>
-                <span className="font-serif text-xl font-bold text-[#B45309] dark:text-[#E2A856]">
-                  Потенциал: {result.score}%
+                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                  Вокальный потенциал: {result.score}%
                 </span>
               </div>
 
-              <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                Ориентировочный диапазон: {result.profile.rangeLabel}
+              <p className="mt-3 text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                Вау, вы супер! У вас выразительный природный голос и живая музыкальная интонация.
               </p>
 
               <p className="mt-2 text-sm leading-relaxed text-zinc-700 dark:text-zinc-200">
@@ -689,28 +794,61 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                 {result.profile.subtypes.map((sub) => (
                   <span
                     key={sub}
-                    className="rounded-full border border-zinc-900/10 bg-white/70 px-2.5 py-0.5 text-[11px] font-medium text-zinc-700 dark:border-white/10 dark:bg-black/30 dark:text-zinc-300"
+                    className="rounded-full border border-zinc-900/10 bg-white/80 px-2.5 py-0.5 text-[11px] font-medium text-zinc-700 dark:border-white/10 dark:bg-black/35 dark:text-zinc-300"
                   >
                     {sub}
                   </span>
                 ))}
               </div>
+            </div>
 
-              <div className="mt-4 border-t border-zinc-900/10 pt-3 text-xs text-zinc-600 dark:border-white/10 dark:text-zinc-400">
-                Зафиксировано звучание от <strong>{hzToNoteLabel(result.minSampleHz)}</strong> до{' '}
-                <strong>{hzToNoteLabel(result.maxSampleHz)}</strong> (средняя опора ~{' '}
-                {Math.round(result.medianHz)} Гц).
+            {/* Clean Visual 3-Column Metrics */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div className="rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/85 p-3 text-center dark:border-white/10 dark:bg-[#0D0C10]/80">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Нижняя нота
+                </p>
+                <p className="mt-1 font-serif text-lg font-bold text-zinc-900 dark:text-[#F5F3EF]">
+                  {hzToNoteLabel(result.minSampleHz).split(' ')[0]}
+                </p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {hzToNoteLabel(result.minSampleHz).split(' ')[1] ?? ''}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/85 p-3 text-center dark:border-white/10 dark:bg-[#0D0C10]/80">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Верхняя нота
+                </p>
+                <p className="mt-1 font-serif text-lg font-bold text-zinc-900 dark:text-[#F5F3EF]">
+                  {hzToNoteLabel(result.maxSampleHz).split(' ')[0]}
+                </p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  {hzToNoteLabel(result.maxSampleHz).split(' ')[1] ?? ''}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/85 p-3 text-center dark:border-white/10 dark:bg-[#0D0C10]/80">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  Опора тона
+                </p>
+                <p className="mt-1 font-serif text-lg font-bold text-[#B45309] dark:text-[#E2A856]">
+                  {Math.round(result.medianHz)} Гц
+                </p>
+                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                  Центр тембра
+                </p>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-center">
-              <p className="font-serif text-xl font-semibold text-zinc-900 dark:text-[#F5F3EF]">
-                Вау, вы супер! Отличный природный тембр 🎉
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-                Осталось записаться на урок, чтобы снять зажимы, укрепить опору и раскрыть ваш талант на полную мощность!
-              </p>
-            </div>
+            <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
+              Ориентировочный диапазон типа «{result.profile.name}»: {result.profile.rangeLabel}
+            </p>
+
+            {/* Clear final call to action */}
+            <p className="pt-1 text-center font-serif text-lg font-semibold text-zinc-900 dark:text-[#F5F3EF]">
+              Вы в одном шаге от того, чтобы записаться на урок и раскрыть ваш потенциал!
+            </p>
 
             <div className="flex flex-col gap-2.5 sm:flex-row">
               <button
