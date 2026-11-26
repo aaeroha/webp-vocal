@@ -1,0 +1,207 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-sans: "Manrope", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5.5rem;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #FAF8F5;
+    color: #18181B;
+    transition: background-color 0.35s ease, color 0.35s ease;
+    overflow-x: hidden;
+  }
+
+  .dark body {
+    background-color: #0D0C10;
+    color: #F5F3EF;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Smooth unhurried reveal animations */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(28px) scale(0.985);
+  transition: opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-item.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Floating musical notes keyframes (Light mode) */
+@keyframes floatNoteSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-16px) rotate(6deg);
+  }
+}
+
+@keyframes floatNoteReverse {
+  0%, 100% {
+    transform: translateY(0px) rotate(4deg);
+  }
+  50% {
+    transform: translateY(14px) rotate(-6deg);
+  }
+}
+
+/* Elegant flowing waveform keyframes (Dark mode) */
+@keyframes waveFlow {
+  0%, 100% {
+    transform: translateX(0) scaleY(1);
+  }
+  50% {
+    transform: translateX(-2.5%) scaleY(1.12);
+  }
+}
+
+@keyframes waveFlowReverse {
+  0%, 100% {
+    transform: translateX(-2%) scaleY(0.92);
+  }
+  50% {
+    transform: translateX(1.5%) scaleY(1.08);
+  }
+}
+
+/* Infinite horizontal certificate carousel */
+@keyframes certMarquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes soundPulse {
+  0%, 100% {
+    transform: scaleY(0.45);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 0.9;
+  }
+}
+
+@keyframes caretBlink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+.animate-float-note {
+  animation: floatNoteSlow 7s ease-in-out infinite;
+}
+
+.animate-float-note-reverse {
+  animation: floatNoteReverse 8.5s ease-in-out infinite;
+}
+
+.animate-wave-flow {
+  animation: waveFlow 10s ease-in-out infinite;
+}
+
+.animate-wave-flow-reverse {
+  animation: waveFlowReverse 13s ease-in-out infinite;
+}
+
+.animate-cert-marquee {
+  display: flex;
+  width: max-content;
+  animation: certMarquee 68s linear infinite;
+  will-change: transform;
+}
+
+.cert-marquee-wrap:hover .animate-cert-marquee {
+  animation-play-state: paused;
+}
+
+.animate-sound-bar {
+  animation: soundPulse 2.2s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+.animate-caret {
+  animation: caretBlink 0.9s step-end infinite;
+}
+
+/* Soft button sheen on hover */
+.btn-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.22),
+    transparent
+  );
+  transform: skewX(-20deg);
+  transition: left 0.65s ease;
+  pointer-events: none;
+}
+
+.btn-sheen:hover::after {
+  left: 140%;
+}
+
+/* Dark mode stage gold glow */
+.dark .gold-glow {
+  box-shadow: 0 0 28px rgba(226, 168, 86, 0.22);
+}
+
+.dark .gold-glow-hover:hover {
+  box-shadow: 0 8px 30px rgba(226, 168, 86, 0.24);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .reveal-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .animate-float-note,
+  .animate-float-note-reverse,
+  .animate-wave-flow,
+  .animate-wave-flow-reverse,
+  .animate-cert-marquee,
+  .animate-sound-bar {
+    animation: none;
+  }
+}
