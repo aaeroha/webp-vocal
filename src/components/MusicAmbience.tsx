@@ -13,7 +13,6 @@ const LIGHT_NOTES = [
 
 export function MusicAmbience() {
   const [scrollY, setScrollY] = useState(0);
-  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     let frameId = 0;
@@ -21,11 +20,7 @@ export function MusicAmbience() {
     const handleScroll = () => {
       if (frameId) return;
       frameId = window.requestAnimationFrame(() => {
-        const currentY = window.scrollY;
-        const maxScroll =
-          document.documentElement.scrollHeight - window.innerHeight;
-        setScrollY(currentY);
-        setProgress(maxScroll > 0 ? Math.min(100, (currentY / maxScroll) * 100) : 0);
+        setScrollY(window.scrollY);
         frameId = 0;
       });
     };
@@ -40,17 +35,6 @@ export function MusicAmbience() {
 
   return (
     <>
-      {/* Reading progress indicator at top of screen */}
-      <div
-        aria-hidden="true"
-        className="fixed top-0 left-0 right-0 z-50 h-[3px] bg-transparent pointer-events-none"
-      >
-        <div
-          className="h-full bg-gradient-to-r from-[#B45309] via-[#C26D3A] to-[#D97706] dark:from-[#E2A856] dark:via-[#F3C884] dark:to-[#E2A856] transition-[width] duration-150 ease-out"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
       {/* Background ambience layer */}
       <div
         aria-hidden="true"

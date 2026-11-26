@@ -38,19 +38,46 @@ export function VinylPlayer() {
     });
   };
 
-  // Larger Hi-Fi vinyl deck kinematics (viewBox 0 0 120 110):
-  // Record center: (50, 55), Pivot: (102, 21)
-  // Distance Pivot->Center = sqrt((-52)^2 + 34^2) = sqrt(2704+1156) = 62.13
-  // Arm length = 46.13 -> at center line (0 deg) tip R = 16.0 (exact edge of label «яблоко»)
-  // Outer groove R = 41 -> rotated -39.5 deg from center line -> starts at outer groove
+  // Larger Hi-Fi vinyl deck kinematics (viewBox 0 0 120 110)
   const armAngle = (progress / 100) * 39.5;
   const isEnd = progress >= 98.5;
+  const roundedPercent = Math.round(progress);
 
   return (
     <aside
       aria-label="Виниловый Hi-Fi проигрыватель навигации"
-      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 select-none"
+      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 select-none flex flex-col items-center gap-1.5"
     >
+      {/* Isolated Hi-Fi Mini Digital OLED Display mounted directly above the turntable */}
+      <button
+        type="button"
+        onClick={handleScrollToTop}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        aria-label={`Прокручено ${roundedPercent}%. Нажмите, чтобы вернуться наверх`}
+        className={`relative flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1 font-mono text-[11px] sm:text-xs font-bold tracking-widest shadow-inner transition-all duration-300 cursor-pointer focus:outline-none ${
+          isEnd
+            ? 'border-amber-400/90 bg-[#0A090E] text-amber-300 shadow-[0_0_14px_rgba(251,191,36,0.45)] animate-pulse'
+            : 'border-zinc-700/90 bg-[#0D0C10]/95 text-amber-400 shadow-[0_4px_12px_rgba(0,0,0,0.45)] dark:border-[#B45309]/40 dark:bg-[#1B1920]'
+        }`}
+      >
+        {/* Subtle backlit display status dot */}
+        <span
+          aria-hidden="true"
+          className={`h-1.5 w-1.5 rounded-full ${
+            isEnd ? 'bg-emerald-400 shadow-[0_0_6px_#34D399]' : 'bg-amber-400/80'
+          }`}
+        />
+        <span className="tabular-nums">
+          {String(roundedPercent).padStart(2, '0')}%
+        </span>
+        {(isEnd || isHovered) && (
+          <span className="text-[10px] font-sans font-semibold tracking-normal text-amber-200">
+            • НАВЕРХ ↑
+          </span>
+        )}
+      </button>
+
       {/* Large clean Hi-Fi Turntable Plinth: Matte Black in Light Mode, Ivory White in Dark Mode */}
       <button
         type="button"
@@ -62,7 +89,7 @@ export function VinylPlayer() {
             ? 'Конец пластинки — нажмите, чтобы вернуться наверх'
             : 'Нажмите, чтобы вернуться наверх'
         }
-        aria-label={`Прокрутка наверх. Пройдено ${Math.round(progress)}%`}
+        aria-label={`Прокрутка наверх. Пройдено ${roundedPercent}%`}
         className={`group relative block w-[124px] h-[112px] sm:w-[168px] sm:h-[152px] p-1.5 rounded-2xl cursor-pointer transition-all duration-300 transform-gpu active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
           isEnd
             ? 'ring-2 ring-amber-500/90 shadow-2xl shadow-amber-500/35 scale-105 bg-[#121216] border border-amber-500/50 dark:bg-[#F5F0E6] dark:border-amber-600/60'
@@ -123,7 +150,6 @@ export function VinylPlayer() {
           <g className="animate-vinyl-spin">
             <circle cx="50" cy="55" r="41.5" fill="#131317" />
 
-            {/* Fine Sound Grooves */}
             <circle cx="50" cy="55" r="39" stroke="rgba(255,255,255,0.09)" strokeWidth="0.6" />
             <circle cx="50" cy="55" r="36.5" stroke="rgba(255,255,255,0.05)" strokeWidth="0.5" />
             <circle cx="50" cy="55" r="34" stroke="rgba(255,255,255,0.09)" strokeWidth="0.6" />
@@ -135,7 +161,6 @@ export function VinylPlayer() {
             <circle cx="50" cy="55" r="19" stroke="rgba(255,255,255,0.12)" strokeWidth="0.7" />
             <circle cx="50" cy="55" r="17" stroke="rgba(255,255,255,0.16)" strokeWidth="0.6" />
 
-            {/* Dual Vinyl Light Reflection Sheen */}
             <path
               d="M50 55 L20 25 A41.5 41.5 0 0 1 80 25 Z"
               fill="url(#vinylSheenBig)"
@@ -151,14 +176,12 @@ export function VinylPlayer() {
             <circle cx="50" cy="55" r="15.5" fill="url(#vinylLabelBig)" />
             <circle cx="50" cy="55" r="13.2" stroke="rgba(255,255,255,0.25)" strokeWidth="0.45" />
 
-            {/* Treble Note inside Center Label */}
             <path
               d="M48.2 59.5 V50.8 C48.2 49.2 49.5 48.2 52.2 48.2 V53.8 C52.2 52.8 51.2 52.2 50.1 52.2 C49 52.2 48.2 53 48.2 54.1 C48.2 55.2 49 55.9 50.1 55.9 C51.2 55.9 52.2 55.2 52.2 54.1 V50"
               fill="#FEF3C7"
               opacity="0.92"
             />
 
-            {/* Precision Spindle Center */}
             <circle cx="50" cy="55" r="2.5" fill="#09090B" />
             <circle cx="50" cy="55" r="1.3" fill="#E4E4E7" />
           </g>
@@ -199,7 +222,6 @@ export function VinylPlayer() {
               transition: 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
             }}
           >
-            {/* S-shaped Metallic Arm pointing from (102,21) to outer groove (86.7, 64.5) */}
             <path
               d="M 102 21 C 103.5 34, 94.5 47, 86.7 64.5"
               fill="none"
@@ -216,7 +238,6 @@ export function VinylPlayer() {
               opacity="0.55"
             />
 
-            {/* Headshell & Stylus Cartridge */}
             <g transform="translate(86.7, 64.5) rotate(-18)">
               <rect
                 x="-2.5"
@@ -233,18 +254,6 @@ export function VinylPlayer() {
             </g>
           </g>
         </svg>
-
-        {/* Integrated Scroll Percentage / Return-to-Top Badge RIGHT ON the Turntable Corner */}
-        <div
-          className={`absolute bottom-1.5 right-1.5 flex items-center gap-1 rounded-lg px-2 py-0.5 text-[10px] sm:text-[11px] font-bold tracking-tight transition-all duration-300 shadow-sm ${
-            isEnd
-              ? 'bg-gradient-to-r from-[#B45309] to-[#D97706] text-white animate-pulse'
-              : 'bg-white/15 text-zinc-100 backdrop-blur-xs dark:bg-zinc-900/12 dark:text-zinc-900'
-          }`}
-        >
-          <span>{Math.round(progress)}%</span>
-          {(isEnd || isHovered) && <span aria-hidden="true">↑</span>}
-        </div>
       </button>
     </aside>
   );
