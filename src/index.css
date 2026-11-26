@@ -93,6 +93,21 @@
   }
 }
 
+/* Vinyl record continuous spin */
+@keyframes vinylSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-vinyl-spin {
+  animation: vinylSpin 3.2s linear infinite;
+  transform-origin: 42px 50px;
+}
+
 @keyframes soundPulse {
   0%, 100% {
     transform: scaleY(0.45);
@@ -201,7 +216,8 @@
   .animate-wave-flow,
   .animate-wave-flow-reverse,
   .animate-cert-marquee,
-  .animate-sound-bar {
+  .animate-sound-bar,
+  .animate-vinyl-spin {
     animation: none;
   }
 }

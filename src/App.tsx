@@ -8,6 +8,7 @@ import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { MusicAmbience } from './components/MusicAmbience';
 import { Reviews } from './components/Reviews';
+import { VinylPlayer } from './components/VinylPlayer';
 import { SITE_CONFIG } from './data/content';
 
 export function App() {
@@ -35,6 +36,7 @@ export function App() {
   return (
     <div className="relative min-h-screen bg-[#FAF8F5] text-[#18181B] transition-colors duration-300 dark:bg-[#0D0C10] dark:text-[#F5F3EF]">
       <MusicAmbience />
+      <VinylPlayer />
       <Header isDark={isDark} onToggleTheme={() => setIsDark((prev) => !prev)} />
 
       <main>
