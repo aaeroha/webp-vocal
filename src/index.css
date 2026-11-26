@@ -31,18 +31,60 @@
   }
 }
 
-/* Smooth unhurried reveal animations */
+/* Custom 1950s Retro Vocal Microphone Cursor on Precision Pointer Devices */
+@media (hover: hover) and (pointer: fine) {
+  html.mic-cursor-active,
+  html.mic-cursor-active body,
+  html.mic-cursor-active a,
+  html.mic-cursor-active button,
+  html.mic-cursor-active [role="button"],
+  html.mic-cursor-active summary,
+  html.mic-cursor-active input,
+  html.mic-cursor-active select,
+  html.mic-cursor-active label {
+    cursor: none !important;
+  }
+}
+
+/* Smooth unhurried reveal animations (various harmonious directions) */
 .reveal-item {
   opacity: 0;
   transform: translateY(28px) scale(0.985);
-  transition: opacity 0.95s cubic-bezier(0.16, 1, 0.3, 1),
-              transform 0.95s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
   will-change: opacity, transform;
 }
 
-.reveal-item.is-visible {
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-32px) scale(0.98);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(32px) scale(0.98);
+  transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.93) translateY(14px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-item.is-visible,
+.reveal-left.is-visible,
+.reveal-right.is-visible,
+.reveal-scale.is-visible {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translate3d(0, 0, 0) scale(1);
 }
 
 /* Floating musical notes keyframes (Light mode) */
@@ -105,7 +147,7 @@
 
 .animate-vinyl-spin {
   animation: vinylSpin 3.2s linear infinite;
-  transform-origin: 42px 50px;
+  transform-origin: 48px 54px;
 }
 
 @keyframes soundPulse {
@@ -126,6 +168,21 @@
   50%, 100% {
     opacity: 0;
   }
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-enter {
+  animation: modalEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-float-note {
@@ -206,7 +263,10 @@
   html {
     scroll-behavior: auto;
   }
-  .reveal-item {
+  .reveal-item,
+  .reveal-left,
+  .reveal-right,
+  .reveal-scale {
     opacity: 1;
     transform: none;
     transition: none;

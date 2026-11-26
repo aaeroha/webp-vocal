@@ -6,9 +6,10 @@ import { useReveal } from '../hooks/useReveal';
 export function Certificates() {
   const items = CERTIFICATES_CONTENT.items;
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const { ref, isVisible } = useReveal(0.12);
+  const { ref, isVisible } = useReveal({ threshold: 0.08 });
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
+  const isModalOpen = selectedIndex !== null;
 
   useEffect(() => {
     if (selectedIndex === null) return;
@@ -45,8 +46,11 @@ export function Certificates() {
 
   return (
     <section id="certificates" className="relative z-10 py-14 sm:py-20 lg:py-24">
-      <div ref={ref} className={`reveal-item mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${isVisible ? 'is-visible' : ''}`}>
-        <div className="max-w-2xl">
+      <div
+        ref={ref}
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+      >
+        <div className={`reveal-left max-w-2xl ${isVisible ? 'is-visible' : ''}`}>
           <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
             {CERTIFICATES_CONTENT.eyebrow}
           </p>
@@ -58,8 +62,13 @@ export function Certificates() {
           </p>
         </div>
 
-        {/* Infinite auto-scrolling carousel strictly aligned inside max-w-7xl container */}
-        <div className="cert-marquee-wrap relative mt-8 overflow-hidden rounded-2xl sm:mt-10">
+        {/* Infinite auto-scrolling carousel — pauses on hover AND when modal is open */}
+        <div
+          style={{ transitionDelay: '140ms' }}
+          className={`reveal-scale cert-marquee-wrap relative mt-8 overflow-hidden rounded-2xl sm:mt-10 ${
+            isVisible ? 'is-visible' : ''
+          }`}
+        >
           {/* Soft edge fade gradients inside container */}
           <div
             aria-hidden="true"
@@ -70,7 +79,12 @@ export function Certificates() {
             className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
           />
 
-          <div className="animate-cert-marquee gap-4 py-2 sm:gap-5">
+          <div
+            className="animate-cert-marquee gap-4 py-2 sm:gap-5"
+            style={{
+              animationPlayState: isModalOpen ? 'paused' : undefined,
+            }}
+          >
             {trackItems.map((cert, idx) => {
               const realIndex = idx % items.length;
               return (
@@ -86,6 +100,8 @@ export function Certificates() {
                       alt={cert.title}
                       loading="lazy"
                       decoding="async"
+                      width={275}
+                      height={367}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-300 group-hover:bg-black/25">
@@ -124,7 +140,7 @@ export function Certificates() {
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
 
-          <div className="relative z-10 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#FAF8F5] p-4 shadow-2xl dark:bg-[#16151C] sm:p-6">
+          <div className="animate-modal-enter relative z-10 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#FAF8F5] p-4 shadow-2xl dark:bg-[#16151C] sm:p-6">
             <div className="flex items-start justify-between gap-4 pb-3">
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309]/10 px-3 py-1 text-xs font-semibold text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">

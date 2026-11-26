@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Menu, Send, X } from 'lucide-react';
+import { CalendarCheck, Menu, X } from 'lucide-react';
 import { NAV_LINKS, SITE_CONFIG } from '../data/content';
 import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
   isDark: boolean;
   onToggleTheme: () => void;
+  onOpenBooking: () => void;
 }
 
-export function Header({ isDark, onToggleTheme }: HeaderProps) {
+export function Header({ isDark, onToggleTheme, onOpenBooking }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -65,7 +66,7 @@ export function Header({ isDark, onToggleTheme }: HeaderProps) {
           {/* Center: Desktop anchor links (> 1024px) */}
           <nav
             aria-label="Основная навигация"
-            className="hidden lg:flex items-center gap-7"
+            className="hidden lg:flex items-center gap-6"
           >
             {NAV_LINKS.map((link) => (
               <a
@@ -78,19 +79,18 @@ export function Header({ isDark, onToggleTheme }: HeaderProps) {
             ))}
           </nav>
 
-          {/* Right: ThemeToggle, Telegram CTA, and Mobile/Tablet Burger */}
+          {/* Right: ThemeToggle, Unified Booking CTA, and Mobile/Tablet Burger */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 
-            <a
-              href={SITE_CONFIG.telegramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-sheen inline-flex h-10 items-center gap-2 rounded-full bg-[#B45309] px-3.5 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow sm:px-4 sm:text-sm"
+            <button
+              type="button"
+              onClick={onOpenBooking}
+              className="btn-sheen inline-flex h-10 items-center gap-2 rounded-full bg-[#B45309] px-3.5 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow sm:px-4 sm:text-sm cursor-pointer"
             >
-              <Send className="h-3.5 w-3.5 shrink-0" />
-              <span>Telegram</span>
-            </a>
+              <CalendarCheck className="h-3.5 w-3.5 shrink-0" />
+              <span>Записаться</span>
+            </button>
 
             <button
               type="button"
@@ -112,13 +112,11 @@ export function Header({ isDark, onToggleTheme }: HeaderProps) {
           menuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
         }`}
       >
-        {/* Backdrop */}
         <div
           onClick={() => setMenuOpen(false)}
           className="absolute inset-0 bg-black/45 backdrop-blur-xs"
         />
 
-        {/* Drawer panel */}
         <aside
           className={`absolute top-0 right-0 flex h-full w-[min(85vw,340px)] flex-col justify-between border-l border-zinc-900/10 bg-[#FAF8F5] p-6 shadow-2xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-[#121117] ${
             menuOpen ? 'translate-x-0' : 'translate-x-full'
@@ -158,24 +156,18 @@ export function Header({ isDark, onToggleTheme }: HeaderProps) {
             </nav>
           </div>
 
-          <div className="space-y-3 border-t border-zinc-900/10 pt-5 dark:border-white/10">
-            <a
-              href={SITE_CONFIG.telegramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-sheen flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-5 py-3 text-sm font-semibold text-white dark:bg-[#E2A856] dark:text-[#0D0C10]"
+          <div className="border-t border-zinc-900/10 pt-5 dark:border-white/10">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuOpen(false);
+                onOpenBooking();
+              }}
+              className="btn-sheen flex w-full items-center justify-center gap-2 rounded-full bg-[#B45309] px-5 py-3.5 text-sm font-semibold text-white dark:bg-[#E2A856] dark:text-[#0D0C10] cursor-pointer"
             >
-              <Send className="h-4 w-4" />
-              Записаться в Telegram
-            </a>
-            <a
-              href={SITE_CONFIG.whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center rounded-full border border-zinc-900/15 bg-[#F2EDE6] px-5 py-3 text-sm font-semibold text-zinc-800 dark:border-white/15 dark:bg-[#16151C] dark:text-[#F5F3EF]"
-            >
-              Написать в WhatsApp
-            </a>
+              <CalendarCheck className="h-4 w-4" />
+              Записаться на урок
+            </button>
           </div>
         </aside>
       </div>

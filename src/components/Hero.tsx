@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { MessageCircle, Send } from 'lucide-react';
-import { HERO_CONTENT, SITE_CONFIG, STATS_CONTENT, type StatCounter } from '../data/content';
+import { CalendarCheck, ChevronDown } from 'lucide-react';
+import { HERO_CONTENT, STATS_CONTENT, type StatCounter } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
+
+interface HeroProps {
+  onOpenBooking: () => void;
+}
 
 function formatStatNumber(val: number, formatSpaces?: boolean) {
   if (!formatSpaces) return String(val);
@@ -20,7 +24,10 @@ function AnimatedStatCard({
   const [displayValue, setDisplayValue] = useState(0);
 
   useEffect(() => {
-    if (!start) return;
+    if (!start) {
+      setDisplayValue(0);
+      return;
+    }
 
     let frameId = 0;
     const duration = 1600;
@@ -44,7 +51,7 @@ function AnimatedStatCard({
   return (
     <div
       style={{ transitionDelay: `${delayMs}ms` }}
-      className={`reveal-item flex flex-col items-center justify-center rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/92 px-4 py-5 text-center backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#B45309]/40 dark:border-white/12 dark:bg-[#16151C]/92 dark:hover:border-[#E2A856]/45 dark:gold-glow-hover sm:px-5 sm:py-6 ${
+      className={`reveal-scale flex flex-col items-center justify-center rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/92 px-4 py-5 text-center backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-[#B45309]/40 dark:border-white/12 dark:bg-[#16151C]/92 dark:hover:border-[#E2A856]/45 dark:gold-glow-hover sm:px-5 sm:py-6 ${
         start ? 'is-visible' : ''
       }`}
     >
@@ -64,12 +71,19 @@ function AnimatedStatCard({
   );
 }
 
-export function Hero() {
-  const { ref: statsRef, isVisible: statsVisible } = useReveal(0.15);
+export function Hero({ onOpenBooking }: HeroProps) {
+  const { ref: heroRef, isVisible: heroVisible } = useReveal({ threshold: 0.08 });
+  const { ref: statsRef, isVisible: statsVisible } = useReveal({ threshold: 0.1 });
+
+  // H1 cycling typewriter
   const phrases = HERO_CONTENT.typewriterPhrases;
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [charCount, setCharCount] = useState(phrases[0].length);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Subtitle one-shot typewriter that resets whenever user leaves Hero & scrolls back
+  const fullSubtitle = HERO_CONTENT.subtitle;
+  const [subCount, setSubCount] = useState(0);
 
   useEffect(() => {
     const currentPhrase = phrases[phraseIndex];
@@ -93,21 +107,41 @@ export function Hero() {
     return () => window.clearTimeout(timer);
   }, [charCount, isDeleting, phraseIndex, phrases]);
 
+  useEffect(() => {
+    if (!heroVisible) {
+      setSubCount(0);
+      return;
+    }
+
+    if (subCount >= fullSubtitle.length) return;
+
+    const timer = window.setTimeout(() => {
+      // Type smoothly ~2-3 chars per tick so the 280-char paragraph reads naturally in ~2.2s
+      setSubCount((prev) => Math.min(fullSubtitle.length, prev + 2));
+    }, 16);
+
+    return () => window.clearTimeout(timer);
+  }, [heroVisible, subCount, fullSubtitle.length]);
+
   const typedText = phrases[phraseIndex].slice(0, charCount);
+  const typedSubtitle = fullSubtitle.slice(0, subCount);
+  const isSubtitleTyping = heroVisible && subCount < fullSubtitle.length;
 
   return (
     <section
       id="top"
+      ref={heroRef}
       className="relative z-10 overflow-hidden pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-20 lg:pb-24"
     >
-      {/* Background video */}
+      {/* Background video with fast poster preload */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <video
           autoPlay
           loop
           muted
           playsInline
-          preload="auto"
+          preload="metadata"
+          poster={HERO_CONTENT.posterUrl}
           className="h-full w-full object-cover opacity-65 dark:opacity-72"
         >
           <source src={HERO_CONTENT.videoUrl} type="video/webm" />
@@ -116,7 +150,7 @@ export function Hero() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="max-w-3xl">
+        <div className={`reveal-item max-w-3xl ${heroVisible ? 'is-visible' : ''}`}>
           <div className="inline-flex items-center gap-2 rounded-full border border-[#B45309]/30 bg-[#FAF8F5]/90 px-4 py-1.5 text-[13px] font-semibold text-[#B45309] backdrop-blur-md dark:border-[#E2A856]/35 dark:bg-[#0D0C10]/80 dark:text-[#E2A856]">
             <span className="h-1.5 w-1.5 rounded-full bg-[#B45309] dark:bg-[#E2A856]" />
             <span>{HERO_CONTENT.eyebrow}</span>
@@ -130,36 +164,50 @@ export function Hero() {
             />
           </h1>
 
-          <p className="mt-4 max-w-2xl rounded-2xl bg-[#FAF8F5]/68 p-4 text-[15px] leading-[1.65] text-zinc-800 backdrop-blur-xs dark:bg-[#0D0C10]/58 dark:text-zinc-100 sm:p-5 sm:text-base lg:text-[1.0625rem]">
-            {HERO_CONTENT.subtitle}
-          </p>
+          {/* Subtitle with height-reserved typewriter effect */}
+          <div className="relative mt-4 max-w-2xl rounded-2xl bg-[#FAF8F5]/72 p-4 text-[15px] leading-[1.65] text-zinc-800 backdrop-blur-xs dark:bg-[#0D0C10]/62 dark:text-zinc-100 sm:p-5 sm:text-base lg:text-[1.0625rem]">
+            {/* Invisible spacer prevents any layout jump while typing */}
+            <p aria-hidden="true" className="invisible select-none">
+              {fullSubtitle}
+            </p>
+            <p className="absolute inset-0 p-4 sm:p-5">
+              <span>{typedSubtitle}</span>
+              {isSubtitleTyping && (
+                <span
+                  aria-hidden="true"
+                  className="animate-caret ml-0.5 inline-block h-[1em] w-[2px] translate-y-[0.12em] bg-[#B45309] dark:bg-[#E2A856]"
+                />
+              )}
+            </p>
+          </div>
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <a
-              href={SITE_CONFIG.telegramUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-sheen inline-flex items-center justify-center gap-2.5 rounded-full bg-[#B45309] px-7 py-3.5 text-[15px] font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow"
+            <button
+              type="button"
+              onClick={onOpenBooking}
+              className="btn-sheen inline-flex items-center justify-center gap-2.5 rounded-full bg-[#B45309] px-7 py-3.5 text-[15px] font-semibold text-white shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow cursor-pointer"
             >
-              <Send className="h-4 w-4 shrink-0" />
+              <CalendarCheck className="h-4.5 w-4.5 shrink-0" />
               <span>{HERO_CONTENT.primaryCta}</span>
-            </a>
+            </button>
 
             <a
-              href={SITE_CONFIG.whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2.5 rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 px-7 py-3.5 text-[15px] font-semibold text-zinc-900 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309]/40 hover:text-[#B45309] dark:border-white/20 dark:bg-[#16151C]/88 dark:text-[#F5F3EF] dark:hover:border-[#E2A856]/50 dark:hover:text-[#E2A856]"
+              href="#formats"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 px-6 py-3.5 text-[15px] font-semibold text-zinc-900 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309]/40 hover:text-[#B45309] dark:border-white/20 dark:bg-[#16151C]/88 dark:text-[#F5F3EF] dark:hover:border-[#E2A856]/50 dark:hover:text-[#E2A856]"
             >
-              <MessageCircle className="h-4 w-4 shrink-0" />
-              <span>{HERO_CONTENT.secondaryCta}</span>
+              <span>Как проходят уроки</span>
+              <ChevronDown className="h-4 w-4 shrink-0 opacity-75" />
             </a>
           </div>
         </div>
 
-        {/* О моей работе в цифрах */}
+        {/* О моей работе в цифрах — restarts counting every time user returns */}
         <div ref={statsRef} className="mt-12 lg:mt-16">
-          <p className="mb-5 text-center text-[13px] font-semibold uppercase tracking-[0.2em] text-[#B45309] dark:text-[#E2A856]">
+          <p
+            className={`reveal-item mb-5 text-center text-[13px] font-semibold uppercase tracking-[0.2em] text-[#B45309] dark:text-[#E2A856] ${
+              statsVisible ? 'is-visible' : ''
+            }`}
+          >
             {STATS_CONTENT.eyebrow}
           </p>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 lg:grid-cols-5">

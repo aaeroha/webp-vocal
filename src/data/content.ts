@@ -13,7 +13,8 @@ export interface StatCounter {
 }
 
 export interface PrincipleCard {
-  number: string;
+  id: string;
+  iconKey: 'physiology' | 'mechanics' | 'stage';
   title: string;
   description: string;
 }
@@ -27,7 +28,7 @@ export interface CertificateItem {
 
 export interface LessonStepItem {
   id: string;
-  step: string;
+  iconKey: 'breath' | 'tuning' | 'music' | 'mic';
   badge: string;
   title: string;
   description: string;
@@ -50,9 +51,22 @@ export interface FaqItem {
 }
 
 export interface SocialLink {
+  id: 'youtube' | 'rutube';
   label: string;
   href: string;
   handle: string;
+}
+
+export interface VoiceTypeProfile {
+  id: string;
+  gender: 'female' | 'male';
+  name: string;
+  rangeLabel: string;
+  subtypes: string[];
+  description: string;
+  minHz: number;
+  maxHz: number;
+  pianoNotes: string[];
 }
 
 export const AVITO_REVIEWS_URL =
@@ -68,10 +82,14 @@ export const SITE_CONFIG = {
   whatsappUrl: 'https://wa.me/79000000000',
   email: 'vocal@valeria-erokhina.ru',
   studioAddress: 'Оборудованная студия: г. Москва, Ватутинки',
-  yandexMapWidgetUrl:
+  yandexMapWidgetLightUrl:
     'https://yandex.ru/map-widget/v1/?ll=37.348786%2C55.518501&z=15&pt=37.348786%2C55.518501%2Cpm2rdm&l=map',
+  yandexMapWidgetDarkUrl:
+    'https://yandex.ru/map-widget/v1/?ll=37.348786%2C55.518501&z=15&pt=37.348786%2C55.518501%2Cpm2rdm&l=map&theme=dark',
   yandexMapDirectUrl:
     'https://yandex.ru/maps/?ll=37.348786%2C55.518501&z=15&pt=37.348786%2C55.518501%2Cpm2rdm',
+  yandexMapRouteUrl:
+    'https://yandex.ru/maps/?rtext=~55.518501%2C37.348786&rtt=auto',
   onlinePlatform: 'Онлайн по всему миру: Zoom / Telegram / Google Meet с профессиональным звуком',
   schedule: 'Ежедневно по предварительной записи, 10:00 – 21:00 (МСК)',
 };
@@ -79,7 +97,8 @@ export const SITE_CONFIG = {
 export const NAV_LINKS: NavLink[] = [
   { label: 'Обо мне', href: '#about' },
   { label: 'Сертификаты', href: '#certificates' },
-  { label: 'Как проходят занятия', href: '#formats' },
+  { label: 'Занятия', href: '#formats' },
+  { label: 'Пианино', href: '#vocal-piano' },
   { label: 'Отзывы', href: '#reviews' },
   { label: 'Вопросы', href: '#faq' },
   { label: 'Контакты', href: '#contacts' },
@@ -91,8 +110,8 @@ export const HERO_CONTENT = {
   subtitle:
     'Меня зовут Валерия Ерохина. Я педагог высшей категории с опытом более 10 лет, магистр педагогических наук и действующая вокалистка. Обучаю свободному, здоровому звучанию с нуля до сцены на основе современной вокальной механики и фонопедии — без зажимов, крика и скучной теории.',
   primaryCta: 'Записаться на занятие',
-  secondaryCta: 'Написать в WhatsApp',
   videoUrl: './media/video/hero-bg.webm',
+  posterUrl: './media/video/hero-poster.webp',
 };
 
 export const STATS_CONTENT = {
@@ -150,19 +169,22 @@ export const ABOUT_CONTENT = {
   },
   principles: [
     {
-      number: '01',
+      id: 'physiology',
+      iconKey: 'physiology',
       title: 'Бережная физиология и фонопедия',
       description:
         'Никакого форсирования и боли в горле. Работаем со снятием гортанных и телесных зажимов, восстанавливаем выносливость и природную свободу голоса.',
     },
     {
-      number: '02',
+      id: 'mechanics',
+      iconKey: 'mechanics',
       title: 'Понятная вокальная механика',
       description:
         'Объясняю сложные процессы простым языком: вы точно знаете, как взять высокую ноту, сделать микст, бэлт или мягкий субтон без гадания.',
     },
     {
-      number: '03',
+      id: 'stage',
+      iconKey: 'stage',
       title: 'Путь от первых нот до сцены',
       description:
         'Помогаю не только настроить технику, но и раскрыть тембр, артистизм, работу с микрофоном, а также подготовиться к записи в студии или конкурсам.',
@@ -282,7 +304,7 @@ export const LESSON_FLOW_CONTENT = {
   items: [
     {
       id: 'step-1',
-      step: '01',
+      iconKey: 'breath',
       badge: 'Настройка тела и дыхания',
       title: 'Снятие зажимов и опора звука',
       description:
@@ -295,7 +317,7 @@ export const LESSON_FLOW_CONTENT = {
     },
     {
       id: 'step-2',
-      step: '02',
+      iconKey: 'tuning',
       badge: 'Вокальная механика',
       title: 'Точные упражнения под ваш голос',
       description:
@@ -308,7 +330,7 @@ export const LESSON_FLOW_CONTENT = {
     },
     {
       id: 'step-3',
-      step: '03',
+      iconKey: 'music',
       badge: 'Репертуар и стиль',
       title: 'Разбор любимых песен',
       description:
@@ -321,7 +343,7 @@ export const LESSON_FLOW_CONTENT = {
     },
     {
       id: 'step-4',
-      step: '04',
+      iconKey: 'mic',
       badge: 'Студия, онлайн и сцена',
       title: 'Микрофон, запись и выступления',
       description:
@@ -335,12 +357,117 @@ export const LESSON_FLOW_CONTENT = {
   ] satisfies LessonStepItem[],
 };
 
+export const VOICE_TYPES: VoiceTypeProfile[] = [
+  {
+    id: 'soprano',
+    gender: 'female',
+    name: 'Сопрано',
+    rangeLabel: 'c1 – c3 (до первой – до третьей октавы)',
+    subtypes: ['колоратурное', 'лирическое', 'лирико-драматическое', 'драматическое'],
+    description:
+      'Высокий, светлый и полётный женский голос. Легко раскрывается в верхнем регистре, звучит ярко и воздушно.',
+    minHz: 262,
+    maxHz: 1046,
+    pianoNotes: ['C4', 'E4', 'G4', 'C5'],
+  },
+  {
+    id: 'mezzo',
+    gender: 'female',
+    name: 'Меццо-сопрано',
+    rangeLabel: 'a – a2 (ля малой – ля второй октавы)',
+    subtypes: ['лирическое', 'характерное', 'драматическое'],
+    description:
+      'Средний женский голос — плотнее и темнее сопрано, с бархатной серединой и выразительным тёплым тембром.',
+    minHz: 205,
+    maxHz: 262,
+    pianoNotes: ['A3', 'C4', 'E4', 'A4'],
+  },
+  {
+    id: 'contralto',
+    gender: 'female',
+    name: 'Контральто (Альт)',
+    rangeLabel: 'f – f2 (фа малой – фа второй октавы)',
+    subtypes: ['глубокое', 'академическое альтовое'],
+    description:
+      'Самый низкий и редкий женский голос — глубокий, насыщенный и благородно-бархатный. В академической практике часто упоминается в паре с термином альт.',
+    minHz: 135,
+    maxHz: 205,
+    pianoNotes: ['F3', 'A3', 'C4', 'F4'],
+  },
+  {
+    id: 'tenor',
+    gender: 'male',
+    name: 'Тенор',
+    rangeLabel: 'c – c2 (до малой – до второй октавы)',
+    subtypes: ['альтино', 'лирический', 'лирико-драматический (спинто)', 'драматический'],
+    description:
+      'Высокий, яркий и эмоциональный мужской голос с богатым микстом и свободным верхним регистром.',
+    minHz: 155,
+    maxHz: 523,
+    pianoNotes: ['C3', 'E3', 'G3', 'C4'],
+  },
+  {
+    id: 'baritone',
+    gender: 'male',
+    name: 'Баритон',
+    rangeLabel: 'A – a1 (ля большой – ля первой октавы)',
+    subtypes: ['лирический', 'лирико-драматический', 'драматический', 'бас-баритон'],
+    description:
+      'Средний, самый распространённый мужской тип голоса — мужественный, гибкий и универсальный для любых жанров.',
+    minHz: 112,
+    maxHz: 155,
+    pianoNotes: ['A2', 'C#3', 'E3', 'A3'],
+  },
+  {
+    id: 'bass',
+    gender: 'male',
+    name: 'Бас',
+    rangeLabel: 'F – f1 (фа большой – фа первой октавы)',
+    subtypes: ['кантанте (высокий)', 'центральный', 'профундо (глубокий)'],
+    description:
+      'Низкий, объёмный и фундаментный мужской голос с мощной грудной опорой и гипнотической глубиной.',
+    minHz: 65,
+    maxHz: 112,
+    pianoNotes: ['F2', 'A2', 'C3', 'F3'],
+  },
+];
+
+export const VOICE_TEST_CONTENT = {
+  songs: [
+    {
+      id: 'song-1',
+      title: 'Лирическая поп-баллада',
+      hint: 'Пропойте протяжно, на мягком дыхании',
+      lines: '«Тихо падает свет на ночное окно, / В сердце музыка дышит свободно...»',
+    },
+    {
+      id: 'song-2',
+      title: 'Драйвовый рок / поп-припев',
+      hint: 'Дайте больше опоры и яркости в голос',
+      lines: '«Выше неба летит этот чистый аккорд, / Я пою — и не страшен ни ветер, ни шторм!»',
+    },
+    {
+      id: 'song-3',
+      title: 'Тёплый джаз / эстрада',
+      hint: 'Попробуйте мягкий субтон и плавные переходы',
+      lines: '«Среди огней большого города, / Поймаю ритм и ноту золотую...»',
+    },
+  ],
+  randomPhrases: [
+    '«Ми-я-ма-мо-му» — протяните гласные ровно на одном удобном звуке вверх и вниз.',
+    '«Ле-е-е-тит свободный звук от дыхания к небу!» — проговорите нараспев с улыбкой.',
+    '«Ма-мэ-ми-мо-му» — спойте мягко, словно качая голос на волне, без напряжения в шее.',
+    '«Ба-ра-ба-ра-бу» — лёгкое стаккато и длинное протяжное «А-а-а» на самом комфортном тоне.',
+  ],
+};
+
 export const REVIEWS_CONTENT = {
   eyebrow: 'Отзывы учеников и родителей',
   title: 'Реальные впечатления о занятиях',
   subtitle:
-    'Нажмите на любую карточку, чтобы перейти к отзывам на Яндекс Услугах или Авито.',
+    'Нажмите на любую карточку или рейтинг, чтобы перейти к отзывам на Яндекс Услугах или Авито.',
   yandexRating: '5.0',
+  avitoRating: '5.0',
   items: [
     {
       id: 'rev-1',
@@ -462,10 +589,19 @@ export const CONTACTS_CONTENT = {
   eyebrow: 'Контакты и запись',
   title: 'Начните путь к свободному голосу',
   subtitle:
-    'Напишите напрямую в удобный мессенджер — я отвечу лично, помогу выбрать время и расскажу все детали занятий.',
+    'Выберите удобный способ связи или постройте маршрут до студии — я отвечу лично, помогу подобрать время и расскажу все детали занятий.',
   socialLinks: [
-    { label: 'Telegram-канал', href: 'https://t.me/valeria_erokhina_vocal', handle: '@valeria_erokhina_vocal' },
-    { label: 'ВКонтакте', href: 'https://vk.com/', handle: 'vk.com/valeria_vocal' },
-    { label: 'YouTube / Rutube', href: 'https://youtube.com/', handle: 'Выступления и разборы' },
+    {
+      id: 'youtube',
+      label: 'YouTube',
+      href: 'https://www.youtube.com/',
+      handle: 'Выступления и разборы (скоро ссылка)',
+    },
+    {
+      id: 'rutube',
+      label: 'Rutube',
+      href: 'https://rutube.ru/',
+      handle: 'Видеоуроки и концерты (скоро ссылка)',
+    },
   ] satisfies SocialLink[],
 };

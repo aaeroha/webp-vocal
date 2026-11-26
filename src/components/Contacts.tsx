@@ -1,21 +1,52 @@
-import { Clock, ExternalLink, Globe, MapPin, MessageCircle, Send } from 'lucide-react';
-import { CONTACTS_CONTENT, SITE_CONFIG } from '../data/content';
+import { CalendarCheck, Clock, ExternalLink, Globe, MapPin } from 'lucide-react';
+import { CONTACTS_CONTENT, SITE_CONFIG, type SocialLink } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
-export function Contacts() {
-  const { ref, isVisible } = useReveal();
+interface ContactsProps {
+  isDark: boolean;
+  onOpenBooking: () => void;
+}
+
+function SocialLogo({ id }: { id: SocialLink['id'] }) {
+  if (id === 'youtube') {
+    return (
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none">
+        <rect x="2" y="4.5" width="20" height="15" rx="4.2" fill="#FF0000" />
+        <path d="M10 9.2L15.5 12L10 14.8V9.2Z" fill="#FFFFFF" />
+      </svg>
+    );
+  }
+  // Rutube logo badge
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0" fill="none">
+      <rect x="2" y="2" width="20" height="20" rx="5.5" fill="#001F3F" />
+      <path
+        d="M7.5 16.5V7.5H12.4C14.6 7.5 15.8 8.6 15.8 10.3C15.8 11.7 15 12.6 13.7 12.9L16 16.5H13.5L11.5 13.2H9.7V16.5H7.5ZM9.7 11.4H12.1C13.1 11.4 13.6 11 13.6 10.3C13.6 9.6 13.1 9.2 12.1 9.2H9.7V11.4Z"
+        fill="#FFFFFF"
+      />
+      <circle cx="17.8" cy="6.4" r="1.4" fill="#EF4444" />
+    </svg>
+  );
+}
+
+export function Contacts({ isDark, onOpenBooking }: ContactsProps) {
+  const { ref, isVisible } = useReveal({ threshold: 0.08 });
+
+  const mapSrc = isDark
+    ? SITE_CONFIG.yandexMapWidgetDarkUrl
+    : SITE_CONFIG.yandexMapWidgetLightUrl;
 
   return (
     <section id="contacts" className="relative z-10 py-14 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className={`reveal-item rounded-3xl border border-zinc-900/10 bg-[#F2EDE6]/90 p-6 dark:border-white/10 dark:bg-[#16151C]/95 sm:p-10 lg:p-12 ${
+          className={`reveal-scale rounded-3xl border border-zinc-900/10 bg-[#F2EDE6]/90 p-6 dark:border-white/10 dark:bg-[#16151C]/95 sm:p-10 lg:p-12 ${
             isVisible ? 'is-visible' : ''
           }`}
         >
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12 items-stretch">
-            {/* Left: Heading, Messengers, Studio details & Socials */}
+            {/* Left: Heading, Unified CTA, Studio details & YouTube/Rutube Socials */}
             <div className="flex flex-col justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
@@ -28,25 +59,15 @@ export function Contacts() {
                   {CONTACTS_CONTENT.subtitle}
                 </p>
 
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <a
-                    href={SITE_CONFIG.telegramUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-sheen inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#B45309] px-6 py-3.5 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow"
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={onOpenBooking}
+                    className="btn-sheen inline-flex w-full sm:w-auto items-center justify-center gap-2.5 rounded-full bg-[#B45309] px-8 py-4 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow cursor-pointer"
                   >
-                    <Send className="h-4 w-4" />
-                    <span>Написать в Telegram</span>
-                  </a>
-                  <a
-                    href={SITE_CONFIG.whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-zinc-900/15 bg-[#FAF8F5] px-6 py-3.5 text-sm font-semibold text-zinc-900 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309]/40 hover:text-[#B45309] dark:border-white/15 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:border-[#E2A856]/50 dark:hover:text-[#E2A856]"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    <span>Написать в WhatsApp</span>
-                  </a>
+                    <CalendarCheck className="h-4.5 w-4.5" />
+                    <span>Записаться на урок</span>
+                  </button>
                 </div>
 
                 <div className="mt-7 space-y-3.5 border-t border-zinc-900/10 pt-6 dark:border-white/10">
@@ -69,45 +90,47 @@ export function Contacts() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Социальные сети и материалы
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2.5">
+                <div className="mt-3 flex flex-wrap gap-3">
                   {CONTACTS_CONTENT.socialLinks.map((social) => (
                     <a
-                      key={social.label}
+                      key={social.id}
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-full border border-zinc-900/10 bg-[#FAF8F5] px-3.5 py-2 text-xs font-medium text-zinc-800 transition-colors hover:border-[#B45309]/40 hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-zinc-200 dark:hover:border-[#E2A856]/45 dark:hover:text-[#E2A856]"
+                      className="group inline-flex items-center gap-2.5 rounded-2xl border border-zinc-900/10 bg-[#FAF8F5] px-4 py-2.5 text-xs font-semibold text-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B45309]/45 hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-zinc-200 dark:hover:border-[#E2A856]/45 dark:hover:text-[#E2A856]"
                     >
+                      <SocialLogo id={social.id} />
                       <span>{social.label}</span>
-                      <ExternalLink className="h-3 w-3 opacity-70" />
+                      <ExternalLink className="h-3.5 w-3.5 opacity-60 transition-opacity group-hover:opacity-100" />
                     </a>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Right: Yandex Map with marker on Ватутинки, Москва */}
+            {/* Right: Yandex Map dynamically respecting Dark Theme */}
             <div className="flex flex-col overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#FAF8F5]/85 dark:border-white/10 dark:bg-[#0D0C10]/80">
               <div className="relative min-h-[280px] flex-1 w-full sm:min-h-[340px]">
                 <iframe
+                  key={isDark ? 'yandex-dark' : 'yandex-light'}
                   title="Карта студии — г. Москва, Ватутинки"
-                  src={SITE_CONFIG.yandexMapWidgetUrl}
+                  src={mapSrc}
                   className="h-full w-full border-0"
                   loading="lazy"
                   allowFullScreen
                 />
               </div>
-              <div className="flex items-center justify-between gap-3 border-t border-zinc-900/10 px-4 py-3 text-xs dark:border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-900/10 px-4 py-3 text-xs dark:border-white/10">
                 <span className="font-medium text-zinc-700 dark:text-zinc-300">
                   Москва, Ватутинки
                 </span>
                 <a
-                  href={SITE_CONFIG.yandexMapDirectUrl}
+                  href={SITE_CONFIG.yandexMapRouteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 font-semibold text-[#B45309] hover:underline dark:text-[#E2A856]"
                 >
-                  <span>Открыть в Яндекс Картах</span>
+                  <span>Построить маршрут в Яндекс Картах</span>
                   <ExternalLink className="h-3 w-3" />
                 </a>
               </div>

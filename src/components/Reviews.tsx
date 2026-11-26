@@ -1,4 +1,4 @@
-import { ExternalLink, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { AVITO_REVIEWS_URL, REVIEWS_CONTENT, YANDEX_PROFILE_URL } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
@@ -19,20 +19,34 @@ function YandexLogo() {
   );
 }
 
+function AvitoLogo() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      className="h-7 w-7 shrink-0"
+      fill="none"
+    >
+      <circle cx="8.2" cy="15.8" r="5" fill="#04E061" />
+      <circle cx="15.8" cy="7.5" r="3.9" fill="#00AAFF" />
+      <circle cx="6.8" cy="7.2" r="2.6" fill="#965EEB" />
+      <circle cx="16.5" cy="16.2" r="2.9" fill="#FF4053" />
+    </svg>
+  );
+}
+
 export function Reviews() {
-  const { ref: sectionRef, isVisible } = useReveal(0.12);
+  const { ref: sectionRef, isVisible } = useReveal({ threshold: 0.08 });
   const trackItems = [...REVIEWS_CONTENT.items, ...REVIEWS_CONTENT.items];
 
   return (
     <section id="reviews" className="relative z-10 py-14 sm:py-20 lg:py-24">
       <div
         ref={sectionRef}
-        className={`reveal-item mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ${
-          isVisible ? 'is-visible' : ''
-        }`}
+        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
       >
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div className="max-w-2xl">
+          <div className={`reveal-left max-w-2xl ${isVisible ? 'is-visible' : ''}`}>
             <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
               {REVIEWS_CONTENT.eyebrow}
             </p>
@@ -44,13 +58,16 @@ export function Reviews() {
             </p>
           </div>
 
-          {/* 5-star Yandex Profile Badge with Yandex Logo & Avito Link */}
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Twin 5.0 Profile Badges: Yandex & Avito (with green outline) */}
+          <div
+            style={{ transitionDelay: '120ms' }}
+            className={`reveal-right flex flex-wrap items-stretch gap-3 ${isVisible ? 'is-visible' : ''}`}
+          >
             <a
               href={YANDEX_PROFILE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 rounded-2xl border border-[#B45309]/25 bg-[#F2EDE6]/95 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309]/50 dark:border-[#E2A856]/30 dark:bg-[#16151C] dark:hover:border-[#E2A856]/60 dark:gold-glow-hover"
+              className="inline-flex min-w-[215px] items-center gap-3 rounded-2xl border border-[#B45309]/30 bg-[#F2EDE6]/95 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309]/60 hover:shadow-md dark:border-[#E2A856]/35 dark:bg-[#16151C] dark:hover:border-[#E2A856]/65 dark:gold-glow-hover"
             >
               <YandexLogo />
               <span className="font-serif text-3xl font-semibold leading-none text-[#B45309] dark:text-[#E2A856]">
@@ -72,16 +89,33 @@ export function Reviews() {
               href={AVITO_REVIEWS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl border border-zinc-900/12 bg-[#F2EDE6]/80 px-4 py-3 text-xs font-semibold text-zinc-800 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309]/40 hover:text-[#B45309] dark:border-white/12 dark:bg-[#16151C] dark:text-[#F5F3EF] dark:hover:border-[#E2A856]/50 dark:hover:text-[#E2A856]"
+              className="inline-flex min-w-[215px] items-center gap-3 rounded-2xl border-2 border-[#04B44B]/60 bg-[#F2EDE6]/95 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#04B44B] hover:shadow-md hover:shadow-[#04B44B]/15 dark:border-[#04E061]/55 dark:bg-[#16151C] dark:hover:border-[#04E061] dark:hover:shadow-[#04E061]/20"
             >
-              <span>Отзывы на Авито</span>
-              <ExternalLink className="h-3.5 w-3.5" />
+              <AvitoLogo />
+              <span className="font-serif text-3xl font-semibold leading-none text-[#049A40] dark:text-[#04E061]">
+                {REVIEWS_CONTENT.avitoRating}
+              </span>
+              <div className="leading-tight">
+                <div className="flex items-center gap-0.5 text-[#049A40] dark:text-[#04E061]">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                  ))}
+                </div>
+                <p className="mt-1 text-xs font-semibold text-zinc-800 dark:text-[#F5F3EF]">
+                  Оценка на Авито
+                </p>
+              </div>
             </a>
           </div>
         </div>
 
         {/* Infinite auto-scrolling carousel inside max-w-7xl */}
-        <div className="cert-marquee-wrap relative mt-8 overflow-hidden rounded-2xl sm:mt-10">
+        <div
+          style={{ transitionDelay: '180ms' }}
+          className={`reveal-scale cert-marquee-wrap relative mt-8 overflow-hidden rounded-2xl sm:mt-10 ${
+            isVisible ? 'is-visible' : ''
+          }`}
+        >
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
@@ -98,7 +132,11 @@ export function Reviews() {
                 href={review.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex w-[290px] shrink-0 flex-col rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/92 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#B45309]/40 hover:shadow-md dark:border-white/10 dark:bg-[#16151C]/95 dark:hover:border-[#E2A856]/45 dark:gold-glow-hover sm:w-[340px] sm:p-6"
+                className={`group flex w-[290px] shrink-0 flex-col rounded-2xl border bg-[#F2EDE6]/92 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:bg-[#16151C]/95 dark:gold-glow-hover sm:w-[340px] sm:p-6 ${
+                  review.platform === 'Авито'
+                    ? 'border-[#04B44B]/30 hover:border-[#04B44B]/70 dark:border-[#04E061]/25 dark:hover:border-[#04E061]/65'
+                    : 'border-zinc-900/10 hover:border-[#B45309]/40 dark:border-white/10 dark:hover:border-[#E2A856]/45'
+                }`}
               >
                 {/* Top: Author & Date + Platform badge */}
                 <div className="flex items-start justify-between gap-2">
@@ -110,7 +148,13 @@ export function Reviews() {
                       {review.date}
                     </p>
                   </div>
-                  <span className="shrink-0 rounded-full bg-[#B45309]/10 px-2.5 py-0.5 text-[11px] font-semibold text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                      review.platform === 'Авито'
+                        ? 'bg-[#04B44B]/12 text-[#049A40] dark:bg-[#04E061]/15 dark:text-[#04E061]'
+                        : 'bg-[#B45309]/10 text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]'
+                    }`}
+                  >
                     {review.platform}
                   </span>
                 </div>

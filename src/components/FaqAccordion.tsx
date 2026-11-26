@@ -5,7 +5,8 @@ import { useReveal } from '../hooks/useReveal';
 
 export function FaqAccordion() {
   const [openId, setOpenId] = useState<string | null>(FAQ_CONTENT.items[0]?.id ?? null);
-  const { ref, isVisible } = useReveal();
+  const { ref: headerRef, isVisible: headerVisible } = useReveal({ threshold: 0.1 });
+  const { ref, isVisible } = useReveal({ threshold: 0.06 });
 
   const toggle = (id: string) => {
     setOpenId((prev) => (prev === id ? null : id));
@@ -14,7 +15,10 @@ export function FaqAccordion() {
   return (
     <section id="faq" className="relative z-10 py-14 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <div className="text-left sm:text-center">
+        <div
+          ref={headerRef}
+          className={`reveal-item text-left sm:text-center ${headerVisible ? 'is-visible' : ''}`}
+        >
           <p className="text-[13px] font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
             {FAQ_CONTENT.eyebrow}
           </p>
