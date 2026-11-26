@@ -60,9 +60,9 @@ export function FaqAccordion() {
                   }`}
                 >
                   <div className="overflow-hidden">
-                    <p className="px-5 pb-5 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:px-6 sm:pb-6 sm:text-base">
+                    <div className="px-5 pb-5 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300 sm:px-6 sm:pb-6 sm:text-base whitespace-pre-line">
                       {item.answer}
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>
