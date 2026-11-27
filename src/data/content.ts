@@ -550,7 +550,7 @@ export const VOCAL_ATLAS_TECHNIQUES: VocalTechniqueInfo[] = [
     activeZones: ['chest', 'larynx'],
     zoneNames: ['Грудная клетка и трахея', 'Гортань (полное смыкание)'],
     accentColor: '#10B981',
-    anchor3D: [0.0, -1.18, 0.35],
+    anchor3D: [0.0, -1.16, 0.34],
     physiology:
       'Голосовые складки работают всей толщиной с низкой частотой смыкания, а грудная клетка и трахея создают глубокий низкочастотный резонанс и устойчивую опору.',
     sensation:
@@ -571,7 +571,7 @@ export const VOCAL_ATLAS_TECHNIQUES: VocalTechniqueInfo[] = [
     activeZones: ['larynx', 'palate', 'chest'],
     zoneNames: ['Щитовидный хрящ + тванг', 'Нёбный рупор', 'Грудная опора'],
     accentColor: '#F59E0B',
-    anchor3D: [0.0, -0.34, 0.36],
+    anchor3D: [0.0, -0.32, 0.34],
     physiology:
       'Плотное, но безопасное смыкание истинных складок, лёгкий наклон перстневидного хряща и узкая настройка надгортанной воронки (тванг), усиливающая голос без крика.',
     sensation:
@@ -593,7 +593,7 @@ export const VOCAL_ATLAS_TECHNIQUES: VocalTechniqueInfo[] = [
     activeZones: ['false-folds', 'larynx'],
     zoneNames: ['Ложные (вестибулярные) складки', 'Надгортанник и гортань'],
     accentColor: '#F43F5E',
-    anchor3D: [0.0, -0.22, 0.34],
+    anchor3D: [0.0, -0.14, 0.30],
     physiology:
       'Ложные голосовые складки (расположенные чуть выше истинных) мягко сужаются и добавляют равномерную высокочастотную вибрацию, не травмируя основные связки.',
     sensation:
@@ -614,7 +614,7 @@ export const VOCAL_ATLAS_TECHNIQUES: VocalTechniqueInfo[] = [
     activeZones: ['palate', 'larynx'],
     zoneNames: ['Голосовые складки (мягкое смыкание)', 'Мягкое нёбо и ротовой тракт'],
     accentColor: '#38BDF8',
-    anchor3D: [0.0, 0.22, 0.42],
+    anchor3D: [0.0, 0.25, 0.44],
     physiology:
       'Истинные складки смыкаются бережно, оставляя микроскопический воздушный зазор вдоль задней трети — поток воздуха формирует нежный бархатный тембр.',
     sensation:
@@ -635,7 +635,7 @@ export const VOCAL_ATLAS_TECHNIQUES: VocalTechniqueInfo[] = [
     activeZones: ['mask', 'palate', 'larynx'],
     zoneNames: ['Носовые пазухи (маска)', 'Нёбный свод', 'Гортань'],
     accentColor: '#E2A856',
-    anchor3D: [0.0, 0.48, 0.56],
+    anchor3D: [0.0, 0.50, 0.55],
     physiology:
       'Грудные и перстнещитовидные мышцы перераспределяют натяжение плавно — звуковая волна отражается от твёрдого нёба прямо в переднюю резонансную «маску».',
     sensation:
@@ -656,7 +656,7 @@ export const VOCAL_ATLAS_TECHNIQUES: VocalTechniqueInfo[] = [
     activeZones: ['head', 'mask', 'palate'],
     zoneNames: ['Лобные и верхние пазухи', 'Высокий купол мягкого нёба'],
     accentColor: '#A78BFA',
-    anchor3D: [0.0, 0.82, 0.36],
+    anchor3D: [0.0, 0.88, 0.36],
     physiology:
       'Голосовые складки вытягиваются и истончаются, колеблясь только тонкими краями, а акустическая энергия фокусируется в верхних пазухах и куполе головы.',
     sensation:

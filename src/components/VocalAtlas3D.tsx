@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {
   RotateCcw,
   Sparkles,
@@ -15,11 +16,11 @@ import {
   type VocalTechniqueInfo,
 } from '../data/content';
 import {
-  playInstrumentSample,
+  playVocalTechniqueVoice,
   preloadInstrument,
 } from '../utils/instrumentSampler';
 
-// Order chips anatomically from top (cranial vault) down to chest/diaphragm
+// Order chips anatomically from cranial vault down to chest/diaphragm
 const ANATOMICAL_CHIP_ORDER: VocalTechniqueInfo['id'][] = [
   'head-register',
   'mix',
@@ -33,140 +34,100 @@ const ORDERED_TECHNIQUES: VocalTechniqueInfo[] = ANATOMICAL_CHIP_ORDER.map(
   (id) => VOCAL_ATLAS_TECHNIQUES.find((t) => t.id === id)
 ).filter((t): t is VocalTechniqueInfo => Boolean(t));
 
-const PLAYABLE_INSTRUMENT_NOTE: Record<
-  VocalTechniqueInfo['id'],
-  { primary: 'strings' | 'piano'; secondary?: 'strings' | 'piano'; fifth?: number }
-> = {
-  'head-register': { primary: 'strings', secondary: 'piano' },
-  mix: { primary: 'piano', secondary: 'strings' },
-  subtone: { primary: 'strings' },
-  distortion: { primary: 'piano', fifth: 1.4983 }, // clean musical power fifth
-  belt: { primary: 'piano', secondary: 'strings' },
-  'chest-support': { primary: 'strings', secondary: 'piano' },
-};
-
-function playPleasantTechniqueNote(tech: VocalTechniqueInfo): void {
-  const cfg = PLAYABLE_INSTRUMENT_NOTE[tech.id] ?? { primary: 'piano' };
-  const freq = tech.freqHz;
-
-  playInstrumentSample(freq, cfg.primary, 1.45, 0.58);
-  if (cfg.secondary) {
-    window.setTimeout(() => {
-      playInstrumentSample(freq, cfg.secondary!, 1.35, 0.28);
-    }, 35);
-  }
-  if (cfg.fifth) {
-    window.setTimeout(() => {
-      playInstrumentSample(freq * cfg.fifth!, cfg.primary, 1.25, 0.34);
-    }, 45);
-  }
+function createHolographicGlassMaterial(
+  initialAccentHex: string,
+  fadeMode: 'head' | 'thorax'
+): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uAccentColor: { value: new THREE.Color(initialAccentHex) },
+    },
+    vertexShader: `
+      varying vec3 vNormalView;
+      varying vec3 vViewPos;
+      varying vec3 vLocalPos;
+      void main() {
+        vLocalPos = position;
+        vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+        vViewPos = -mvPos.xyz;
+        vNormalView = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * mvPos;
+      }
+    `,
+    fragmentShader:
+      fadeMode === 'head'
+        ? `
+          uniform vec3 uAccentColor;
+          varying vec3 vNormalView;
+          varying vec3 vViewPos;
+          varying vec3 vLocalPos;
+          void main() {
+            vec3 viewDir = normalize(vViewPos);
+            float ndotv = abs(dot(normalize(vNormalView), viewDir));
+            float fresnel = pow(1.0 - ndotv, 2.05);
+            // Smoothly fade lower shoulder edge of LeePerrySmith into the thoracic ribcage envelope
+            float bottomFade = smoothstep(-3.96, -2.55, vLocalPos.y);
+            vec3 baseColor = vec3(0.48, 0.60, 0.78);
+            vec3 rimColor = mix(vec3(0.76, 0.85, 0.98), uAccentColor, 0.28);
+            vec3 col = mix(baseColor, rimColor, fresnel);
+            float alpha = (0.055 + fresnel * 0.56) * bottomFade;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `
+        : `
+          uniform vec3 uAccentColor;
+          varying vec3 vNormalView;
+          varying vec3 vViewPos;
+          varying vec3 vLocalPos;
+          void main() {
+            vec3 viewDir = normalize(vViewPos);
+            float ndotv = abs(dot(normalize(vNormalView), viewDir));
+            float fresnel = pow(1.0 - ndotv, 2.15);
+            // Seamless top blend into LeePerrySmith shoulders and clean base fade
+            float topFade = 1.0 - smoothstep(-0.88, -0.58, vLocalPos.y);
+            float bottomFade = smoothstep(-1.76, -1.56, vLocalPos.y);
+            vec3 baseColor = vec3(0.44, 0.56, 0.74);
+            vec3 rimColor = mix(vec3(0.74, 0.84, 0.96), uAccentColor, 0.28);
+            vec3 col = mix(baseColor, rimColor, fresnel);
+            float alpha = (0.045 + fresnel * 0.48) * topFade * bottomFade;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
 }
 
-interface CrossSectionSlice {
-  y: number;
-  rx: number;
-  zFront: number;
-  zBack: number;
-  nosePeak: number;
-  browDip: number;
-  mouthIndent: number;
-  chinPeak: number;
-  clavicleDip: number;
-}
+function buildThoraxEnvelopeGeometry(): THREE.BufferGeometry {
+  // Smooth organic ribcage shell from clavicle (-0.56) down to diaphragmatic waist (-1.76)
+  const slices = [
+    { y: -0.56, rx: 0.98, zf: 0.36, zb: 0.38 },
+    { y: -0.74, rx: 1.12, zf: 0.43, zb: 0.43 },
+    { y: -0.96, rx: 1.07, zf: 0.45, zb: 0.44 },
+    { y: -1.24, rx: 1.00, zf: 0.44, zb: 0.42 },
+    { y: -1.52, rx: 0.94, zf: 0.41, zb: 0.40 },
+    { y: -1.76, rx: 0.88, zf: 0.38, zb: 0.38 },
+  ];
 
-const BUST_SLICES: CrossSectionSlice[] = [
-  { y: 1.34, rx: 0.04, zFront: 0.04, zBack: -0.04, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  { y: 1.26, rx: 0.36, zFront: 0.34, zBack: -0.36, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  { y: 1.12, rx: 0.50, zFront: 0.50, zBack: -0.52, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  { y: 0.90, rx: 0.55, zFront: 0.57, zBack: -0.56, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  { y: 0.72, rx: 0.54, zFront: 0.60, zBack: -0.54, nosePeak: 0.02, browDip: 0.03, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  // Orbital / brow ridge
-  { y: 0.58, rx: 0.52, zFront: 0.59, zBack: -0.50, nosePeak: 0.07, browDip: 0.08, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  // Upper nose bridge + cheeks
-  { y: 0.45, rx: 0.51, zFront: 0.58, zBack: -0.47, nosePeak: 0.16, browDip: 0.02, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  // Nose tip
-  { y: 0.34, rx: 0.49, zFront: 0.57, zBack: -0.44, nosePeak: 0.22, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  // Philtrum & upper lip
-  { y: 0.23, rx: 0.46, zFront: 0.58, zBack: -0.41, nosePeak: 0.04, browDip: 0, mouthIndent: 0.02, chinPeak: 0, clavicleDip: 0 },
-  // Lips crevice
-  { y: 0.16, rx: 0.44, zFront: 0.56, zBack: -0.39, nosePeak: 0, browDip: 0, mouthIndent: 0.05, chinPeak: 0, clavicleDip: 0 },
-  // Lower lip
-  { y: 0.10, rx: 0.42, zFront: 0.57, zBack: -0.38, nosePeak: 0, browDip: 0, mouthIndent: 0.01, chinPeak: 0.03, clavicleDip: 0 },
-  // Sculpted chin & jawline
-  { y: 0.00, rx: 0.38, zFront: 0.55, zBack: -0.36, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0.08, clavicleDip: 0 },
-  // Submental jaw taper into neck
-  { y: -0.14, rx: 0.32, zFront: 0.32, zBack: -0.33, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  // Upper neck
-  { y: -0.28, rx: 0.29, zFront: 0.28, zBack: -0.31, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  // Lower neck
-  { y: -0.46, rx: 0.31, zFront: 0.29, zBack: -0.33, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0.04 },
-  // Trapezius / clavicle transition
-  { y: -0.64, rx: 0.68, zFront: 0.35, zBack: -0.37, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0.06 },
-  // Shoulders & upper thorax
-  { y: -0.84, rx: 0.98, zFront: 0.42, zBack: -0.42, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0.03 },
-  // Mid chest
-  { y: -1.18, rx: 1.04, zFront: 0.45, zBack: -0.44, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  // Lower ribcage taper
-  { y: -1.52, rx: 0.98, zFront: 0.42, zBack: -0.42, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-  // Diaphragmatic base
-  { y: -1.74, rx: 0.92, zFront: 0.39, zBack: -0.39, nosePeak: 0, browDip: 0, mouthIndent: 0, chinPeak: 0, clavicleDip: 0 },
-];
-
-function computeBustVertex(slice: CrossSectionSlice, u: number): THREE.Vector3 {
-  // u in [0, 1], theta = 0 faces +Z (front)
-  const theta = u * Math.PI * 2;
-  const sinT = Math.sin(theta);
-  const cosT = Math.cos(theta);
-
-  const x = sinT * slice.rx;
-  let z = cosT >= 0 ? cosT * slice.zFront : cosT * Math.abs(slice.zBack);
-
-  if (cosT > 0.15) {
-    // Nose bridge bulge tight around center
-    const centerFactor = Math.exp(-Math.pow(sinT * 5.2, 2));
-    z += slice.nosePeak * centerFactor;
-
-    // Eye socket indentations at x offset +/- 0.36 * rx
-    const eyeLeft = Math.exp(-Math.pow((sinT - 0.38) * 5.0, 2));
-    const eyeRight = Math.exp(-Math.pow((sinT + 0.38) * 5.0, 2));
-    z -= slice.browDip * (eyeLeft + eyeRight);
-
-    // Subtle mouth & chin shaping
-    const mouthCenter = Math.exp(-Math.pow(sinT * 4.2, 2));
-    z -= slice.mouthIndent * mouthCenter;
-    z += slice.chinPeak * Math.exp(-Math.pow(sinT * 3.8, 2));
-
-    // Sternal notch / clavicle valley
-    z -= slice.clavicleDip * Math.exp(-Math.pow(sinT * 3.2, 2));
-  }
-
-  return new THREE.Vector3(x, slice.y, z);
-}
-
-function buildSculptedBustGeometry(radialSegments = 56): {
-  surface: THREE.BufferGeometry;
-  profileCurvePoints: THREE.Vector3[];
-} {
-  const rows = BUST_SLICES.length;
-  const cols = radialSegments + 1;
+  const radialSegs = 56;
+  const cols = radialSegs + 1;
   const positions: number[] = [];
-  const uvs: number[] = [];
   const indices: number[] = [];
-  const profileCurvePoints: THREE.Vector3[] = [];
 
-  for (let r = 0; r < rows; r++) {
-    const slice = BUST_SLICES[r];
-    profileCurvePoints.push(computeBustVertex(slice, 0));
+  for (let r = 0; r < slices.length; r++) {
+    const s = slices[r];
     for (let c = 0; c < cols; c++) {
-      const u = c / radialSegments;
-      const v = computeBustVertex(slice, u);
-      positions.push(v.x, v.y, v.z);
-      uvs.push(u, r / (rows - 1));
+      const theta = (c / radialSegs) * Math.PI * 2;
+      const x = Math.sin(theta) * s.rx;
+      const cosT = Math.cos(theta);
+      const z = cosT >= 0 ? cosT * s.zf : cosT * s.zb;
+      positions.push(x, s.y, z);
     }
   }
 
-  for (let r = 0; r < rows - 1; r++) {
-    for (let c = 0; c < radialSegments; c++) {
+  for (let r = 0; r < slices.length - 1; r++) {
+    for (let c = 0; c < radialSegs; c++) {
       const a = r * cols + c;
       const b = a + 1;
       const d = (r + 1) * cols + c;
@@ -176,13 +137,11 @@ function buildSculptedBustGeometry(radialSegments = 56): {
     }
   }
 
-  const surface = new THREE.BufferGeometry();
-  surface.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  surface.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  surface.setIndex(indices);
-  surface.computeVertexNormals();
-
-  return { surface, profileCurvePoints };
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geom.setIndex(indices);
+  geom.computeVertexNormals();
+  return geom;
 }
 
 function createSculptedLungGeometry(side: -1 | 1): THREE.BufferGeometry {
@@ -194,26 +153,21 @@ function createSculptedLungGeometry(side: -1 | 1): THREE.BufferGeometry {
     const vy = pos.getY(i);
     const vz = pos.getZ(i);
 
-    // vy in [-1, 1]; top = +1 (narrow lung apex), bottom = -1 (wide base on diaphragm)
-    const apexTaper = 0.58 + (1 - vy) * 0.25;
-    let x = vx * 0.30 * apexTaper;
-    let y = vy * 0.39;
-    let z = vz * 0.24 * (0.72 + (1 - vy) * 0.16);
+    const apexTaper = 0.56 + (1 - vy) * 0.25;
+    let x = vx * 0.31 * apexTaper;
+    let y = vy * 0.38;
+    let z = vz * 0.23 * (0.72 + (1 - vy) * 0.16);
 
-    // Flatten medial surface facing trachea/heart
     const isMedial = (side === -1 && vx > 0) || (side === 1 && vx < 0);
     if (isMedial) {
       x *= 0.56;
     }
 
-    // Concave base resting gently over diaphragm dome
     if (vy < -0.55) {
       y += Math.pow((-vy - 0.55) / 0.45, 1.4) * 0.085;
     }
 
-    // Slight gentle posterior-inferior sweep
-    z -= vy * 0.03;
-
+    z -= vy * 0.025;
     pos.setXYZ(i, x, y, z);
   }
 
@@ -222,25 +176,19 @@ function createSculptedLungGeometry(side: -1 | 1): THREE.BufferGeometry {
 }
 
 function createDiaphragmDomeGeometry(): THREE.BufferGeometry {
-  // Arched twin-cupola diaphragmatic muscle sheet directly beneath left & right lungs
-  const widthSegs = 40;
-  const depthSegs = 20;
-  const geom = new THREE.PlaneGeometry(1.52, 0.72, widthSegs, depthSegs);
+  const geom = new THREE.PlaneGeometry(1.50, 0.70, 38, 18);
   geom.rotateX(-Math.PI / 2);
 
   const pos = geom.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i);
     const z = pos.getZ(i);
-    const nx = x / 0.76; // -1..1
-    const nz = z / 0.36; // -1..1
+    const nx = x / 0.75;
+    const nz = z / 0.35;
 
-    // Double cupola dome (slightly higher right cupola & lower central tendon dip)
-    const edgeDrop = Math.pow(nx * nx * 0.72 + nz * nz * 0.85, 1.2) * 0.22;
+    const edgeDrop = Math.pow(nx * nx * 0.72 + nz * nz * 0.85, 1.2) * 0.21;
     const cupolaLift = Math.exp(-Math.pow((Math.abs(nx) - 0.45) * 2.6, 2)) * 0.085;
-    const y = cupolaLift - edgeDrop;
-
-    pos.setY(i, y);
+    pos.setY(i, cupolaLift - edgeDrop);
   }
 
   geom.computeVertexNormals();
@@ -255,14 +203,14 @@ export default function VocalAtlas3D() {
   const [selectedId, setSelectedId] = useState<VocalTechniqueInfo['id']>('mix');
   const [hoveredId, setHoveredId] = useState<VocalTechniqueInfo['id'] | null>(null);
   const [playingId, setPlayingId] = useState<VocalTechniqueInfo['id'] | null>(null);
-  const [verticalPan, setVerticalPan] = useState<number>(0); // -0.9..0.9
+  const [verticalPan, setVerticalPan] = useState<number>(0);
   const [calloutCoords, setCalloutCoords] = useState<{
     ax: number;
     ay: number;
     cx: number;
     cy: number;
     visible: boolean;
-  }>({ ax: 240, ay: 220, cx: 480, cy: 220, visible: true });
+  }>({ ax: 220, ay: 220, cx: 520, cy: 220, visible: true });
 
   const activeTech = useMemo(() => {
     const id = hoveredId || selectedId;
@@ -279,12 +227,12 @@ export default function VocalAtlas3D() {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const soundTimerRef = useRef<number | null>(null);
 
-  // Gently preload SoundFont instruments so demo notes sound instant & warm
+  // Preload realistic choir/voice vocal banks quietly on mount
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      preloadInstrument('piano');
-      preloadInstrument('strings');
-    }, 350);
+      preloadInstrument('choir_aahs');
+      preloadInstrument('voice_oohs');
+    }, 300);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -292,10 +240,10 @@ export default function VocalAtlas3D() {
     setSelectedId(tech.id);
     setPlayingId(tech.id);
     if (soundTimerRef.current) window.clearTimeout(soundTimerRef.current);
-    playPleasantTechniqueNote(tech);
+    playVocalTechniqueVoice(tech.freqHz, tech.id);
     soundTimerRef.current = window.setTimeout(() => {
       setPlayingId(null);
-    }, 1350);
+    }, 1500);
   };
 
   useEffect(() => {
@@ -307,10 +255,23 @@ export default function VocalAtlas3D() {
     const height = canvasHost.clientHeight || 520;
 
     const scene = new THREE.Scene();
-
     const camera = new THREE.PerspectiveCamera(34, width / height, 0.1, 40);
-    camera.position.set(1.05, 0.14, 5.55);
+    camera.position.set(1.05, 0.10, 5.75);
     cameraRef.current = camera;
+
+    const applyResponsiveCameraFrustum = (w: number, h: number) => {
+      camera.aspect = w / h;
+      if (w >= 768) {
+        // Shift camera view offset rightward so the 3D bust renders around ~36% from left,
+        // closer to the left colored chips, leaving a wider reading zone on the right.
+        const viewShiftPx = Math.round(w * 0.145);
+        camera.setViewOffset(w, h, viewShiftPx, 0, w, h);
+      } else {
+        camera.clearViewOffset();
+      }
+      camera.updateProjectionMatrix();
+    };
+    applyResponsiveCameraFrustum(width, height);
 
     const renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -331,11 +292,11 @@ export default function VocalAtlas3D() {
     controls.maxDistance = 8.4;
     controls.minPolarAngle = Math.PI * 0.22;
     controls.maxPolarAngle = Math.PI * 0.78;
-    controls.target.set(0, -0.08, 0);
+    controls.target.set(0, -0.14, 0);
     controlsRef.current = controls;
 
-    // Studio three-point rim lighting
-    scene.add(new THREE.AmbientLight(0xdce6f5, 0.72));
+    // Studio anatomical lighting
+    scene.add(new THREE.AmbientLight(0xdce6f5, 0.76));
 
     const keyLight = new THREE.DirectionalLight(0xfff1d6, 1.45);
     keyLight.position.set(2.8, 3.6, 4.2);
@@ -345,7 +306,7 @@ export default function VocalAtlas3D() {
     rimLight.position.set(-3.4, 1.4, -2.5);
     scene.add(rimLight);
 
-    const warmUnderLight = new THREE.PointLight(0xe2a856, 0.9, 9);
+    const warmUnderLight = new THREE.PointLight(0xe2a856, 0.85, 9);
     warmUnderLight.position.set(0, -1.8, 2.2);
     scene.add(warmUnderLight);
 
@@ -389,72 +350,52 @@ export default function VocalAtlas3D() {
     };
 
     // ------------------------------------------------------------------
-    // 1. OUTER SCULPTED HUMAN PROFILE SHELL (Head + Face + Neck + Thorax)
+    // 1. REALISTIC SCULPTED HUMAN HEAD, NECK & SHOULDERS (.GLB) + THORAX
     // ------------------------------------------------------------------
-    const { surface: bustGeom, profileCurvePoints } = buildSculptedBustGeometry(56);
+    const headHoloMat = createHolographicGlassMaterial(activeTech.accentColor, 'head');
+    const thoraxHoloMat = createHolographicGlassMaterial(activeTech.accentColor, 'thorax');
 
-    const shellMat = new THREE.MeshPhysicalMaterial({
-      color: 0xb6c7e2,
-      roughness: 0.25,
-      metalness: 0.04,
-      transparent: true,
-      opacity: 0.14,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-      clearcoat: 0.45,
-      clearcoatRoughness: 0.25,
-    });
-    const shellMesh = new THREE.Mesh(bustGeom, shellMat);
-    atlasGroup.add(shellMesh);
-
-    // Subtle anatomical gold wireframe sagittal profile + cheek contours
-    const frontProfileGeom = new THREE.BufferGeometry().setFromPoints(profileCurvePoints);
-    const frontProfileLine = new THREE.Line(
-      frontProfileGeom,
-      new THREE.LineBasicMaterial({ color: 0xe2a856, transparent: true, opacity: 0.68 })
-    );
-    atlasGroup.add(frontProfileLine);
-
-    // Back spine line + left/right silhouette cheek/shoulder meridians
-    const backCurvePts = BUST_SLICES.map((s) => computeBustVertex(s, 0.5));
-    const leftSidePts = BUST_SLICES.map((s) => computeBustVertex(s, 0.25));
-    const rightSidePts = BUST_SLICES.map((s) => computeBustVertex(s, 0.75));
-    const faintGoldMat = new THREE.LineBasicMaterial({
-      color: 0xe2a856,
-      transparent: true,
-      opacity: 0.24,
-    });
-    atlasGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(backCurvePts), faintGoldMat));
-    atlasGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leftSidePts), faintGoldMat));
-    atlasGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rightSidePts), faintGoldMat));
-
-    // Delicate orbital brow-jawline ring contours on face so face features read crisp in 3D
-    const jawPoints: THREE.Vector3[] = [];
-    for (let i = 0; i <= 32; i++) {
-      const a = -0.34 + (i / 32) * 0.68;
-      jawPoints.push(
-        new THREE.Vector3(
-          Math.sin(a * Math.PI) * 0.39,
-          0.01 + Math.abs(a) * 0.14,
-          Math.cos(a * Math.PI) * 0.57
-        )
-      );
-    }
-    atlasGroup.add(
-      new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(jawPoints),
-        new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.28 })
-      )
+    let isDisposed = false;
+    const gltfLoader = new GLTFLoader();
+    gltfLoader.load(
+      './media/models/LeePerrySmith.glb',
+      (gltf) => {
+        if (isDisposed) return;
+        const headRoot = gltf.scene;
+        headRoot.traverse((obj) => {
+          if ((obj as THREE.Mesh).isMesh) {
+            const mesh = obj as THREE.Mesh;
+            mesh.material = headHoloMat;
+            mesh.renderOrder = 2;
+          }
+        });
+        headRoot.scale.setScalar(0.28);
+        headRoot.position.set(0, 0.16, 0);
+        atlasGroup.add(headRoot);
+      },
+      undefined,
+      () => {
+        // Fallback minimal head ellipse only if model failed to load
+        if (isDisposed) return;
+        const fallbackHead = new THREE.Mesh(new THREE.SphereGeometry(0.46, 32, 24), thoraxHoloMat);
+        fallbackHead.scale.set(0.86, 1.15, 0.96);
+        fallbackHead.position.set(0, 0.56, 0.08);
+        atlasGroup.add(fallbackHead);
+      }
     );
 
-    // Holographic scan ring at chest base
+    const thoraxMesh = new THREE.Mesh(buildThoraxEnvelopeGeometry(), thoraxHoloMat);
+    thoraxMesh.renderOrder = 2;
+    atlasGroup.add(thoraxMesh);
+
+    // Subtle holographic floor scan ring
     const baseRingMat = new THREE.MeshBasicMaterial({
       color: 0xe2a856,
       transparent: true,
       opacity: 0.42,
       side: THREE.DoubleSide,
     });
-    const baseRing = new THREE.Mesh(new THREE.RingGeometry(0.95, 1.01, 64), baseRingMat);
+    const baseRing = new THREE.Mesh(new THREE.RingGeometry(0.92, 0.98, 64), baseRingMat);
     baseRing.rotation.x = -Math.PI / 2;
     baseRing.position.y = -1.75;
     atlasGroup.add(baseRing);
@@ -464,47 +405,38 @@ export default function VocalAtlas3D() {
     // ------------------------------------------------------------------
     const chestGroup = new THREE.Group();
 
-    // Central trachea airway column
     const tracheaMat = makeZoneMat('chest', 0x10b981, 0.42);
     const tracheaCore = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.095, 0.105, 0.54, 24),
+      new THREE.CylinderGeometry(0.088, 0.098, 0.52, 24),
       tracheaMat
     );
-    tracheaCore.position.set(0, -0.62, 0.04);
+    tracheaCore.position.set(0, -0.64, 0.05);
     chestGroup.add(tracheaCore);
 
-    // 10 crisp cartilaginous tracheal C-rings
     const ringMat = makeZoneMat('chest', 0x34d399, 0.72);
-    for (let i = 0; i < 10; i++) {
-      const tRing = new THREE.Mesh(new THREE.TorusGeometry(0.112, 0.013, 10, 28), ringMat);
+    for (let i = 0; i < 9; i++) {
+      const tRing = new THREE.Mesh(new THREE.TorusGeometry(0.104, 0.012, 10, 28), ringMat);
       tRing.rotation.x = Math.PI / 2;
-      tRing.position.set(0, -0.40 - i * 0.052, 0.04);
+      tRing.position.set(0, -0.43 - i * 0.052, 0.05);
       chestGroup.add(tRing);
     }
 
-    // Carina Y-Bifurcation (left & right mainstem bronchi entering lung hila)
     const leftBronchusCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, -0.87, 0.04),
-      new THREE.Vector3(-0.14, -0.97, 0.02),
-      new THREE.Vector3(-0.34, -1.06, 0.01),
+      new THREE.Vector3(0, -0.88, 0.05),
+      new THREE.Vector3(-0.14, -0.97, 0.03),
+      new THREE.Vector3(-0.34, -1.06, 0.02),
     ]);
     const rightBronchusCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, -0.87, 0.04),
-      new THREE.Vector3(0.14, -0.97, 0.02),
-      new THREE.Vector3(0.34, -1.06, 0.01),
+      new THREE.Vector3(0, -0.88, 0.05),
+      new THREE.Vector3(0.14, -0.97, 0.03),
+      new THREE.Vector3(0.34, -1.06, 0.02),
     ]);
-    const leftBronchus = new THREE.Mesh(
-      new THREE.TubeGeometry(leftBronchusCurve, 16, 0.052, 14, false),
-      tracheaMat
+    chestGroup.add(
+      new THREE.Mesh(new THREE.TubeGeometry(leftBronchusCurve, 16, 0.048, 14, false), tracheaMat),
+      new THREE.Mesh(new THREE.TubeGeometry(rightBronchusCurve, 16, 0.048, 14, false), tracheaMat)
     );
-    const rightBronchus = new THREE.Mesh(
-      new THREE.TubeGeometry(rightBronchusCurve, 16, 0.052, 14, false),
-      tracheaMat
-    );
-    chestGroup.add(leftBronchus, rightBronchus);
 
-    // Separated anatomical Left & Right Lungs with subtle pleural glow
-    const lungMat = makeZoneMat('chest', 0x10b981, 0.48);
+    const lungMat = makeZoneMat('chest', 0x10b981, 0.50);
     const lungWireMat = new THREE.MeshBasicMaterial({
       color: 0x6ee7b7,
       wireframe: true,
@@ -516,40 +448,37 @@ export default function VocalAtlas3D() {
     const leftLung = new THREE.Mesh(leftLungGeom, lungMat);
     leftLung.position.set(-0.42, -1.16, 0.03);
     leftLung.rotation.z = 0.08;
-    const leftLungWire = new THREE.Mesh(leftLungGeom, lungWireMat);
-    leftLung.add(leftLungWire);
+    leftLung.add(new THREE.Mesh(leftLungGeom, lungWireMat));
 
     const rightLungGeom = createSculptedLungGeometry(1);
     const rightLung = new THREE.Mesh(rightLungGeom, lungMat);
     rightLung.position.set(0.42, -1.16, 0.03);
     rightLung.rotation.z = -0.08;
-    const rightLungWire = new THREE.Mesh(rightLungGeom, lungWireMat);
-    rightLung.add(rightLungWire);
+    rightLung.add(new THREE.Mesh(rightLungGeom, lungWireMat));
 
     chestGroup.add(leftLung, rightLung);
 
-    // Sternum central chest resonance bridge (aligns directly with chest anchor at y=-1.18, z=+0.34)
     const sternumCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, -0.78, 0.31),
-      new THREE.Vector3(0, -1.10, 0.35),
-      new THREE.Vector3(0, -1.42, 0.31),
+      new THREE.Vector3(0, -0.80, 0.30),
+      new THREE.Vector3(0, -1.10, 0.34),
+      new THREE.Vector3(0, -1.42, 0.30),
     ]);
-    const sternum = new THREE.Mesh(
-      new THREE.TubeGeometry(sternumCurve, 20, 0.035, 12, false),
-      makeZoneMat('chest', 0x34d399, 0.62)
+    chestGroup.add(
+      new THREE.Mesh(
+        new THREE.TubeGeometry(sternumCurve, 20, 0.032, 12, false),
+        makeZoneMat('chest', 0x34d399, 0.62)
+      )
     );
-    chestGroup.add(sternum);
 
-    // Delicate anatomical rib arcs wrapping lungs symmetrically
     const ribMat = new THREE.MeshBasicMaterial({
       color: 0x94a3b8,
       transparent: true,
-      opacity: 0.2,
+      opacity: 0.22,
     });
     for (let r = 0; r < 5; r++) {
       const ry = -0.84 - r * 0.145;
-      const spreadX = 0.64 + Math.sin((r / 4) * Math.PI) * 0.24;
-      const depthZ = 0.26 + Math.sin((r / 4) * Math.PI) * 0.09;
+      const spreadX = 0.65 + Math.sin((r / 4) * Math.PI) * 0.24;
+      const depthZ = 0.25 + Math.sin((r / 4) * Math.PI) * 0.09;
       for (const side of [-1, 1] as const) {
         const ribCurve = new THREE.CatmullRomCurve3([
           new THREE.Vector3(side * 0.10, ry + 0.04, -depthZ),
@@ -558,50 +487,48 @@ export default function VocalAtlas3D() {
           new THREE.Vector3(side * 0.06, ry - 0.05, depthZ + 0.05),
         ]);
         chestGroup.add(
-          new THREE.Mesh(new THREE.TubeGeometry(ribCurve, 18, 0.01, 6, false), ribMat)
+          new THREE.Mesh(new THREE.TubeGeometry(ribCurve, 18, 0.009, 6, false), ribMat)
         );
       }
     }
 
-    // Wide Muscular Diaphragm Dome positioned anatomically BENEATH both lungs
-    const diaphragmGeom = createDiaphragmDomeGeometry();
-    const diaphragmMat = makeZoneMat('chest', 0x059669, 0.68);
-    const diaphragm = new THREE.Mesh(diaphragmGeom, diaphragmMat);
-    diaphragm.position.set(0, -1.53, 0.02);
+    const diaphragm = new THREE.Mesh(
+      createDiaphragmDomeGeometry(),
+      makeZoneMat('chest', 0x059669, 0.68)
+    );
+    diaphragm.position.set(0, -1.52, 0.02);
     chestGroup.add(diaphragm);
 
     atlasGroup.add(chestGroup);
     zoneMeshes.chest.push(chestGroup);
 
     // ------------------------------------------------------------------
-    // 3. LARYNX (Thyroid & Cricoid Cartilages + True Vocal Folds)
+    // 3. LARYNX & TRUE VOCAL FOLDS
     // ------------------------------------------------------------------
     const larynxGroup = new THREE.Group();
 
     const cricoid = new THREE.Mesh(
-      new THREE.TorusGeometry(0.135, 0.026, 12, 32),
+      new THREE.TorusGeometry(0.125, 0.024, 12, 32),
       makeZoneMat('larynx', 0xfbbf24, 0.8)
     );
     cricoid.rotation.x = Math.PI / 2;
-    cricoid.position.set(0, -0.35, 0.05);
+    cricoid.position.set(0, -0.36, 0.07);
     larynxGroup.add(cricoid);
 
-    // Thyroid cartilage shield + anterior laryngeal prominence facing +Z
     const thyroid = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.155, 0.145, 0.16, 6, 1, false),
+      new THREE.CylinderGeometry(0.145, 0.135, 0.145, 6, 1, false),
       makeZoneMat('larynx', 0xf59e0b, 0.74)
     );
-    thyroid.scale.set(0.92, 1.0, 1.18);
-    thyroid.position.set(0, -0.27, 0.12);
+    thyroid.scale.set(0.90, 1.0, 1.15);
+    thyroid.position.set(0, -0.28, 0.13);
     larynxGroup.add(thyroid);
 
-    // Pair of glottic true vocal folds inside larynx
     const trueFoldMat = makeZoneMat('larynx', 0xfde68a, 0.92);
-    const leftFold = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.018, 0.17), trueFoldMat);
-    leftFold.position.set(-0.028, -0.26, 0.08);
+    const leftFold = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.016, 0.155), trueFoldMat);
+    leftFold.position.set(-0.025, -0.27, 0.10);
     leftFold.rotation.y = -0.18;
-    const rightFold = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.018, 0.17), trueFoldMat);
-    rightFold.position.set(0.028, -0.26, 0.08);
+    const rightFold = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.016, 0.155), trueFoldMat);
+    rightFold.position.set(0.025, -0.27, 0.10);
     rightFold.rotation.y = 0.18;
     larynxGroup.add(leftFold, rightFold);
 
@@ -609,23 +536,22 @@ export default function VocalAtlas3D() {
     zoneMeshes.larynx.push(larynxGroup);
 
     // ------------------------------------------------------------------
-    // 4. FALSE (VENTRICULAR) FOLDS & EPIGLOTTIS (Distortion / Grit)
+    // 4. FALSE FOLDS & EPIGLOTTIS
     // ------------------------------------------------------------------
     const falseGroup = new THREE.Group();
     const falseMat = makeZoneMat('false-folds', 0xf43f5e, 0.85);
 
-    const leftFalse = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.024, 0.16), falseMat);
-    leftFalse.position.set(-0.046, -0.19, 0.11);
-    const rightFalse = new THREE.Mesh(new THREE.BoxGeometry(0.044, 0.024, 0.16), falseMat);
-    rightFalse.position.set(0.046, -0.19, 0.11);
+    const leftFalse = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.022, 0.145), falseMat);
+    leftFalse.position.set(-0.042, -0.19, 0.13);
+    const rightFalse = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.022, 0.145), falseMat);
+    rightFalse.position.set(0.042, -0.19, 0.13);
 
-    // Leaf-shaped epiglottis curving behind tongue base
     const epiglottis = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.046, 0.11, 8, 16),
+      new THREE.CapsuleGeometry(0.042, 0.10, 8, 16),
       falseMat
     );
-    epiglottis.scale.set(1.2, 1.0, 0.34);
-    epiglottis.position.set(0, -0.12, 0.19);
+    epiglottis.scale.set(1.2, 1.0, 0.32);
+    epiglottis.position.set(0, -0.11, 0.21);
     epiglottis.rotation.x = 0.42;
 
     falseGroup.add(leftFalse, rightFalse, epiglottis);
@@ -633,57 +559,54 @@ export default function VocalAtlas3D() {
     zoneMeshes['false-folds'].push(falseGroup);
 
     // ------------------------------------------------------------------
-    // 5. PHARYNX, ORAL CAVITY & SOFT PALATE VAULT (Subtone / Mix)
+    // 5. PHARYNX & ORAL PALATE ARCH
     // ------------------------------------------------------------------
     const palateGroup = new THREE.Group();
     const pharynxCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, -0.14, 0.06),
-      new THREE.Vector3(0, 0.06, -0.02),
-      new THREE.Vector3(0, 0.22, 0.14),
-      new THREE.Vector3(0, 0.24, 0.39),
+      new THREE.Vector3(0, -0.14, 0.09),
+      new THREE.Vector3(0, 0.08, 0.02),
+      new THREE.Vector3(0, 0.25, 0.18),
+      new THREE.Vector3(0, 0.26, 0.41),
     ]);
-    const pharynxTube = new THREE.Mesh(
-      new THREE.TubeGeometry(pharynxCurve, 28, 0.125, 22, false),
-      makeZoneMat('palate', 0x38bdf8, 0.56)
+    palateGroup.add(
+      new THREE.Mesh(
+        new THREE.TubeGeometry(pharynxCurve, 28, 0.112, 20, false),
+        makeZoneMat('palate', 0x38bdf8, 0.56)
+      )
     );
-    palateGroup.add(pharynxTube);
 
-    // Domed hard/soft palate arch & uvula accent
     const palateDome = new THREE.Mesh(
-      new THREE.SphereGeometry(0.19, 28, 16, 0, Math.PI * 2, 0, Math.PI * 0.5),
+      new THREE.SphereGeometry(0.17, 26, 16, 0, Math.PI * 2, 0, Math.PI * 0.5),
       makeZoneMat('palate', 0x38bdf8, 0.78)
     );
-    palateDome.scale.set(0.88, 0.65, 1.32);
-    palateDome.position.set(0, 0.20, 0.25);
+    palateDome.scale.set(0.86, 0.62, 1.26);
+    palateDome.position.set(0, 0.22, 0.28);
     palateGroup.add(palateDome);
 
     atlasGroup.add(palateGroup);
     zoneMeshes.palate.push(palateGroup);
 
     // ------------------------------------------------------------------
-    // 6. RESONANT MASK (Nasal Cavity, Turbinates & Maxillary/Frontal Sinuses)
+    // 6. RESONANT MASK (Nasal Bridge & Sinuses behind LeePerrySmith Nose)
     // ------------------------------------------------------------------
     const maskGroup = new THREE.Group();
     const maskMat = makeZoneMat('mask', 0xe2a856, 0.78);
 
-    // Nasal cavity bridge chamber behind nose tip
-    const nasalChamber = new THREE.Mesh(new THREE.SphereGeometry(0.115, 22, 18), maskMat);
-    nasalChamber.scale.set(0.82, 0.92, 1.48);
-    nasalChamber.position.set(0, 0.42, 0.39);
+    const nasalChamber = new THREE.Mesh(new THREE.SphereGeometry(0.105, 22, 18), maskMat);
+    nasalChamber.scale.set(0.78, 0.90, 1.42);
+    nasalChamber.position.set(0, 0.45, 0.43);
 
-    // Bilateral maxillary sinus cheeks
-    const leftCheekSinus = new THREE.Mesh(new THREE.SphereGeometry(0.082, 18, 16), maskMat);
-    leftCheekSinus.scale.set(0.9, 0.85, 1.15);
-    leftCheekSinus.position.set(-0.15, 0.36, 0.35);
+    const leftCheekSinus = new THREE.Mesh(new THREE.SphereGeometry(0.075, 18, 16), maskMat);
+    leftCheekSinus.scale.set(0.9, 0.85, 1.12);
+    leftCheekSinus.position.set(-0.14, 0.39, 0.38);
 
-    const rightCheekSinus = new THREE.Mesh(new THREE.SphereGeometry(0.082, 18, 16), maskMat);
-    rightCheekSinus.scale.set(0.9, 0.85, 1.15);
-    rightCheekSinus.position.set(0.15, 0.36, 0.35);
+    const rightCheekSinus = new THREE.Mesh(new THREE.SphereGeometry(0.075, 18, 16), maskMat);
+    rightCheekSinus.scale.set(0.9, 0.85, 1.12);
+    rightCheekSinus.position.set(0.14, 0.39, 0.38);
 
-    // Frontal sinus pocket behind brow ridge
-    const frontalSinus = new THREE.Mesh(new THREE.SphereGeometry(0.10, 20, 16), maskMat);
-    frontalSinus.scale.set(1.38, 0.62, 0.68);
-    frontalSinus.position.set(0, 0.61, 0.44);
+    const frontalSinus = new THREE.Mesh(new THREE.SphereGeometry(0.092, 20, 16), maskMat);
+    frontalSinus.scale.set(1.32, 0.58, 0.65);
+    frontalSinus.position.set(0, 0.62, 0.46);
 
     maskGroup.add(nasalChamber, leftCheekSinus, rightCheekSinus, frontalSinus);
     atlasGroup.add(maskGroup);
@@ -694,55 +617,53 @@ export default function VocalAtlas3D() {
     // ------------------------------------------------------------------
     const headGroup = new THREE.Group();
     const headDome = new THREE.Mesh(
-      new THREE.SphereGeometry(0.36, 32, 24),
-      makeZoneMat('head', 0xa78bfa, 0.56)
+      new THREE.SphereGeometry(0.32, 30, 22),
+      makeZoneMat('head', 0xa78bfa, 0.54)
     );
-    headDome.scale.set(0.96, 0.82, 1.10);
-    headDome.position.set(0, 0.89, 0.04);
+    headDome.scale.set(0.92, 0.80, 1.06);
+    headDome.position.set(0, 0.88, 0.04);
 
     const headHalo = new THREE.Mesh(
-      new THREE.TorusGeometry(0.42, 0.014, 12, 48),
-      makeZoneMat('head', 0xc4b5fd, 0.68)
+      new THREE.TorusGeometry(0.37, 0.012, 12, 48),
+      makeZoneMat('head', 0xc4b5fd, 0.66)
     );
     headHalo.rotation.x = Math.PI / 2 - 0.14;
-    headHalo.position.set(0, 0.96, 0.04);
+    headHalo.position.set(0, 0.94, 0.04);
 
     headGroup.add(headDome, headHalo);
     atlasGroup.add(headGroup);
     zoneMeshes.head.push(headGroup);
 
     // ------------------------------------------------------------------
-    // 8. ACOUSTIC VIBRATION PARTICLE MIST
+    // 8. ACOUSTIC PARTICLES & ORGAN ANCHOR DOT
     // ------------------------------------------------------------------
-    const particleCount = 46;
+    const particleCount = 42;
     const particlePos = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i++) {
-      particlePos[i * 3] = (Math.random() - 0.5) * 0.46;
+      particlePos[i * 3] = (Math.random() - 0.5) * 0.42;
       particlePos[i * 3 + 1] = -0.3 + Math.random() * 1.1;
-      particlePos[i * 3 + 2] = 0.05 + (Math.random() - 0.5) * 0.35;
+      particlePos[i * 3 + 2] = 0.06 + (Math.random() - 0.5) * 0.34;
     }
     const particleGeom = new THREE.BufferGeometry();
     particleGeom.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
     const particleMat = new THREE.PointsMaterial({
       color: 0xe2a856,
-      size: 0.03,
+      size: 0.028,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.62,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
-    const particles = new THREE.Points(particleGeom, particleMat);
-    atlasGroup.add(particles);
+    atlasGroup.add(new THREE.Points(particleGeom, particleMat));
 
-    // Subtle anchor marker sphere in 3D space (projects to SVG dotted callout)
     const anchorDot = new THREE.Mesh(
-      new THREE.SphereGeometry(0.036, 16, 16),
+      new THREE.SphereGeometry(0.035, 16, 16),
       new THREE.MeshBasicMaterial({ color: 0xe2a856 })
     );
     atlasGroup.add(anchorDot);
 
     // ------------------------------------------------------------------
-    // ANIMATION, SMOOTH RESPONSIVE CENTERING & CALLOUT PROJECTION
+    // ANIMATION LOOP & RESPONSIVE PROJECTION
     // ------------------------------------------------------------------
     let rafId = 0;
     const clock = new THREE.Clock();
@@ -754,8 +675,7 @@ export default function VocalAtlas3D() {
       if (!canvasHost) return;
       const w = canvasHost.clientWidth || 640;
       const h = canvasHost.clientHeight || 520;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
+      applyResponsiveCameraFrustum(w, h);
       renderer.setSize(w, h);
     };
 
@@ -770,25 +690,24 @@ export default function VocalAtlas3D() {
       const hostHeight = canvasHost.clientHeight || 520;
       const isDesktopOverlay = hostWidth >= 768;
 
-      // Center bust nicely inside the unobstructed middle window between left chips & right card on desktop
-      const targetModelX = isDesktopOverlay ? -0.18 : 0.0;
-      atlasGroup.position.x = THREE.MathUtils.lerp(atlasGroup.position.x, targetModelX, 0.1);
       atlasGroup.position.y = THREE.MathUtils.lerp(
         atlasGroup.position.y,
         panOffsetRef.current,
         0.14
       );
-      controls.target.set(isDesktopOverlay ? 0.06 : 0, -0.06 + panOffsetRef.current * 0.25, 0);
+      controls.target.set(0, -0.14 + panOffsetRef.current * 0.25, 0);
 
-      // Gentle ambient 3/4 turn
+      // Gentle 3/4 alive idle rotation
       atlasGroup.rotation.y = Math.sin(t * 0.32) * 0.14 + 0.16;
 
-      // Highlight active anatomical organs + soft diaphragmatic breath
+      headHoloMat.uniforms.uAccentColor.value.set(current.accentColor);
+      thoraxHoloMat.uniforms.uAccentColor.value.set(current.accentColor);
+
       const activeSet = new Set<ResonatorZoneId>(current.activeZones);
       (Object.keys(zoneMaterials) as ResonatorZoneId[]).forEach((zKey) => {
         const isActive = activeSet.has(zKey);
         const pulse = isActive ? 0.42 + Math.sin(t * 4.4) * 0.22 : 0.05;
-        const targetOp = isActive ? 0.88 : 0.22;
+        const targetOp = isActive ? 0.88 : 0.20;
 
         zoneMaterials[zKey].forEach((m) => {
           m.emissiveIntensity = THREE.MathUtils.lerp(m.emissiveIntensity, pulse, 0.12);
@@ -797,10 +716,10 @@ export default function VocalAtlas3D() {
 
         const baseScale = zKey === 'chest'
           ? isActive
-            ? 1.015 + Math.sin(t * 2.1) * 0.025
-            : 1.0 + Math.sin(t * 1.4) * 0.01
+            ? 1.015 + Math.sin(t * 2.1) * 0.024
+            : 1.0 + Math.sin(t * 1.4) * 0.009
           : isActive
-          ? 1.02 + Math.sin(t * 5.0) * 0.014
+          ? 1.02 + Math.sin(t * 5.0) * 0.013
           : 1.0;
 
         zoneMeshes[zKey].forEach((obj) => {
@@ -808,18 +727,16 @@ export default function VocalAtlas3D() {
         });
       });
 
-      // Update anchor dot smoothly toward the technique's anatomical organ
       const [ax, ay, az] = current.anchor3D;
       tempTargetAnchor.set(ax, ay, az);
       anchorDot.position.lerp(tempTargetAnchor, 0.18);
       (anchorDot.material as THREE.MeshBasicMaterial).color.set(current.accentColor);
       baseRingMat.color.set(current.accentColor);
 
-      // Animated particle flow rising toward active anchor
       particleMat.color.set(current.accentColor);
       const pAttr = particleGeom.getAttribute('position') as THREE.BufferAttribute;
       for (let i = 0; i < particleCount; i++) {
-        let py = pAttr.getY(i) + 0.0042;
+        let py = pAttr.getY(i) + 0.004;
         if (py > ay + 0.55) py = Math.max(-1.45, ay - 0.55);
         pAttr.setY(i, py);
       }
@@ -828,7 +745,6 @@ export default function VocalAtlas3D() {
       controls.update();
       renderer.render(scene, camera);
 
-      // Project anchor point & align dotted line directly with inside-right callout card border (~30fps)
       frameTick++;
       if (frameTick % 2 === 0 && isDesktopOverlay && calloutRef.current) {
         anchorDot.getWorldPosition(anchorVec);
@@ -862,6 +778,7 @@ export default function VocalAtlas3D() {
     animate();
 
     return () => {
+      isDisposed = true;
       cancelAnimationFrame(rafId);
       ro.disconnect();
       controls.dispose();
@@ -889,12 +806,11 @@ export default function VocalAtlas3D() {
     const cam = cameraRef.current;
     setVerticalPan(0);
     if (!controls || !cam) return;
-    cam.position.set(1.05, 0.14, 5.55);
-    controls.target.set(0, -0.06, 0);
+    cam.position.set(1.05, 0.10, 5.75);
+    controls.target.set(0, -0.14, 0);
     controls.update();
   };
 
-  // Percentage for tall vertical pan thumb (0% top when pan=+0.9, 100% bottom when pan=-0.9)
   const thumbTopPercent = ((0.9 - verticalPan) / 1.8) * 100;
 
   return (
@@ -902,20 +818,20 @@ export default function VocalAtlas3D() {
       ref={containerRef}
       className="relative overflow-hidden rounded-[26px] border border-zinc-200/80 bg-[#0b0d17] shadow-2xl dark:border-white/10"
     >
-      {/* Subtle diagnostic scan background aura */}
+      {/* Ambient scan aura shifted slightly toward the model on left */}
       <div
         className="pointer-events-none absolute inset-0 opacity-60 transition-colors duration-700"
         style={{
-          background: `radial-gradient(ellipse 68% 62% at 44% 48%, ${activeTech.accentColor}1d, transparent 70%), radial-gradient(circle at 80% 20%, rgba(56,189,248,0.08), transparent 48%)`,
+          background: `radial-gradient(ellipse 62% 62% at 36% 48%, ${activeTech.accentColor}1d, transparent 70%), radial-gradient(circle at 80% 20%, rgba(56,189,248,0.08), transparent 48%)`,
         }}
       />
 
-      {/* Full-width 3D Viewport housing overlaid desktop UI inside the 3D scene */}
+      {/* Full-width 3D Viewport */}
       <div
         ref={canvasHostRef}
         className="relative h-[360px] w-full cursor-grab active:cursor-grabbing sm:h-[430px] md:h-[580px] lg:h-[620px]"
       >
-        {/* Top-left subtle diagnostic pill inside frame */}
+        {/* Top-left subtle diagnostic pill */}
         <div className="pointer-events-none absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-full border border-white/12 bg-black/35 px-3 py-1.5 text-[11px] font-medium text-zinc-200 backdrop-blur-md">
           <span
             className="h-2 w-2 rounded-full animate-pulse"
@@ -924,7 +840,7 @@ export default function VocalAtlas3D() {
           <span>3D-скан · Вращайте и приближайте</span>
         </div>
 
-        {/* DESKTOP LEFT OVERLAY: Colored technique chips running TOP-TO-BOTTOM */}
+        {/* DESKTOP LEFT OVERLAY: Colored technique chips running TOP-TO-BOTTOM close to 3D model */}
         <div
           className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 flex-col gap-2 md:flex lg:left-6"
           onPointerDown={(e) => e.stopPropagation()}
@@ -968,7 +884,7 @@ export default function VocalAtlas3D() {
           })}
         </div>
 
-        {/* DESKTOP LIVE DOTTED SVG LEADER LINE from 3D organ to inside floating callout card */}
+        {/* DESKTOP LIVE DOTTED SVG LEADER LINE */}
         <svg
           className="pointer-events-none absolute inset-0 z-10 hidden h-full w-full md:block"
           aria-hidden="true"
@@ -1011,11 +927,11 @@ export default function VocalAtlas3D() {
           )}
         </svg>
 
-        {/* DESKTOP RIGHT-INSIDE OVERLAY: Floating glass callout menu card */}
+        {/* DESKTOP RIGHT-INSIDE OVERLAY: Wider floating glass callout card using reclaimed horizontal space */}
         <div
           ref={calloutRef}
           onPointerDown={(e) => e.stopPropagation()}
-          className="absolute right-12 top-1/2 z-20 hidden w-[295px] -translate-y-1/2 rounded-2xl border bg-[#0e101c]/90 p-5 text-white shadow-2xl backdrop-blur-md transition-colors duration-300 md:block lg:right-16 lg:w-[345px]"
+          className="absolute right-12 top-1/2 z-20 hidden w-[345px] -translate-y-1/2 rounded-2xl border bg-[#0e101c]/90 p-5 text-white shadow-2xl backdrop-blur-md transition-colors duration-300 md:block lg:right-14 lg:w-[420px] xl:w-[460px]"
           style={{
             borderColor: `${activeTech.accentColor}66`,
             boxShadow: `0 16px 42px rgba(0,0,0,0.52), 0 0 28px ${activeTech.accentColor}1c`,
@@ -1028,12 +944,11 @@ export default function VocalAtlas3D() {
           />
         </div>
 
-        {/* FAR-RIGHT TRANSPARENT VERTICAL PAN SLIDER + ZOOM LOUPE CONTROLS AT BOTTOM (NO dark box/padding) */}
+        {/* FAR-RIGHT TRANSPARENT VERTICAL PAN SLIDER + ZOOM LOUPE CONTROLS AT BOTTOM */}
         <div
           className="absolute right-2.5 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-3 sm:right-4"
           onPointerDown={(e) => e.stopPropagation()}
         >
-          {/* Tall slim vertical pan track */}
           <div
             role="slider"
             tabIndex={0}
@@ -1077,7 +992,6 @@ export default function VocalAtlas3D() {
             />
           </div>
 
-          {/* Magnifying glass +/- & reset buttons placed below the tall slider */}
           <div className="flex flex-col items-center gap-1.5">
             <button
               type="button"
@@ -1110,7 +1024,7 @@ export default function VocalAtlas3D() {
         </div>
       </div>
 
-      {/* MOBILE CLEAN UNOBSTRUCTED STACK (< md): 3D viewport stays clean above, then colored pills + description card */}
+      {/* MOBILE CLEAN UNOBSTRUCTED STACK (< md) */}
       <div className="border-t border-white/10 bg-[#0d101b]/95 px-3.5 py-4 md:hidden">
         <div className="mb-3.5 grid grid-cols-2 gap-1.5">
           {ORDERED_TECHNIQUES.map((tech) => {
@@ -1199,12 +1113,12 @@ function TechniqueCardContent({
           {isPlaying ? (
             <>
               <Waves className="h-3.5 w-3.5 animate-pulse" />
-              <span>Звучит</span>
+              <span>Звучит голос</span>
             </>
           ) : (
             <>
               <Volume2 className="h-3.5 w-3.5" />
-              <span>Нота</span>
+              <span>Голос</span>
             </>
           )}
         </button>
