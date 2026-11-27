@@ -123,10 +123,15 @@ export function Reviews() {
 
   return (
     <section id="reviews" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
-      {/* Infinite Rising Message Bubbles with 3 Dots in Background */}
+      {/* Infinite Rising Message Bubbles with 3 Dots and smooth top/bottom fade mask */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 z-0 overflow-hidden text-[#B45309] dark:text-[#E2A856]"
+        style={{
+          maskImage: 'linear-gradient(to bottom, transparent 0%, black 18%, black 80%, transparent 100%)',
+          WebkitMaskImage:
+            'linear-gradient(to bottom, transparent 0%, black 18%, black 80%, transparent 100%)',
+        }}
       >
         {FLOATING_CHAT_BUBBLES.map((b, idx) => (
           <div

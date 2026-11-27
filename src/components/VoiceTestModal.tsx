@@ -1049,7 +1049,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               </div>
 
               <p className="mt-4 text-sm font-medium leading-relaxed text-zinc-800 dark:text-zinc-100">
-                Вау, вы супер! У вас выразительный природный тембр и живая музыкальная интонация.
+                {result.profile.compliment}
               </p>
 
               <div className="mt-5 grid grid-cols-3 divide-x divide-zinc-900/10 border-y border-zinc-900/10 py-4 text-center dark:divide-white/10 dark:border-white/10">
@@ -1147,9 +1147,12 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               </div>
             </div>
 
-            <p className="text-center font-serif text-lg font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF]">
-              Вы в одном шаге от того, чтобы записаться на урок и раскрыть ваш потенциал!
-            </p>
+            <div className="rounded-2xl border-2 border-[#B45309]/45 bg-gradient-to-r from-[#B45309]/12 via-[#D97706]/14 to-[#B45309]/12 px-4 py-3 text-center shadow-sm dark:border-[#FACC15]/45 dark:from-[#E2A856]/18 dark:via-[#FACC15]/15 dark:to-[#E2A856]/18">
+              <p className="inline-flex items-center justify-center gap-2 font-serif text-lg sm:text-xl font-bold leading-snug text-[#9A4407] dark:text-[#FDE047]">
+                <Sparkles className="h-4.5 w-4.5 shrink-0 text-[#B45309] dark:text-[#FACC15]" />
+                <span>Вы в одном шаге от того, чтобы записаться на урок и раскрыть ваш потенциал!</span>
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <button

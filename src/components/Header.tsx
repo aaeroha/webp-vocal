@@ -1,5 +1,20 @@
 import { useEffect, useState } from 'react';
-import { AudioWaveform, CalendarCheck, ChevronDown, Menu, Mic, X } from 'lucide-react';
+import {
+  AudioWaveform,
+  Award,
+  CalendarCheck,
+  ChevronDown,
+  HelpCircle,
+  MapPin,
+  Menu,
+  Mic,
+  MicVocal,
+  Music2,
+  Piano,
+  Sparkles,
+  Star,
+  X,
+} from 'lucide-react';
 import { NAV_LINKS, SITE_CONFIG } from '../data/content';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -11,16 +26,16 @@ interface HeaderProps {
 }
 
 const PRIMARY_LINKS = [
-  { label: 'Обо мне', href: '#about' },
-  { label: 'Занятия', href: '#formats' },
-  { label: 'Пианино', href: '#vocal-piano' },
+  { label: 'Обо мне', href: '#about', icon: MicVocal },
+  { label: 'Занятия', href: '#formats', icon: Music2 },
+  { label: 'Пианино', href: '#vocal-piano', icon: Piano },
 ];
 
 const INFO_DROPDOWN_LINKS = [
-  { label: 'Дипломы и база', desc: 'Образование и сертификаты', href: '#certificates' },
-  { label: 'Отзывы учеников', desc: 'Рейтинг 5.0 на Яндекс и Авито', href: '#reviews' },
-  { label: 'Частые вопросы', desc: 'Ответы о начале занятий', href: '#faq' },
-  { label: 'Контакты и карта', desc: 'Ватутинки (Москва) и онлайн', href: '#contacts' },
+  { label: 'Дипломы и база', href: '#certificates', icon: Award },
+  { label: 'Отзывы учеников', href: '#reviews', icon: Star },
+  { label: 'Частые вопросы', href: '#faq', icon: HelpCircle },
+  { label: 'Контакты и карта', href: '#contacts', icon: MapPin },
 ];
 
 export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }: HeaderProps) {
@@ -71,22 +86,26 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
             </span>
           </a>
 
-          {/* Center: Structured Desktop Navigation with Hover/Click Info Dropdown */}
+          {/* Center: Vocal-styled Navigation + Voice Test integrated naturally in the center cluster */}
           <nav
             aria-label="Основная навигация"
-            className="hidden xl:flex items-center gap-6"
+            className="hidden xl:flex items-center gap-2"
           >
-            {PRIMARY_LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="relative py-1 text-sm font-medium text-zinc-700 transition-colors hover:text-[#B45309] dark:text-zinc-300 dark:hover:text-[#E2A856]"
-              >
-                {link.label}
-              </a>
-            ))}
+            {PRIMARY_LINKS.map((link) => {
+              const Icon = link.icon;
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-[#F2EDE6]/80 hover:text-[#B45309] dark:text-zinc-300 dark:hover:bg-[#16151C] dark:hover:text-[#E2A856]"
+                >
+                  <Icon className="h-3.5 w-3.5 text-[#B45309]/80 transition-transform duration-200 group-hover:scale-110 dark:text-[#E2A856]/85" />
+                  <span>{link.label}</span>
+                </a>
+              );
+            })}
 
-            {/* Structured "Информация" dropdown */}
+            {/* Clean "Информация" dropdown without cluttered subtext */}
             <div
               className="relative"
               onMouseEnter={() => setInfoOpen(true)}
@@ -96,8 +115,9 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
                 type="button"
                 onClick={() => setInfoOpen((prev) => !prev)}
                 aria-expanded={infoOpen}
-                className="inline-flex items-center gap-1 py-1 text-sm font-medium text-zinc-700 transition-colors hover:text-[#B45309] dark:text-zinc-300 dark:hover:text-[#E2A856] cursor-pointer"
+                className="group inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-[#F2EDE6]/80 hover:text-[#B45309] dark:text-zinc-300 dark:hover:bg-[#16151C] dark:hover:text-[#E2A856] cursor-pointer"
               >
+                <Sparkles className="h-3.5 w-3.5 text-[#B45309]/80 dark:text-[#E2A856]/85" />
                 <span>Информация</span>
                 <ChevronDown
                   className={`h-3.5 w-3.5 transition-transform duration-200 ${
@@ -107,39 +127,37 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
               </button>
 
               <div
-                className={`absolute left-1/2 top-full z-50 w-64 -translate-x-1/2 pt-2 transition-all duration-200 ${
+                className={`absolute left-1/2 top-full z-50 w-56 -translate-x-1/2 pt-2 transition-all duration-200 ${
                   infoOpen
                     ? 'pointer-events-auto translate-y-0 opacity-100'
                     : 'pointer-events-none -translate-y-1 opacity-0'
                 }`}
               >
-                <div className="rounded-2xl border border-zinc-900/10 bg-[#FAF8F5]/98 p-2 shadow-xl backdrop-blur-md dark:border-white/12 dark:bg-[#16151C]/98">
-                  {INFO_DROPDOWN_LINKS.map((item) => (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setInfoOpen(false)}
-                      className="block rounded-xl px-3.5 py-2.5 transition-colors hover:bg-[#F2EDE6] dark:hover:bg-[#0D0C10]"
-                    >
-                      <span className="block text-sm font-semibold text-zinc-900 dark:text-[#F5F3EF]">
-                        {item.label}
-                      </span>
-                      <span className="mt-0.5 block text-[11px] text-zinc-500 dark:text-zinc-400">
-                        {item.desc}
-                      </span>
-                    </a>
-                  ))}
+                <div className="rounded-2xl border border-zinc-900/10 bg-[#FAF8F5]/98 p-1.5 shadow-xl backdrop-blur-md dark:border-white/12 dark:bg-[#16151C]/98">
+                  {INFO_DROPDOWN_LINKS.map((item) => {
+                    const ItemIcon = item.icon;
+                    return (
+                      <a
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setInfoOpen(false)}
+                        className="group flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-medium text-zinc-800 transition-colors hover:bg-[#F2EDE6] hover:text-[#B45309] dark:text-[#F5F3EF] dark:hover:bg-[#0D0C10] dark:hover:text-[#E2A856]"
+                      >
+                        <ItemIcon className="h-4 w-4 shrink-0 text-[#B45309]/80 transition-transform group-hover:scale-110 dark:text-[#E2A856]/85" />
+                        <span>{item.label}</span>
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             </div>
-          </nav>
 
-          {/* Right: Desktop Voice Test CTA -> Booking CTA -> Burger -> ThemeToggle at very right edge */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
+            <span aria-hidden="true" className="mx-1 h-4 w-px bg-zinc-900/12 dark:bg-white/12" />
+
             <button
               type="button"
               onClick={onOpenVoiceTest}
-              className="group relative hidden xl:inline-flex h-10 items-center gap-1.5 rounded-full border border-[#B45309]/35 bg-[#F2EDE6]/95 px-3.5 text-sm font-semibold text-[#B45309] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309] hover:bg-[#FAF8F5] dark:border-[#E2A856]/40 dark:bg-[#16151C] dark:text-[#E2A856] dark:hover:border-[#E2A856] cursor-pointer"
+              className="group relative inline-flex h-9 items-center gap-1.5 rounded-full border border-[#B45309]/40 bg-[#F2EDE6]/95 px-3.5 text-sm font-semibold text-[#B45309] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309] hover:bg-[#FAF8F5] dark:border-[#E2A856]/45 dark:bg-[#16151C] dark:text-[#E2A856] dark:hover:border-[#E2A856] cursor-pointer"
             >
               <span className="relative flex h-2 w-2 shrink-0">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
@@ -148,11 +166,14 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
               <Mic className="h-3.5 w-3.5 shrink-0" />
               <span>Тест голоса</span>
             </button>
+          </nav>
 
+          {/* Right: Booking CTA -> Mobile Burger -> ThemeToggle at very right edge */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <button
               type="button"
               onClick={onOpenBooking}
-              className="btn-sheen inline-flex h-10 items-center gap-1.5 rounded-full bg-[#B45309] px-3 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow sm:px-4 sm:text-sm cursor-pointer"
+              className="btn-sheen inline-flex h-10 items-center gap-1.5 rounded-full bg-[#B45309] px-3.5 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#9A4407] dark:bg-[#E2A856] dark:text-[#0D0C10] dark:hover:bg-[#EBB86E] dark:gold-glow sm:px-4 sm:text-sm cursor-pointer"
             >
               <CalendarCheck className="h-3.5 w-3.5 shrink-0" />
               <span>Записаться</span>

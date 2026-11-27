@@ -78,6 +78,7 @@ export function Hero({ onOpenBooking }: HeroProps) {
   const [isDesktop, setIsDesktop] = useState<boolean>(() =>
     typeof window !== 'undefined' ? window.innerWidth >= 768 : true
   );
+  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
@@ -97,9 +98,13 @@ export function Hero({ onOpenBooking }: HeroProps) {
         // Autoplay policy fallback handled silently
       });
     };
+    const onReady = () => {
+      setVideoReady(true);
+      attemptPlay();
+    };
     attemptPlay();
-    vid.addEventListener('canplay', attemptPlay);
-    return () => vid.removeEventListener('canplay', attemptPlay);
+    vid.addEventListener('canplay', onReady);
+    return () => vid.removeEventListener('canplay', onReady);
   }, [isDesktop]);
 
   // H1 cycling typewriter
@@ -159,8 +164,17 @@ export function Hero({ onOpenBooking }: HeroProps) {
       ref={heroRef}
       className="relative z-10 overflow-hidden pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-20 lg:pb-24"
     >
-      {/* Background video on desktop only; mobile shows clean ambient backdrop */}
+      {/* Instant LCP Poster Image + Progressive Ambient Video Overlay */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+        <img
+          src={HERO_CONTENT.posterUrl}
+          alt=""
+          width={1920}
+          height={1080}
+          fetchPriority="high"
+          decoding="async"
+          className="h-full w-full object-cover object-[50%_14%] opacity-68 dark:opacity-75"
+        />
         {isDesktop && (
           <video
             ref={videoRef}
@@ -168,18 +182,19 @@ export function Hero({ onOpenBooking }: HeroProps) {
             loop
             muted
             playsInline
-            preload="auto"
-            poster={HERO_CONTENT.posterUrl}
+            preload="metadata"
             src={HERO_CONTENT.videoUrl}
-            className="h-full w-full object-cover object-[50%_14%] opacity-68 dark:opacity-75"
+            className={`absolute inset-0 h-full w-full object-cover object-[50%_14%] transition-opacity duration-700 ${
+              videoReady ? 'opacity-68 dark:opacity-75' : 'opacity-0'
+            }`}
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/62 via-[#FAF8F5]/42 to-[#FAF8F5]/95 dark:from-[#0D0C10]/60 dark:via-[#0D0C10]/38 dark:to-[#0D0C10]/95" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className={`reveal-item max-w-3xl ${heroVisible ? 'is-visible' : ''}`}>
-          <h1 className="font-serif text-[2.4rem] leading-[1.08] font-semibold tracking-tight text-zinc-950 drop-shadow-[0_1px_10px_rgba(250,248,245,0.65)] dark:text-[#F5F3EF] dark:drop-shadow-[0_2px_14px_rgba(0,0,0,0.7)] min-h-[2.8rem] sm:min-h-[3.6rem] sm:text-5xl lg:min-h-[4.4rem] lg:text-[4rem]">
+        <div className="max-w-3xl">
+          <h1 className="font-serif text-[2.4rem] leading-[1.08] font-semibold tracking-tight text-zinc-950 drop-shadow-[0_1px_10px_rgba(250,248,245,0.65)] dark:text-[#F5F3EF] dark:drop-shadow-[0_2px_14px_rgba(0,0,0,0.7)] min-h-[5.4rem] sm:min-h-[3.8rem] sm:text-5xl lg:min-h-[4.6rem] lg:text-[4rem]">
             <span>{typedText}</span>
             <span
               aria-hidden="true"

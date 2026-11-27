@@ -126,16 +126,17 @@ export function RetroMicCursor() {
       }}
     >
       <div
-        className={`relative origin-top-left transition-all duration-150 ease-out ${
+        className={`relative transition-all duration-150 ease-out ${
           isPressed
-            ? 'scale-90 -rotate-[42deg]'
+            ? 'scale-90 -rotate-[40deg]'
             : isHoveringInteractive
-              ? 'scale-110 -rotate-[38deg]'
+              ? 'scale-110 -rotate-[36deg]'
               : 'scale-100 -rotate-[32deg]'
         }`}
         style={{
-          marginLeft: '-8px',
-          marginTop: '-4px',
+          marginLeft: '-11px',
+          marginTop: '-6px',
+          transformOrigin: '11px 6px',
           filter: isHoveringInteractive
             ? 'drop-shadow(0 0 11px rgba(250, 204, 21, 0.95)) drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4))'
             : 'drop-shadow(0 3px 6px rgba(0, 0, 0, 0.38))',

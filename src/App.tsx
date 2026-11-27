@@ -1,29 +1,21 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { About } from './components/About';
+import { Certificates } from './components/Certificates';
+import { Contacts } from './components/Contacts';
+import { CookieNotice } from './components/CookieNotice';
+import { FaqAccordion } from './components/FaqAccordion';
+import { Formats } from './components/Formats';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { MusicAmbience } from './components/MusicAmbience';
 import { RetroMicCursor } from './components/RetroMicCursor';
+import { Reviews } from './components/Reviews';
 import { VinylPlayer } from './components/VinylPlayer';
+import { VocalPiano } from './components/VocalPiano';
 import { VoiceTestTrigger } from './components/VoiceTestTrigger';
-import { CookieNotice } from './components/CookieNotice';
 import { SITE_CONFIG } from './data/content';
 
-// Lazy-load below-the-fold sections & modals for optimal initial page speed
-const About = lazy(() => import('./components/About').then((m) => ({ default: m.About })));
-const Formats = lazy(() => import('./components/Formats').then((m) => ({ default: m.Formats })));
-const VocalPiano = lazy(() =>
-  import('./components/VocalPiano').then((m) => ({ default: m.VocalPiano }))
-);
-const Certificates = lazy(() =>
-  import('./components/Certificates').then((m) => ({ default: m.Certificates }))
-);
-const Reviews = lazy(() => import('./components/Reviews').then((m) => ({ default: m.Reviews })));
-const FaqAccordion = lazy(() =>
-  import('./components/FaqAccordion').then((m) => ({ default: m.FaqAccordion }))
-);
-const Contacts = lazy(() =>
-  import('./components/Contacts').then((m) => ({ default: m.Contacts }))
-);
+// Only heavy interactive modals stay lazy-loaded so initial page layout has zero CLS shifts
 const BookingModal = lazy(() =>
   import('./components/BookingModal').then((m) => ({ default: m.BookingModal }))
 );
@@ -89,15 +81,13 @@ export function App() {
 
       <main className="overflow-x-clip">
         <Hero onOpenBooking={openBooking} />
-        <Suspense fallback={null}>
-          <About />
-          <Formats onOpenBooking={openBooking} />
-          <VocalPiano />
-          <Certificates />
-          <Reviews />
-          <FaqAccordion />
-          <Contacts isDark={isDark} onOpenBooking={openBooking} />
-        </Suspense>
+        <About />
+        <Formats onOpenBooking={openBooking} />
+        <VocalPiano />
+        <Certificates />
+        <Reviews />
+        <FaqAccordion />
+        <Contacts isDark={isDark} onOpenBooking={openBooking} />
       </main>
 
       <footer className="relative z-10 border-t border-zinc-900/10 py-8 text-center text-sm text-zinc-500 dark:border-white/10 dark:text-zinc-400">
