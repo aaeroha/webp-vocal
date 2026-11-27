@@ -4,13 +4,21 @@ import { FAQ_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
 const FLOATING_QUESTIONS = [
+  // Outer edges
   { top: '6%', left: '4%', size: 'text-7xl sm:text-8xl', dur: '6.2s', delay: '0s', anim: 'animate-question-mirror' },
   { top: '14%', right: '5%', size: 'text-8xl sm:text-9xl', dur: '8.4s', delay: '1.1s', anim: 'animate-question-orbit' },
-  { top: '32%', left: '3%', size: 'text-6xl sm:text-7xl', dur: '7.1s', delay: '0.5s', anim: 'animate-question-tilt' },
-  { top: '46%', right: '4%', size: 'text-7xl sm:text-8xl', dur: '6.8s', delay: '1.9s', anim: 'animate-question-mirror' },
-  { top: '63%', left: '6%', size: 'text-8xl sm:text-9xl', dur: '9.0s', delay: '1.4s', anim: 'animate-question-orbit' },
-  { top: '75%', right: '6%', size: 'text-6xl sm:text-7xl', dur: '5.8s', delay: '0.7s', anim: 'animate-question-tilt' },
-  { top: '86%', left: '10%', size: 'text-7xl sm:text-8xl', dur: '7.6s', delay: '2.4s', anim: 'animate-question-mirror' },
+  { top: '34%', left: '3%', size: 'text-6xl sm:text-7xl', dur: '7.1s', delay: '0.5s', anim: 'animate-question-tilt' },
+  { top: '48%', right: '4%', size: 'text-7xl sm:text-8xl', dur: '6.8s', delay: '1.9s', anim: 'animate-question-mirror' },
+  { top: '66%', left: '6%', size: 'text-8xl sm:text-9xl', dur: '9.0s', delay: '1.4s', anim: 'animate-question-orbit' },
+  { top: '76%', right: '6%', size: 'text-6xl sm:text-7xl', dur: '5.8s', delay: '0.7s', anim: 'animate-question-tilt' },
+  // Closer to middle & center zone
+  { top: '10%', left: '26%', size: 'text-6xl sm:text-7xl', dur: '7.4s', delay: '0.9s', anim: 'animate-question-orbit' },
+  { top: '24%', left: '54%', size: 'text-7xl sm:text-8xl', dur: '6.6s', delay: '2.1s', anim: 'animate-question-mirror' },
+  { top: '39%', left: '34%', size: 'text-8xl sm:text-9xl', dur: '8.2s', delay: '0.4s', anim: 'animate-question-tilt' },
+  { top: '53%', left: '62%', size: 'text-7xl sm:text-8xl', dur: '7.8s', delay: '1.7s', anim: 'animate-question-mirror' },
+  { top: '69%', left: '44%', size: 'text-6xl sm:text-8xl', dur: '6.4s', delay: '1.2s', anim: 'animate-question-orbit' },
+  { top: '83%', left: '24%', size: 'text-7xl sm:text-8xl', dur: '8.8s', delay: '2.5s', anim: 'animate-question-tilt' },
+  { top: '86%', left: '68%', size: 'text-6xl sm:text-7xl', dur: '7.0s', delay: '0.3s', anim: 'animate-question-mirror' },
 ];
 
 export function FaqAccordion() {

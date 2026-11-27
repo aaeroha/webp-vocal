@@ -5,6 +5,7 @@ import { MusicAmbience } from './components/MusicAmbience';
 import { RetroMicCursor } from './components/RetroMicCursor';
 import { VinylPlayer } from './components/VinylPlayer';
 import { VoiceTestTrigger } from './components/VoiceTestTrigger';
+import { CookieNotice } from './components/CookieNotice';
 import { SITE_CONFIG } from './data/content';
 
 // Lazy-load below-the-fold sections & modals for optimal initial page speed
@@ -64,6 +65,7 @@ export function App() {
       <MusicAmbience />
       <VinylPlayer />
       <VoiceTestTrigger onOpen={openVoiceTest} />
+      <CookieNotice />
 
       <Suspense fallback={null}>
         {bookingOpen && (

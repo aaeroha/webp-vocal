@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AudioWaveform, CalendarCheck, Menu, Mic, X } from 'lucide-react';
+import { AudioWaveform, CalendarCheck, ChevronDown, Menu, Mic, X } from 'lucide-react';
 import { NAV_LINKS, SITE_CONFIG } from '../data/content';
 import { ThemeToggle } from './ThemeToggle';
 
@@ -10,8 +10,22 @@ interface HeaderProps {
   onOpenVoiceTest: () => void;
 }
 
+const PRIMARY_LINKS = [
+  { label: 'Обо мне', href: '#about' },
+  { label: 'Занятия', href: '#formats' },
+  { label: 'Пианино', href: '#vocal-piano' },
+];
+
+const INFO_DROPDOWN_LINKS = [
+  { label: 'Дипломы и база', desc: 'Образование и сертификаты', href: '#certificates' },
+  { label: 'Отзывы учеников', desc: 'Рейтинг 5.0 на Яндекс и Авито', href: '#reviews' },
+  { label: 'Частые вопросы', desc: 'Ответы о начале занятий', href: '#faq' },
+  { label: 'Контакты и карта', desc: 'Ватутинки (Москва) и онлайн', href: '#contacts' },
+];
+
 export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -57,12 +71,12 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
             </span>
           </a>
 
-          {/* Center: Desktop anchor links (> 1024px) */}
+          {/* Center: Structured Desktop Navigation with Hover/Click Info Dropdown */}
           <nav
             aria-label="Основная навигация"
-            className="hidden xl:flex items-center gap-5"
+            className="hidden xl:flex items-center gap-6"
           >
-            {NAV_LINKS.map((link) => (
+            {PRIMARY_LINKS.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
@@ -71,9 +85,56 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
                 {link.label}
               </a>
             ))}
+
+            {/* Structured "Информация" dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setInfoOpen(true)}
+              onMouseLeave={() => setInfoOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setInfoOpen((prev) => !prev)}
+                aria-expanded={infoOpen}
+                className="inline-flex items-center gap-1 py-1 text-sm font-medium text-zinc-700 transition-colors hover:text-[#B45309] dark:text-zinc-300 dark:hover:text-[#E2A856] cursor-pointer"
+              >
+                <span>Информация</span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                    infoOpen ? 'rotate-180 text-[#B45309] dark:text-[#E2A856]' : ''
+                  }`}
+                />
+              </button>
+
+              <div
+                className={`absolute left-1/2 top-full z-50 w-64 -translate-x-1/2 pt-2 transition-all duration-200 ${
+                  infoOpen
+                    ? 'pointer-events-auto translate-y-0 opacity-100'
+                    : 'pointer-events-none -translate-y-1 opacity-0'
+                }`}
+              >
+                <div className="rounded-2xl border border-zinc-900/10 bg-[#FAF8F5]/98 p-2 shadow-xl backdrop-blur-md dark:border-white/12 dark:bg-[#16151C]/98">
+                  {INFO_DROPDOWN_LINKS.map((item) => (
+                    <a
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setInfoOpen(false)}
+                      className="block rounded-xl px-3.5 py-2.5 transition-colors hover:bg-[#F2EDE6] dark:hover:bg-[#0D0C10]"
+                    >
+                      <span className="block text-sm font-semibold text-zinc-900 dark:text-[#F5F3EF]">
+                        {item.label}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] text-zinc-500 dark:text-zinc-400">
+                        {item.desc}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
           </nav>
 
-          {/* Right: Desktop Voice Test CTA (mobile uses burger menu) + ThemeToggle + Booking CTA + Mobile Burger */}
+          {/* Right: Desktop Voice Test CTA -> Booking CTA -> Burger -> ThemeToggle at very right edge */}
           <div className="flex items-center gap-2 sm:gap-2.5">
             <button
               type="button"
@@ -87,8 +148,6 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
               <Mic className="h-3.5 w-3.5 shrink-0" />
               <span>Тест голоса</span>
             </button>
-
-            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
 
             <button
               type="button"
@@ -108,6 +167,8 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
             >
               <Menu className="h-5 w-5" />
             </button>
+
+            <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
           </div>
         </div>
       </header>

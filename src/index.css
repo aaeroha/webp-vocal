@@ -476,6 +476,22 @@
   transform-origin: bottom;
 }
 
+@keyframes spectrumPulse {
+  0%, 100% {
+    transform: scaleY(var(--spec-min, 0.3));
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(var(--spec-max, 1.05));
+    opacity: 0.95;
+  }
+}
+
+.animate-spectrum-bar {
+  animation: spectrumPulse 2s ease-in-out infinite;
+  transform-origin: center center;
+}
+
 .animate-caret {
   animation: caretBlink 0.9s step-end infinite;
 }

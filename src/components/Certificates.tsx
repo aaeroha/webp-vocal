@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import { Award, ChevronLeft, ChevronRight, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { CERTIFICATES_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
@@ -234,113 +235,116 @@ export function Certificates() {
         </div>
       </div>
 
-      {/* Lightbox Modal with Zoom Controls */}
-      {selected && selectedIndex !== null && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="cert-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6"
-        >
-          <div
-            onClick={() => setSelectedIndex(null)}
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-          />
+      {/* Lightbox Modal with Zoom Controls rendered via Portal above all sections */}
+      {selected && selectedIndex !== null && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="cert-modal-title"
+              className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-6"
+            >
+              <div
+                onClick={() => setSelectedIndex(null)}
+                className="absolute inset-0 bg-black/82 backdrop-blur-sm"
+              />
 
-          <div className="animate-modal-enter relative z-10 flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 bg-[#FAF8F5] p-3.5 shadow-2xl dark:bg-[#16151C] sm:p-6">
-            <div className="flex items-start justify-between gap-3 pb-3">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309]/10 px-3 py-1 text-xs font-semibold text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
-                  <Award className="h-3.5 w-3.5" />
-                  {selected.category} • {selectedIndex + 1} / {items.length}
-                </span>
-                <h3
-                  id="cert-modal-title"
-                  className="mt-2 font-serif text-lg font-semibold text-zinc-900 dark:text-[#F5F3EF] sm:text-2xl"
-                >
-                  {selected.title}
-                </h3>
-              </div>
+              <div className="animate-modal-enter relative z-10 flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 bg-[#FAF8F5] p-3.5 shadow-2xl dark:bg-[#16151C] sm:p-6">
+                <div className="flex items-start justify-between gap-3 pb-3">
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309]/10 px-3 py-1 text-xs font-semibold text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
+                      <Award className="h-3.5 w-3.5" />
+                      {selected.category} • {selectedIndex + 1} / {items.length}
+                    </span>
+                    <h3
+                      id="cert-modal-title"
+                      className="mt-2 font-serif text-lg font-semibold text-zinc-900 dark:text-[#F5F3EF] sm:text-2xl"
+                    >
+                      {selected.title}
+                    </h3>
+                  </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setZoomLevel((z) => Math.max(1, Number((z - 0.5).toFixed(2))))}
-                  disabled={zoomLevel <= 1}
-                  aria-label="Уменьшить"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </button>
-                <span className="min-w-[44px] text-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                  {Math.round(zoomLevel * 100)}%
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setZoomLevel((z) => Math.min(2.5, Number((z + 0.5).toFixed(2))))}
-                  disabled={zoomLevel >= 2.5}
-                  aria-label="Увеличить"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </button>
-                {zoomLevel > 1 && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((z) => Math.max(1, Number((z - 0.5).toFixed(2))))}
+                      disabled={zoomLevel <= 1}
+                      aria-label="Уменьшить"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </button>
+                    <span className="min-w-[44px] text-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((z) => Math.min(2.5, Number((z + 0.5).toFixed(2))))}
+                      disabled={zoomLevel >= 2.5}
+                      aria-label="Увеличить"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </button>
+                    {zoomLevel > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setZoomLevel(1)}
+                        aria-label="Сбросить масштаб"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedIndex(null)}
+                      aria-label="Закрыть окно просмотра"
+                      className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                    >
+                      <X className="h-4.5 w-4.5" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-zinc-900/5 dark:bg-black/40">
+                  <div className="custom-scrollbar flex h-full w-full items-center justify-center overflow-auto p-2">
+                    <img
+                      src={selected.imageUrl}
+                      alt={selected.title}
+                      onClick={() => setZoomLevel((z) => (z > 1 ? 1 : 2))}
+                      style={{
+                        transform: `scale(${zoomLevel})`,
+                        transformOrigin: 'center center',
+                      }}
+                      className={`max-h-[66dvh] w-auto max-w-full rounded-xl object-contain transition-transform duration-200 ${
+                        zoomLevel > 1 ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                      }`}
+                    />
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => setZoomLevel(1)}
-                    aria-label="Сбросить масштаб"
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                    onClick={goPrev}
+                    aria-label="Предыдущий документ"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur-xs transition hover:bg-black/75 sm:left-3 sm:h-11 sm:w-11 cursor-pointer"
                   >
-                    <RotateCcw className="h-4 w-4" />
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setSelectedIndex(null)}
-                  aria-label="Закрыть окно просмотра"
-                  className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
-                >
-                  <X className="h-4.5 w-4.5" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    aria-label="Следующий документ"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur-xs transition hover:bg-black/75 sm:right-3 sm:h-11 sm:w-11 cursor-pointer"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-zinc-900/5 dark:bg-black/40">
-              <div className="custom-scrollbar flex h-full w-full items-center justify-center overflow-auto p-2">
-                <img
-                  src={selected.imageUrl}
-                  alt={selected.title}
-                  onClick={() => setZoomLevel((z) => (z > 1 ? 1 : 2))}
-                  style={{
-                    transform: `scale(${zoomLevel})`,
-                    transformOrigin: 'center center',
-                  }}
-                  className={`max-h-[66dvh] w-auto max-w-full rounded-xl object-contain transition-transform duration-200 ${
-                    zoomLevel > 1 ? 'cursor-zoom-out' : 'cursor-zoom-in'
-                  }`}
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={goPrev}
-                aria-label="Предыдущий документ"
-                className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur-xs transition hover:bg-black/75 sm:left-3 sm:h-11 sm:w-11 cursor-pointer"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={goNext}
-                aria-label="Следующий документ"
-                className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur-xs transition hover:bg-black/75 sm:right-3 sm:h-11 sm:w-11 cursor-pointer"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </div>,
+            document.body
+          )
+        : null}
     </section>
   );
 }

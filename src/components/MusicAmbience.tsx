@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 
 const LIGHT_NOTES = [
   { top: '12%', left: '3%', size: 'w-8 h-8', parallax: -0.08, variant: 'single', reverse: false, delay: '0s' },
@@ -10,6 +10,59 @@ const LIGHT_NOTES = [
   { top: '79%', left: '6%', size: 'w-7 h-7', parallax: -0.08, variant: 'double', reverse: false, delay: '1.4s' },
   { top: '87%', right: '6%', size: 'w-8 h-8', parallax: -0.05, variant: 'single', reverse: true, delay: '0.3s' },
 ];
+
+// Symmetric dense vertical audio spectrum bars (mirroring live voice analyzer aesthetic)
+const SPECTRUM_BAR_COUNT = 72;
+const SPECTRUM_BARS = Array.from({ length: SPECTRUM_BAR_COUNT }, (_, i) => {
+  const norm = i / (SPECTRUM_BAR_COUNT - 1);
+  const centerDist = Math.abs(norm - 0.5) * 2;
+  const bell = Math.exp(-Math.pow(centerDist * 1.45, 2));
+  const harmonic = 0.55 + 0.45 * Math.sin(i * 0.72) * Math.cos(i * 0.31);
+  const heightPct = Math.max(12, Math.min(96, Math.round((bell * 0.75 + harmonic * 0.25) * 92)));
+  const dur = (1.6 + ((i * 7) % 11) * 0.16).toFixed(2);
+  const delay = (-((i * 0.19) % 2.4)).toFixed(2);
+  return { heightPct, dur: `${dur}s`, delay: `${delay}s` };
+});
+
+function AmbientSpectrumBand({
+  topClass,
+  opacityClass,
+  parallaxY,
+}: {
+  topClass: string;
+  opacityClass: string;
+  parallaxY: number;
+}) {
+  return (
+    <div
+      className={`absolute ${topClass} left-0 right-0 flex h-36 sm:h-44 items-center justify-center px-2 ${opacityClass}`}
+      style={{ transform: `translateY(${parallaxY}px)` }}
+    >
+      {/* Glowing horizontal axis line */}
+      <div className="absolute inset-x-4 top-1/2 h-[1.5px] -translate-y-1/2 bg-gradient-to-r from-transparent via-teal-400/70 to-transparent shadow-[0_0_12px_rgba(45,212,191,0.55)] dark:via-[#2DD4BF]/80" />
+
+      {/* Dense mirrored vertical equalizer bars */}
+      <div className="relative flex h-full w-full max-w-[1440px] items-center justify-between gap-[2px] sm:gap-[3px]">
+        {SPECTRUM_BARS.map((bar, idx) => (
+          <div key={idx} className="flex h-full flex-1 items-center justify-center">
+            <span
+              className="animate-spectrum-bar block w-[2px] sm:w-[2.5px] rounded-full bg-gradient-to-b from-[#B45309]/10 via-[#0EA5E9]/70 to-[#B45309]/10 dark:from-[#2DD4BF]/10 dark:via-[#2DD4BF]/85 dark:to-[#2DD4BF]/10"
+              style={
+                {
+                  height: `${bar.heightPct}%`,
+                  animationDuration: bar.dur,
+                  animationDelay: bar.delay,
+                  '--spec-min': 0.28,
+                  '--spec-max': 1.05,
+                } as CSSProperties
+              }
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function MusicAmbience() {
   const [scrollY, setScrollY] = useState(0);
@@ -44,21 +97,20 @@ export function MusicAmbience() {
         <div className="absolute -top-32 right-[10%] h-[420px] w-[420px] rounded-full bg-[#C26D3A]/[0.06] blur-3xl dark:bg-[#E2A856]/[0.08]" />
         <div className="absolute top-[45%] -left-32 h-[380px] w-[380px] rounded-full bg-[#B45309]/[0.05] blur-3xl dark:bg-[#E2A856]/[0.06]" />
 
-        {/* LIGHT MODE: Lively, clearly visible dancing musical notes & treble clef */}
-        <div className="block dark:hidden">
-          <svg
-            viewBox="0 0 1440 220"
-            fill="none"
-            className="animate-wave-flow absolute top-28 left-0 w-full opacity-[0.14] text-[#B45309]"
-            style={{ transform: `translateY(${scrollY * -0.04}px)` }}
-          >
-            <path d="M-40 60 C 320 20, 680 100, 1480 45" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M-40 74 C 320 34, 680 114, 1480 59" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M-40 88 C 320 48, 680 128, 1480 73" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M-40 102 C 320 62, 680 142, 1480 87" stroke="currentColor" strokeWidth="1.2" />
-            <path d="M-40 116 C 320 76, 680 156, 1480 101" stroke="currentColor" strokeWidth="1.2" />
-          </svg>
+        {/* Mirrored vertical audio spectrum visualizers (matching voice test equalizer aesthetic) */}
+        <AmbientSpectrumBand
+          topClass="top-[24%]"
+          opacityClass="opacity-[0.18] dark:opacity-[0.26]"
+          parallaxY={scrollY * -0.03}
+        />
+        <AmbientSpectrumBand
+          topClass="top-[66%]"
+          opacityClass="opacity-[0.15] dark:opacity-[0.22]"
+          parallaxY={scrollY * -0.02}
+        />
 
+        {/* LIGHT MODE: Lively dancing musical notes & treble clef */}
+        <div className="block dark:hidden">
           <svg
             viewBox="0 0 120 240"
             fill="none"
@@ -98,64 +150,6 @@ export function MusicAmbience() {
               </svg>
             </div>
           ))}
-        </div>
-
-        {/* DARK MODE: Elegant flowing multi-layer SVG Waveform */}
-        <div className="hidden dark:block">
-          <svg
-            viewBox="0 0 1600 240"
-            fill="none"
-            preserveAspectRatio="none"
-            className="animate-wave-flow absolute top-[34%] -left-[5%] h-48 w-[110%] opacity-25 text-[#E2A856]"
-            style={{ transform: `translateY(${scrollY * -0.03}px)` }}
-          >
-            <defs>
-              <linearGradient id="waveGoldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#E2A856" stopOpacity="0" />
-                <stop offset="25%" stopColor="#E2A856" stopOpacity="0.65" />
-                <stop offset="50%" stopColor="#F5D39A" stopOpacity="0.95" />
-                <stop offset="75%" stopColor="#E2A856" stopOpacity="0.65" />
-                <stop offset="100%" stopColor="#E2A856" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M0 120 Q 100 40, 200 120 T 400 120 T 600 120 T 800 120 T 1000 120 T 1200 120 T 1400 120 T 1600 120"
-              stroke="url(#waveGoldGrad)"
-              strokeWidth="1.6"
-            />
-            <path
-              d="M0 120 Q 100 185, 200 120 T 400 120 T 600 120 T 800 120 T 1000 120 T 1200 120 T 1400 120 T 1600 120"
-              stroke="url(#waveGoldGrad)"
-              strokeWidth="1.2"
-              opacity="0.7"
-            />
-            <path
-              d="M0 120 Q 80 75, 160 120 T 320 120 T 480 120 T 640 120 T 800 120 T 960 120 T 1120 120 T 1280 120 T 1440 120 T 1600 120"
-              stroke="url(#waveGoldGrad)"
-              strokeWidth="1"
-              opacity="0.45"
-            />
-          </svg>
-
-          <svg
-            viewBox="0 0 1600 220"
-            fill="none"
-            preserveAspectRatio="none"
-            className="animate-wave-flow-reverse absolute top-[68%] -left-[5%] h-44 w-[110%] opacity-22 text-[#E2A856]"
-            style={{ transform: `translateY(${scrollY * -0.02}px)` }}
-          >
-            <path
-              d="M0 110 C 120 20, 220 200, 340 110 C 460 20, 560 200, 680 110 C 800 20, 900 200, 1020 110 C 1140 20, 1240 200, 1360 110 C 1480 20, 1540 160, 1600 110"
-              stroke="url(#waveGoldGrad)"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M0 110 C 140 175, 260 45, 400 110 C 540 175, 660 45, 800 110 C 940 175, 1060 45, 1200 110 C 1340 175, 1460 45, 1600 110"
-              stroke="url(#waveGoldGrad)"
-              strokeWidth="1"
-              opacity="0.55"
-            />
-          </svg>
         </div>
       </div>
     </>

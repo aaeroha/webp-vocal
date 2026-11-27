@@ -1,5 +1,5 @@
-import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Star } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { AVITO_REVIEWS_URL, REVIEWS_CONTENT, YANDEX_PROFILE_URL } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
@@ -69,6 +69,7 @@ export function Reviews() {
   const trackItems = [...REVIEWS_CONTENT.items, ...REVIEWS_CONTENT.items];
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const dragStateRef = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false });
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -81,11 +82,13 @@ export function Reviews() {
       const dt = Math.min(50, now - lastTime);
       lastTime = now;
 
-      if (!isPaused && el.scrollWidth > el.clientWidth) {
+      if (!isPaused && !dragStateRef.current.active && el.scrollWidth > el.clientWidth) {
         el.scrollLeft += (dt / 1000) * 34;
         const half = el.scrollWidth / 2;
         if (el.scrollLeft >= half) {
           el.scrollLeft -= half;
+        } else if (el.scrollLeft <= 0) {
+          el.scrollLeft += half;
         }
       }
       rafId = window.requestAnimationFrame(step);
@@ -95,10 +98,27 @@ export function Reviews() {
     return () => window.cancelAnimationFrame(rafId);
   }, [isVisible, isPaused]);
 
-  const scrollByCard = (dir: -1 | 1) => {
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * 310, behavior: 'smooth' });
+    dragStateRef.current = {
+      active: true,
+      startX: e.pageX,
+      startScrollLeft: el.scrollLeft,
+      moved: false,
+    };
+  };
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    const el = scrollRef.current;
+    if (!el || !dragStateRef.current.active) return;
+    const dx = e.pageX - dragStateRef.current.startX;
+    if (Math.abs(dx) > 4) dragStateRef.current.moved = true;
+    el.scrollLeft = dragStateRef.current.startScrollLeft - dx;
+  };
+
+  const stopDragging = () => {
+    dragStateRef.current.active = false;
   };
 
   return (
@@ -195,38 +215,41 @@ export function Reviews() {
           </div>
         </div>
 
-        {/* Touch-friendly swipeable & auto-scrolling carousel */}
+        {/* Seamless infinite auto-scroll with mouse drag-to-scroll & touch swipe (no arrow clutter) */}
         <div
           style={{ transitionDelay: '180ms' }}
           className={`reveal-scale relative mt-8 rounded-2xl sm:mt-10 ${
             isVisible ? 'is-visible' : ''
           }`}
           onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
+          onMouseLeave={() => {
+            setIsPaused(false);
+            stopDragging();
+          }}
           onTouchStart={() => setIsPaused(true)}
           onTouchEnd={() => window.setTimeout(() => setIsPaused(false), 1800)}
         >
-          <button
-            type="button"
-            onClick={() => scrollByCard(-1)}
-            aria-label="Прокрутить отзывы назад"
-            className="absolute left-1 top-1/2 z-20 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 text-zinc-800 shadow-md backdrop-blur-xs transition hover:border-[#B45309] hover:text-[#B45309] dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-200 dark:hover:border-[#E2A856] dark:hover:text-[#E2A856] sm:left-2 sm:h-10 sm:w-10 cursor-pointer"
-          >
-            <ChevronLeft className="h-4.5 w-4.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => scrollByCard(1)}
-            aria-label="Прокрутить отзывы вперёд"
-            className="absolute right-1 top-1/2 z-20 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 text-zinc-800 shadow-md backdrop-blur-xs transition hover:border-[#B45309] hover:text-[#B45309] dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-200 dark:hover:border-[#E2A856] dark:hover:text-[#E2A856] sm:right-2 sm:h-10 sm:w-10 cursor-pointer"
-          >
-            <ChevronRight className="h-4.5 w-4.5" />
-          </button>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
+          />
 
           <div
             ref={scrollRef}
-            className="custom-scrollbar flex gap-4 overflow-x-auto px-2 py-2 sm:gap-5 sm:px-4"
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={stopDragging}
+            onClickCapture={(e) => {
+              if (dragStateRef.current.moved) {
+                e.preventDefault();
+                dragStateRef.current.moved = false;
+              }
+            }}
+            className="flex cursor-grab active:cursor-grabbing select-none gap-4 overflow-x-auto px-2 py-2 sm:gap-5 sm:px-4"
             style={{ scrollbarWidth: 'none' }}
           >
             {trackItems.map((review, idx) => (

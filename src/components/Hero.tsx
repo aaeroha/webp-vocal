@@ -171,7 +171,7 @@ export function Hero({ onOpenBooking }: HeroProps) {
             preload="auto"
             poster={HERO_CONTENT.posterUrl}
             src={HERO_CONTENT.videoUrl}
-            className="h-full w-full object-cover opacity-68 dark:opacity-75"
+            className="h-full w-full object-cover object-[50%_14%] opacity-68 dark:opacity-75"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/62 via-[#FAF8F5]/42 to-[#FAF8F5]/95 dark:from-[#0D0C10]/60 dark:via-[#0D0C10]/38 dark:to-[#0D0C10]/95" />
