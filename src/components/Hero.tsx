@@ -73,7 +73,10 @@ function AnimatedStatCard({
 
 export function Hero({ onOpenBooking }: HeroProps) {
   const { ref: heroRef, isVisible: heroVisible } = useReveal({ threshold: 0.08 });
-  const { ref: statsRef, isVisible: statsVisible } = useReveal({ threshold: 0.1 });
+  const { ref: statsRef, isVisible: statsVisible } = useReveal({
+    threshold: 0.35,
+    rootMargin: '0px 0px -110px 0px',
+  });
 
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);

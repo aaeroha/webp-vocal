@@ -141,14 +141,20 @@ export function VocalPiano() {
 
   useEffect(() => {
     if (!isModalOpen) return;
-    const prevOverflow = document.body.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevOverscroll = document.documentElement.style.overscrollBehavior;
     document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    document.documentElement.style.overscrollBehavior = 'none';
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setIsModalOpen(false);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => {
-      document.body.style.overflow = prevOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.documentElement.style.overscrollBehavior = prevOverscroll;
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [isModalOpen]);
@@ -305,76 +311,78 @@ export function VocalPiano() {
         inModal ? 'flex min-h-0 flex-1 flex-col' : 'mt-6'
       }`}
     >
-      {/* Unified Synthesizer Workstation Deck (Speakers + Left Voice Controls + Central All-In-One LCD + Right Tone & Transport) */}
+      {/* Unified Synthesizer Workstation Deck (2x3 Square Voice Pads + Large Readable LCD + Centered Timbre & Warmup) */}
       <div
         className={`relative border-b border-black/60 bg-gradient-to-b from-[#292832] to-[#191820] ${
-          inModal ? 'px-2.5 py-2 sm:px-4 sm:py-2.5' : 'px-4 py-3.5 sm:px-5 sm:py-4'
+          inModal ? 'px-2.5 py-2 pr-12 sm:px-3.5 sm:py-2.5 sm:pr-12' : 'px-4 py-3.5 sm:px-5 sm:py-4'
         }`}
       >
-        <div className="flex flex-col gap-2.5 md:grid md:grid-cols-[auto_1fr_auto] md:items-center md:gap-3 lg:gap-4">
-          {/* LEFT WING: Speaker Grille (xl) + Dotted LED Voice Switcher + Octave Toggle */}
-          <div className="flex items-center justify-between md:justify-start gap-2.5">
+        <div className="flex flex-col gap-2 min-[540px]:grid min-[540px]:grid-cols-[auto_1fr_auto] min-[540px]:items-center min-[540px]:gap-2.5 lg:gap-4">
+          {/* LEFT WING: Speaker Grille (xl) + 2x3 Square Voice Buttons + Centered Octave */}
+          <div className="flex items-center justify-center min-[540px]:justify-start gap-2">
             {/* Decorative Hardware Speaker Mesh on wide desktop */}
             <div
               aria-hidden="true"
-              className="hidden xl:grid h-[76px] w-14 shrink-0 grid-cols-5 gap-1 rounded-xl border border-white/5 bg-[#111015] p-2 shadow-inner"
+              className="hidden xl:grid h-[88px] w-14 shrink-0 grid-cols-5 gap-1 rounded-xl border border-white/5 bg-[#111015] p-2 shadow-inner"
             >
               {Array.from({ length: 25 }).map((_, i) => (
                 <span key={i} className="h-1.5 w-1.5 rounded-full bg-zinc-700/80" />
               ))}
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between px-1 text-[9px] font-bold uppercase tracking-widest text-zinc-400">
-                <span>Голос • {selectedProfile.name}</span>
-                <span className="text-[#E2A856]">Регистр</span>
+            <div className="flex items-end gap-2">
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-center text-[9px] font-bold uppercase tracking-widest text-zinc-400">
+                  Голос
+                </span>
+
+                {/* 2 rows x 3 square pad buttons */}
+                <div className="grid grid-cols-3 gap-1 rounded-xl border border-white/12 bg-[#0D0C10] p-1 shadow-inner">
+                  {VOICE_TYPES.slice(0, 6).map((vt, idx) => {
+                    const isActive = idx === selectedProfileIdx;
+                    const shortVoice =
+                      vt.name === 'Контральто'
+                        ? 'Контр'
+                        : vt.name === 'Сопрано'
+                          ? 'Сопр'
+                          : vt.name === 'Баритон'
+                            ? 'Барит'
+                            : vt.name.slice(0, 5);
+                    return (
+                      <button
+                        key={vt.id}
+                        type="button"
+                        title={`${vt.name} (${vt.rangeLabel})`}
+                        aria-label={`Выбрать голос: ${vt.name}`}
+                        onClick={() => handleProfileIndexChange(idx)}
+                        className={`flex h-7 w-11 sm:h-8 sm:w-12 items-center justify-center rounded-md text-center text-[10px] font-bold leading-none transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-gradient-to-b from-[#FDE047] to-[#D97706] text-[#0D0C10] shadow-[0_0_10px_rgba(250,204,21,0.55)]'
+                            : 'bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700 hover:text-white'
+                        }`}
+                      >
+                        <span className="truncate">{shortVoice}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                {/* 6 Interactive LED Voice Dots Track */}
-                <div className="relative flex h-9 sm:h-10 items-center rounded-xl border border-white/12 bg-[#0D0C10] px-2.5 sm:px-3 shadow-inner">
-                  <div className="relative flex items-center gap-2 sm:gap-2.5">
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute left-1.5 right-1.5 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-zinc-700"
-                    />
-                    {VOICE_TYPES.map((vt, idx) => {
-                      const isActive = idx === selectedProfileIdx;
-                      return (
-                        <button
-                          key={vt.id}
-                          type="button"
-                          title={`${vt.name} (${vt.rangeLabel})`}
-                          aria-label={`Выбрать голос: ${vt.name}`}
-                          onClick={() => handleProfileIndexChange(idx)}
-                          className={`relative z-10 flex h-4.5 w-4.5 sm:h-5 sm:w-5 items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${
-                            isActive
-                              ? 'scale-120 bg-gradient-to-br from-[#FDE047] to-[#D97706] shadow-[0_0_10px_rgba(250,204,21,0.95)] ring-2 ring-[#FACC15]/40'
-                              : 'bg-zinc-700 hover:bg-zinc-500'
-                          }`}
-                        >
-                          <span
-                            className={`h-1.5 w-1.5 rounded-full ${
-                              isActive ? 'bg-[#0A0B0F]' : 'bg-zinc-400/75'
-                            }`}
-                          />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Single Tactile Octave Switch */}
+              {/* Centered Octave Switch */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-center text-[9px] font-bold uppercase tracking-widest text-[#E2A856]">
+                  Октава
+                </span>
                 <button
                   type="button"
                   onClick={() => handleSwitchRegister(registerMode === 'high' ? 'low' : 'high')}
                   title="Переключить октаву клавиатуры"
-                  className="flex h-9 sm:h-10 flex-col items-center justify-center rounded-xl border border-white/15 bg-[#0D0C10] px-2.5 sm:px-3 font-mono transition-colors hover:border-[#E2A856]/60 cursor-pointer"
+                  className="flex h-[62px] sm:h-[70px] w-12 sm:w-13 flex-col items-center justify-center rounded-xl border border-white/15 bg-[#0D0C10] px-1.5 font-mono text-center transition-colors hover:border-[#E2A856]/60 cursor-pointer"
                 >
                   <span className="text-[8px] font-bold uppercase tracking-wider text-zinc-400">
                     OCT
                   </span>
-                  <span className="text-[11px] font-bold leading-none text-[#FACC15]">
+                  <span className="mt-0.5 text-[11px] font-bold leading-none text-[#FACC15]">
                     {registerMode === 'high' ? 'c1-c2' : 'F-a'}
                   </span>
                 </button>
@@ -382,8 +390,8 @@ export function VocalPiano() {
             </div>
           </div>
 
-          {/* CENTER: ALL-IN-ONE UNIFIED SYNTHESIZER LCD SCREEN */}
-          <div className="relative flex h-[86px] sm:h-[94px] w-full flex-col justify-between overflow-hidden rounded-xl border-2 border-[#3C424D] bg-gradient-to-b from-[#131B22] via-[#0E151B] to-[#0A1015] px-3 py-2 shadow-[inset_0_3px_14px_rgba(0,0,0,0.9),0_1px_0_rgba(255,255,255,0.08)] font-mono">
+          {/* CENTER: LARGER, HIGH-CONTRAST ALL-IN-ONE SYNTHESIZER LCD SCREEN */}
+          <div className="relative flex min-h-[92px] sm:min-h-[104px] w-full flex-col justify-between overflow-hidden rounded-xl border-2 border-[#3C424D] bg-gradient-to-b from-[#131B22] via-[#0E151B] to-[#0A1015] px-3 py-2 sm:px-4 sm:py-2.5 shadow-[inset_0_3px_14px_rgba(0,0,0,0.9),0_1px_0_rgba(255,255,255,0.08)] font-mono">
             {/* Subtle backlit LCD scanline sheen */}
             <div
               aria-hidden="true"
@@ -391,9 +399,9 @@ export function VocalPiano() {
             />
 
             {/* Top LCD Status Bar: Tone + Voice + Range */}
-            <div className="relative z-10 flex items-center justify-between gap-2 border-b border-amber-400/15 pb-1 text-[10px] sm:text-[11px]">
+            <div className="relative z-10 flex items-center justify-between gap-2 border-b border-amber-400/15 pb-1 text-[11px] sm:text-xs">
               <div className="flex items-center gap-1.5 truncate">
-                <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[9px] font-bold text-[#FACC15]">
+                <span className="rounded bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-[#FACC15]">
                   0{INSTRUMENTS.findIndex((i) => i.id === instrument) + 1}
                 </span>
                 <span className="truncate font-bold uppercase tracking-wider text-amber-200">
@@ -401,41 +409,41 @@ export function VocalPiano() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 text-[10px]">
+              <div className="flex items-center gap-2 shrink-0 text-[11px] sm:text-xs">
                 <span className="font-semibold text-emerald-300">
                   {selectedProfile.name}
                 </span>
-                <span className="hidden sm:inline text-zinc-400">
+                <span className="hidden md:inline text-zinc-400">
                   {selectedProfile.rangeLabel.split(' ')[0]}
                 </span>
               </div>
             </div>
 
-            {/* Bottom LCD Live Area: Shows EITHER Current Pressed Note OR 5/7-Note Warmup Sequence */}
-            <div className="relative z-10 flex flex-1 items-center justify-between gap-2 pt-1">
+            {/* Bottom LCD Live Area: Larger legible readout */}
+            <div className="relative z-10 flex flex-1 items-center justify-between gap-2 pt-1.5">
               {phase === 'idle' ? (
                 <>
                   <div className="flex items-baseline gap-2.5 truncate">
                     {lastKeyInfo ? (
                       <>
-                        <span className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#FACC15]">
+                        <span className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#FACC15]">
                           {lastKeyInfo.labelRu}
                         </span>
-                        <span className="text-xs sm:text-sm font-bold text-amber-200/85">
+                        <span className="text-sm sm:text-base font-bold text-amber-200/90">
                           ({lastKeyInfo.sciLabel})
                         </span>
-                        <span className="text-[11px] font-semibold text-emerald-400">
+                        <span className="text-xs sm:text-sm font-semibold text-emerald-400">
                           {Math.round(lastKeyInfo.freq)} Гц
                         </span>
                       </>
                     ) : (
-                      <span className="text-xs sm:text-sm font-semibold text-amber-100/70">
+                      <span className="text-xs sm:text-sm font-semibold text-amber-100/80">
                         Нажмите клавишу или «▶ Распевка»
                       </span>
                     )}
                   </div>
 
-                  <div className="hidden sm:flex shrink-0 items-center gap-1.5 rounded-md border border-amber-400/20 bg-black/35 px-2 py-1 text-[10px] text-amber-300/90">
+                  <div className="hidden lg:flex shrink-0 items-center gap-1.5 rounded-md border border-amber-400/20 bg-black/35 px-2.5 py-1 text-[11px] text-amber-300/90">
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
                     <span>15 распевок</span>
                   </div>
@@ -443,14 +451,14 @@ export function VocalPiano() {
               ) : (
                 <div className="flex w-full items-center gap-2">
                   <div className="hidden sm:flex shrink-0 flex-col leading-tight">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-amber-300">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-300">
                       {phase === 'demo'
                         ? 'СЛУШАЙТЕ'
                         : phase === 'completed'
                           ? 'БРАВО!'
                           : 'ПОЙТЕ / ЖМИТЕ'}
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-400">
+                    <span className="text-[11px] font-bold text-emerald-400">
                       {phase === 'completed'
                         ? `${activeSequenceNotes.length}/${activeSequenceNotes.length} OK`
                         : phase === 'practice'
@@ -476,7 +484,7 @@ export function VocalPiano() {
                       return (
                         <div
                           key={`${noteCode}-${idx}`}
-                          className={`flex flex-col items-center justify-center rounded-md border py-0.5 text-center transition-all duration-150 ${
+                          className={`flex flex-col items-center justify-center rounded-md border py-1 text-center transition-all duration-150 ${
                             isMatched
                               ? 'border-emerald-400/80 bg-emerald-400/20 text-emerald-300'
                               : isDemoActive
@@ -488,13 +496,13 @@ export function VocalPiano() {
                                   : 'border-white/10 bg-white/5 text-zinc-400'
                           }`}
                         >
-                          <div className="flex items-center gap-0.5">
-                            {isMatched && <Check className="h-2.5 w-2.5 shrink-0" />}
-                            <span className="text-[10px] sm:text-xs font-bold leading-none">
+                          <div className="flex items-center justify-center gap-0.5">
+                            {isMatched && <Check className="h-3 w-3 shrink-0" />}
+                            <span className="text-xs sm:text-sm font-bold leading-none">
                               {k?.labelRu ?? noteCode}
                             </span>
                           </div>
-                          <span className="text-[8px] sm:text-[9px] opacity-80">
+                          <span className="mt-0.5 text-[9px] sm:text-[10px] opacity-85">
                             {k?.sciLabel ?? ''}
                           </span>
                         </div>
@@ -506,18 +514,16 @@ export function VocalPiano() {
             </div>
           </div>
 
-          {/* RIGHT WING: 4 Instrument Icons + Transport Controls + Speaker Mesh */}
-          <div className="flex items-center justify-between md:justify-end gap-2.5">
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between px-1 text-[9px] font-bold uppercase tracking-widest text-zinc-400">
-                <span>Тембр</span>
-                <span className="text-[#E2A856]">Распевка</span>
-              </div>
-
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                {/* 4 Tactile Timbre Icon Buttons */}
+          {/* RIGHT WING: Centered Timbre + Centered Warmup Controls + Speaker Mesh */}
+          <div className="flex items-center justify-center min-[540px]:justify-end gap-2">
+            <div className="flex items-end gap-2">
+              {/* Centered Timbre Controls */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-center text-[9px] font-bold uppercase tracking-widest text-zinc-400">
+                  Тембр
+                </span>
                 <div
-                  className="inline-flex items-center gap-1 rounded-xl border border-white/14 bg-[#0D0C10] p-1"
+                  className="grid grid-cols-2 gap-1 rounded-xl border border-white/14 bg-[#0D0C10] p-1"
                   role="group"
                   aria-label="Выбор тембра инструмента"
                 >
@@ -530,7 +536,7 @@ export function VocalPiano() {
                         title={inst.label}
                         aria-label={inst.label}
                         onClick={() => setInstrument(inst.id)}
-                        className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg transition-all cursor-pointer ${
+                        className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-md transition-all cursor-pointer ${
                           active
                             ? 'bg-gradient-to-b from-[#F59E0B] to-[#B45309] text-white shadow-[0_0_10px_rgba(245,158,11,0.6)]'
                             : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100'
@@ -541,55 +547,62 @@ export function VocalPiano() {
                     );
                   })}
                 </div>
+              </div>
 
-                {/* Transport Buttons */}
-                {phase !== 'idle' && (
+              {/* Centered Warmup Transport Controls */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-center text-[9px] font-bold uppercase tracking-widest text-[#E2A856]">
+                  Распевка
+                </span>
+                <div className="flex items-center justify-center gap-1.5">
+                  {phase !== 'idle' && (
+                    <button
+                      type="button"
+                      onClick={replayCurrentWarmup}
+                      disabled={phase === 'demo'}
+                      title="Повторить распевку"
+                      aria-label="Повторить распевку"
+                      className="inline-flex h-[62px] sm:h-[70px] w-9 sm:w-10 items-center justify-center rounded-xl border border-[#E2A856]/45 bg-[#0D0C10] text-[#E2A856] transition-all hover:bg-[#E2A856]/15 disabled:opacity-50 cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </button>
+                  )}
+
                   <button
                     type="button"
-                    onClick={replayCurrentWarmup}
+                    onClick={playWarmupChallenge}
                     disabled={phase === 'demo'}
-                    title="Повторить распевку"
-                    aria-label="Повторить распевку"
-                    className="inline-flex h-9 sm:h-10 w-9 sm:w-10 items-center justify-center rounded-xl border border-[#E2A856]/45 bg-[#0D0C10] text-[#E2A856] transition-all hover:bg-[#E2A856]/15 disabled:opacity-50 cursor-pointer"
+                    className="btn-sheen inline-flex h-[62px] sm:h-[70px] flex-col items-center justify-center gap-1 rounded-xl bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-3 sm:px-3.5 text-center text-[11px] sm:text-xs font-bold leading-tight text-[#0D0C10] shadow-[0_2px_10px_rgba(245,158,11,0.35)] transition-all hover:brightness-110 disabled:opacity-70 cursor-pointer"
                   >
-                    <RotateCcw className="h-4 w-4" />
+                    <Play className="h-4 w-4 fill-current" />
+                    <span>
+                      {phase === 'demo'
+                        ? 'Играет'
+                        : phase === 'idle'
+                          ? 'Распевка'
+                          : 'Другая'}
+                    </span>
                   </button>
-                )}
 
-                <button
-                  type="button"
-                  onClick={playWarmupChallenge}
-                  disabled={phase === 'demo'}
-                  className="btn-sheen inline-flex h-9 sm:h-10 items-center gap-1.5 rounded-xl bg-gradient-to-b from-[#F59E0B] to-[#D97706] px-3.5 sm:px-4 text-xs sm:text-sm font-bold text-[#0D0C10] shadow-[0_2px_10px_rgba(245,158,11,0.35)] transition-all hover:brightness-110 disabled:opacity-70 cursor-pointer"
-                >
-                  <Play className="h-3.5 w-3.5 fill-current" />
-                  <span>
-                    {phase === 'demo'
-                      ? 'Играет...'
-                      : phase === 'idle'
-                        ? 'Распевка'
-                        : 'Другая'}
-                  </span>
-                </button>
-
-                {!inModal && (
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(true)}
-                    title="На весь экран"
-                    aria-label="Открыть пианино на весь экран"
-                    className="inline-flex h-9 sm:h-10 w-9 sm:w-10 items-center justify-center rounded-xl border border-white/15 bg-[#0D0C10] text-zinc-200 transition-colors hover:border-[#E2A856]/60 hover:text-[#E2A856] cursor-pointer"
-                  >
-                    <Maximize2 className="h-4 w-4" />
-                  </button>
-                )}
+                  {!inModal && (
+                    <button
+                      type="button"
+                      onClick={() => setIsModalOpen(true)}
+                      title="На весь экран"
+                      aria-label="Открыть пианино на весь экран"
+                      className="inline-flex h-[62px] sm:h-[70px] w-9 sm:w-10 items-center justify-center rounded-xl border border-white/15 bg-[#0D0C10] text-zinc-200 transition-colors hover:border-[#E2A856]/60 hover:text-[#E2A856] cursor-pointer"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Right Decorative Hardware Speaker Mesh on wide desktop */}
             <div
               aria-hidden="true"
-              className="hidden xl:grid h-[76px] w-14 shrink-0 grid-cols-5 gap-1 rounded-xl border border-white/5 bg-[#111015] p-2 shadow-inner"
+              className="hidden xl:grid h-[88px] w-14 shrink-0 grid-cols-5 gap-1 rounded-xl border border-white/5 bg-[#111015] p-2 shadow-inner"
             >
               {Array.from({ length: 25 }).map((_, i) => (
                 <span key={i} className="h-1.5 w-1.5 rounded-full bg-zinc-700/80" />
@@ -610,7 +623,9 @@ export function VocalPiano() {
       </div>
 
       {/* Full-Width Playable Piano Keyboard Seamlessly Attached Below Hardware Rail */}
-      <div className={`relative ${inModal ? 'flex-1 min-h-[150px]' : ''} overflow-x-auto bg-zinc-950 p-1.5 sm:p-2 custom-scrollbar`}>
+      <div
+        className={`relative ${inModal ? 'flex-1 min-h-[145px] touch-pan-x' : ''} overflow-x-auto bg-zinc-950 p-1.5 sm:p-2 custom-scrollbar`}
+      >
         <div
           className={`relative flex w-full select-none ${
             inModal
@@ -688,21 +703,12 @@ export function VocalPiano() {
             role="dialog"
             aria-modal="true"
             aria-label="Вокальное пианино — полноэкранный режим"
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/88 p-2 backdrop-blur-md sm:p-4"
+            className="fixed inset-0 z-[100] flex touch-none items-center justify-center overflow-hidden overscroll-none bg-black/90 p-1.5 backdrop-blur-md sm:p-4"
           >
-            <div className="animate-modal-enter relative flex h-[96dvh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-zinc-900/15 bg-[#FAF8F5] p-3 shadow-2xl dark:border-white/15 dark:bg-[#16151C] sm:h-auto sm:max-h-[94dvh] sm:rounded-3xl sm:p-5">
-              <div className="flex shrink-0 items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-[#B45309]/15 text-[#B45309] dark:bg-[#E2A856]/20 dark:text-[#E2A856]">
-                    <Music className="h-4 w-4" />
-                  </span>
-                  <h3 className="font-serif text-base font-semibold text-zinc-900 dark:text-[#F5F3EF] sm:text-xl">
-                    Вокальное пианино • {activeInstrumentMeta.shortLabel}
-                  </h3>
-                </div>
-
-                {/* Portrait mobile hint inline on small portrait screens */}
-                <div className="hidden max-sm:portrait:flex items-center gap-1 rounded-full bg-amber-500/15 px-2.5 py-1 text-[10px] font-semibold text-[#9A4407] dark:text-[#FDE047]">
+            <div className="animate-modal-enter relative flex h-[97dvh] w-full max-w-6xl flex-col overflow-hidden rounded-2xl border border-zinc-900/15 bg-[#16151C] p-1.5 shadow-2xl dark:border-white/15 sm:h-auto sm:max-h-[95dvh] sm:rounded-3xl sm:p-3">
+              {/* Compact floating top-right controls (title bar removed to maximize horizontal screen & key area) */}
+              <div className="absolute right-2.5 top-2.5 z-30 flex items-center gap-1.5">
+                <div className="hidden max-sm:portrait:flex items-center gap-1 rounded-full bg-amber-500/20 px-2.5 py-1 text-[10px] font-semibold text-[#FDE047] backdrop-blur-sm">
                   <RotateCw className="h-3 w-3 shrink-0" />
                   <span>Поверните экран</span>
                 </div>
@@ -711,9 +717,9 @@ export function VocalPiano() {
                   type="button"
                   onClick={() => setIsModalOpen(false)}
                   aria-label="Закрыть пианино"
-                  className="inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 bg-black/60 text-white backdrop-blur-sm transition-colors hover:border-[#E2A856] hover:text-[#E2A856] cursor-pointer"
                 >
-                  <X className="h-4.5 w-4.5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
