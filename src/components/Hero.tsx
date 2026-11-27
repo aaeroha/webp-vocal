@@ -75,22 +75,11 @@ export function Hero({ onOpenBooking }: HeroProps) {
   const { ref: heroRef, isVisible: heroVisible } = useReveal({ threshold: 0.08 });
   const { ref: statsRef, isVisible: statsVisible } = useReveal({ threshold: 0.1 });
 
-  const [isDesktop, setIsDesktop] = useState<boolean>(() =>
-    typeof window !== 'undefined' ? window.innerWidth >= 768 : true
-  );
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)');
-    const onChange = () => setIsDesktop(mq.matches);
-    onChange();
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
-
-  useEffect(() => {
-    if (!isDesktop || !videoRef.current) return;
+    if (!videoRef.current) return;
     const vid = videoRef.current;
     vid.muted = true;
     const attemptPlay = () => {
@@ -110,14 +99,16 @@ export function Hero({ onOpenBooking }: HeroProps) {
         vid.load();
       }
     }, 350);
+    vid.addEventListener('loadeddata', onReady);
     vid.addEventListener('canplaythrough', onReady);
     vid.addEventListener('playing', onReady);
     return () => {
       window.clearTimeout(startTimer);
+      vid.removeEventListener('loadeddata', onReady);
       vid.removeEventListener('canplaythrough', onReady);
       vid.removeEventListener('playing', onReady);
     };
-  }, [isDesktop]);
+  }, []);
 
   // H1 cycling typewriter
   const phrases = HERO_CONTENT.typewriterPhrases;
@@ -176,9 +167,12 @@ export function Hero({ onOpenBooking }: HeroProps) {
       ref={heroRef}
       className="relative z-10 overflow-hidden pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-20 lg:pb-24"
     >
-      {/* Instant LCP Poster Image + Progressive Ambient Video (never bleeds through video) */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <div className="relative h-full w-full opacity-68 dark:opacity-75">
+      {/* Instant LCP Poster Image + Progressive Ambient Video (zoomed-out & centered on mobile, full-bleed on desktop) */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[310px] overflow-hidden sm:h-[380px] md:inset-0 md:h-full"
+      >
+        <div className="relative h-full w-full opacity-72 dark:opacity-78">
           <img
             src={HERO_CONTENT.posterUrl}
             alt=""
@@ -186,26 +180,24 @@ export function Hero({ onOpenBooking }: HeroProps) {
             height={1080}
             fetchPriority="high"
             decoding="async"
-            className={`h-full w-full object-cover object-[50%_14%] transition-opacity duration-500 ${
+            className={`h-full w-full object-cover object-center md:object-[50%_14%] transition-opacity duration-500 ${
               videoReady ? 'opacity-0' : 'opacity-100'
             }`}
           />
-          {isDesktop && (
-            <video
-              ref={videoRef}
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="none"
-              src={HERO_CONTENT.videoUrl}
-              className={`absolute inset-0 h-full w-full object-cover object-[50%_14%] transition-opacity duration-700 ${
-                videoReady ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
-          )}
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            src={HERO_CONTENT.videoUrl}
+            className={`absolute inset-0 h-full w-full object-cover object-center md:object-[50%_14%] transition-opacity duration-700 ${
+              videoReady ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/62 via-[#FAF8F5]/42 to-[#FAF8F5]/95 dark:from-[#0D0C10]/60 dark:via-[#0D0C10]/38 dark:to-[#0D0C10]/95" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/55 via-[#FAF8F5]/38 to-[#FAF8F5] dark:from-[#0D0C10]/55 dark:via-[#0D0C10]/35 dark:to-[#0D0C10]" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

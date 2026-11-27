@@ -135,8 +135,7 @@ export function Contacts({ isDark, onOpenBooking }: ContactsProps) {
                       className="group flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-zinc-900/12 bg-[#FAF8F5] px-4 py-3 text-sm font-semibold text-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B45309]/45 hover:text-[#B45309] dark:border-white/12 dark:bg-[#0D0C10] dark:text-zinc-200 dark:hover:border-[#E2A856]/45 dark:hover:text-[#E2A856] sm:flex-initial sm:px-5"
                     >
                       <SocialLogo id={social.id} />
-                      <span className="truncate">{social.label}</span>
-                      <ExternalLink className="h-4 w-4 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
+                      <span>{social.label}</span>
                     </a>
                   ))}
                 </div>
