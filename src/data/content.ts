@@ -57,6 +57,13 @@ export interface SocialLink {
   handle: string;
 }
 
+export interface RecommendedTrack {
+  title: string;
+  artist: string;
+  mood: 'Лирика' | 'Драйв' | 'Классика' | 'Соул';
+  whyFits: string;
+}
+
 export interface VoiceTypeProfile {
   id: string;
   gender: 'female' | 'male';
@@ -68,6 +75,7 @@ export interface VoiceTypeProfile {
   minHz: number;
   maxHz: number;
   pianoNotes: string[];
+  recommendedSongs: RecommendedTrack[];
 }
 
 export interface KaraokeNoteStep {
@@ -121,6 +129,7 @@ export const NAV_LINKS: NavLink[] = [
   { label: 'Обо мне', href: '#about' },
   { label: 'Занятия', href: '#formats' },
   { label: 'Пианино', href: '#vocal-piano' },
+  { label: '3D-атлас', href: '#vocal-atlas' },
   { label: 'Сертификаты', href: '#certificates' },
   { label: 'Отзывы', href: '#reviews' },
   { label: 'Вопросы', href: '#faq' },
@@ -394,6 +403,12 @@ export const VOICE_TYPES: VoiceTypeProfile[] = [
     minHz: 262,
     maxHz: 1046,
     pianoNotes: ['C4', 'E4', 'G4', 'C5'],
+    recommendedSongs: [
+      { title: 'Обезоружена', artist: 'Полина Гагарина', mood: 'Драйв', whyFits: 'Яркие припевы на миксте и головном резонаторе' },
+      { title: 'My Heart Will Go On', artist: 'Celine Dion', mood: 'Лирика', whyFits: 'Полётное дыхание и светлые верхние ноты' },
+      { title: 'Прованс', artist: 'Ёлка', mood: 'Драйв', whyFits: 'Лёгкая середина и игривые подъезды в первой-второй октаве' },
+      { title: 'Ave Maria', artist: 'F. Schubert / Caccini', mood: 'Классика', whyFits: 'Раскрывает кантилену и чистоту высокого тембра' },
+    ],
   },
   {
     id: 'mezzo',
@@ -408,6 +423,12 @@ export const VOICE_TYPES: VoiceTypeProfile[] = [
     minHz: 205,
     maxHz: 262,
     pianoNotes: ['A3', 'C4', 'E4', 'A4'],
+    recommendedSongs: [
+      { title: 'Rolling in the Deep', artist: 'Adele', mood: 'Драйв', whyFits: 'Идеально ложится на плотный грудной центр и бэлт' },
+      { title: 'Shallow', artist: 'Lady Gaga', mood: 'Лирика', whyFits: 'Красивый переход от мягкого субтона к мощной кульминации' },
+      { title: 'Back to Black', artist: 'Amy Winehouse', mood: 'Соул', whyFits: 'Подчёркивает бархатную низкую середину без зажимов' },
+      { title: 'Любовь, похожая на сон', artist: 'Алла Пугачёва', mood: 'Классика', whyFits: 'Тёплая выразительная тесситура малой и первой октавы' },
+    ],
   },
   {
     id: 'contralto',
@@ -422,6 +443,12 @@ export const VOICE_TYPES: VoiceTypeProfile[] = [
     minHz: 135,
     maxHz: 205,
     pianoNotes: ['F3', 'A3', 'C4', 'F4'],
+    recommendedSongs: [
+      { title: 'Summertime Sadness', artist: 'Lana Del Rey', mood: 'Лирика', whyFits: 'Глубокие низкие ноты и атмосферный грудной субтон' },
+      { title: 'Smooth Operator', artist: 'Sade', mood: 'Соул', whyFits: 'Фирменный бархатный грудной тембр в комфортной зоне' },
+      { title: 'На Титанике', artist: 'Лолита', mood: 'Драйв', whyFits: 'Уверенная, плотная подача в нижнем регистре' },
+      { title: 'Believe', artist: 'Cher', mood: 'Драйв', whyFits: 'Раскрывает характерную насыщенную середину голоса' },
+    ],
   },
   {
     id: 'tenor',
@@ -436,6 +463,12 @@ export const VOICE_TYPES: VoiceTypeProfile[] = [
     minHz: 155,
     maxHz: 523,
     pianoNotes: ['C3', 'E3', 'G3', 'C4'],
+    recommendedSongs: [
+      { title: 'Невозможное возможно', artist: 'Дима Билан', mood: 'Драйв', whyFits: 'Динамичный верхний регистр и звонкий микст' },
+      { title: 'Stay With Me', artist: 'Sam Smith', mood: 'Соул', whyFits: 'Красивые переходы между грудью и лёгким фальцетом' },
+      { title: 'Самый лучший день', artist: 'Григорий Лепс', mood: 'Драйв', whyFits: 'Яркая экспрессия и плотные верхние ноты на опоре' },
+      { title: 'Con te partirò', artist: 'Andrea Bocelli', mood: 'Классика', whyFits: 'Максимально раскрывает объём и полётность тенора' },
+    ],
   },
   {
     id: 'baritone',
@@ -450,6 +483,12 @@ export const VOICE_TYPES: VoiceTypeProfile[] = [
     minHz: 112,
     maxHz: 155,
     pianoNotes: ['A2', 'C#3', 'E3', 'A3'],
+    recommendedSongs: [
+      { title: 'Синяя вечность', artist: 'Муслим Магомаев', mood: 'Классика', whyFits: 'Эталонная баритональная ширина и благородная опора' },
+      { title: 'Сансара', artist: 'Баста', mood: 'Лирика', whyFits: 'Естественная речевая позиция и искренний тембр' },
+      { title: 'All of Me', artist: 'John Legend', mood: 'Соул', whyFits: 'Мягкая середина с красивым выходом в микст' },
+      { title: 'Аэропорты', artist: 'Леонид Агутин', mood: 'Драйв', whyFits: 'Комфортный грудной диапазон и выразительный ритм' },
+    ],
   },
   {
     id: 'bass',
@@ -464,6 +503,124 @@ export const VOICE_TYPES: VoiceTypeProfile[] = [
     minHz: 65,
     maxHz: 112,
     pianoNotes: ['F2', 'A2', 'C3', 'F3'],
+    recommendedSongs: [
+      { title: 'Конь', artist: 'Любэ', mood: 'Классика', whyFits: 'Раскрывает богатую грудную глубину и ровное дыхание' },
+      { title: 'Hallelujah', artist: 'Leonard Cohen', mood: 'Лирика', whyFits: 'Низкая бархатная тесситура с интимной подачей' },
+      { title: 'Hurt', artist: 'Johnny Cash', mood: 'Соул', whyFits: 'Акустическая глубина и выразительные разговорные низы' },
+      { title: 'Прогулки по воде', artist: 'Наутилус Помпилиус', mood: 'Драйв', whyFits: 'Спокойная уверенная мощь в большой и малой октаве' },
+    ],
+  },
+];
+
+export type ResonatorZoneId = 'chest' | 'larynx' | 'palate' | 'mask';
+
+export interface VocalTechniqueInfo {
+  id: 'chest-support' | 'subtone' | 'mix' | 'belt' | 'head-register';
+  title: string;
+  subtitle: string;
+  noteLabel: string;
+  freqHz: number;
+  formantHz: number;
+  airiness: number;
+  brightness: number;
+  activeZones: ResonatorZoneId[];
+  zoneNames: string[];
+  accentColor: string;
+  physiology: string;
+  sensation: string;
+  usage: string;
+}
+
+export const VOCAL_ATLAS_TECHNIQUES: VocalTechniqueInfo[] = [
+  {
+    id: 'subtone',
+    title: 'Субтон',
+    subtitle: 'Мягкое воздушное придыхание',
+    noteLabel: 'До первой октавы (C4 • 262 Гц)',
+    freqHz: 261.63,
+    formantHz: 650,
+    airiness: 0.35,
+    brightness: 0.35,
+    activeZones: ['larynx', 'palate'],
+    zoneNames: ['Голосовые складки (неполное смыкание)', 'Нёбная дужка и ротовой тракт'],
+    accentColor: '#38BDF8',
+    physiology:
+      'Голосовые складки смыкаются мягко и оставляют микроскопический воздушный зазор вдоль задней трети — выдох превращается в нежный бархатный «шёпот на ноте».',
+    sensation:
+      'Лёгкое тёплое ощущение на верхнем нёбе, расслабленная шея и спокойный выдох без давления.',
+    usage: 'Интимные куплеты, инди, джаз, поп-баллады (Billie Eilish, Lana Del Rey, Adele).',
+  },
+  {
+    id: 'mix',
+    title: 'Микст',
+    subtitle: 'Бесшовный баланс груди и головы',
+    noteLabel: 'Соль первой октавы (G4 • 392 Гц)',
+    freqHz: 392.0,
+    formantHz: 1150,
+    airiness: 0.04,
+    brightness: 0.72,
+    activeZones: ['larynx', 'palate', 'mask'],
+    zoneNames: ['Гортань и щитовидный хрящ', 'Нёбная дужка', 'Носовые пазухи (маска)'],
+    accentColor: '#E2A856',
+    physiology:
+      'Щиточерпаловидные (грудные) и перстнещитовидные (головные) мышцы работают в точном балансе, плавно передавая звук через нёбный купол в маску.',
+    sensation:
+      'Сфокусированная вибрация в области верхних зубов, скул и переносицы при совершенно свободной гортани.',
+    usage: 'Свободное взятие высоких нот без срывов и «петухов» в современной поп- и рок-музыке.',
+  },
+  {
+    id: 'belt',
+    title: 'Бэлт',
+    subtitle: 'Мощная сценическая кульминация',
+    noteLabel: 'Ля первой октавы (A4 • 440 Гц)',
+    freqHz: 440.0,
+    formantHz: 1650,
+    airiness: 0.01,
+    brightness: 1.0,
+    activeZones: ['chest', 'larynx', 'palate', 'mask'],
+    zoneNames: ['Грудная опора', 'Щитовидный хрящ + тванг', 'Нёбная дужка', 'Передняя маска'],
+    accentColor: '#F59E0B',
+    physiology:
+      'Плотное, но безопасное смыкание складок, небольшой наклон перстневидного хряща и яркая настройка надгортанной воронки (тванг), многократно усиливающая громкость без крика.',
+    sensation:
+      'Мощный плотный стержень от нижних рёбер и чёткий сфокусированный звон в твёрдом нёбе и носовых пазухах.',
+    usage: 'Яркие кульминации в мюзикле, роке, соуле и эстрадных хитах (Lady Gaga, Полина Гагарина).',
+  },
+  {
+    id: 'head-register',
+    title: 'Головной регистр',
+    subtitle: 'Полётный, чистый и высокий звук',
+    noteLabel: 'Ре второй октавы (D5 • 587 Гц)',
+    freqHz: 587.33,
+    formantHz: 1350,
+    airiness: 0.08,
+    brightness: 0.55,
+    activeZones: ['palate', 'mask'],
+    zoneNames: ['Мягкое нёбо (купол)', 'Носовые пазухи и лобный резонатор'],
+    accentColor: '#A78BFA',
+    physiology:
+      'Складки максимально вытягиваются и истончаются, колеблясь в основном краями. Основная акустическая волна фокусируется в верхних резонаторных полостях.',
+    sensation:
+      'Лёгкая вибрация в верхней части лица, за переносицей и на макушке, ощущение полётности и «простора» в голове.',
+    usage: 'Высокие ноты сопрано/теноров, легкие фальцетные украшения, классика и академический кроссовер.',
+  },
+  {
+    id: 'chest-support',
+    title: 'Грудная опора',
+    subtitle: 'Глубина, объём и богатый низ',
+    noteLabel: 'Соль малой октавы (G3 • 196 Гц)',
+    freqHz: 196.0,
+    formantHz: 480,
+    airiness: 0.02,
+    brightness: 0.48,
+    activeZones: ['chest', 'larynx'],
+    zoneNames: ['Грудная клетка и трахея', 'Гортань (полное толстое смыкание)'],
+    accentColor: '#10B981',
+    physiology:
+      'Голосовые складки работают всей толщиной с низкой частотой смыкания, а эластичная работа грудной клетки и трахеи даёт низкочастотный резонанс и устойчивую воздушную подушку.',
+    sensation:
+      'Ощутимое тёплое гудение в центре грудины (можно почувствовать рукой) и спокойный устойчивый низ.',
+    usage: 'Бархатные разговорные низы, баритоны/басы, контральто, соул и романсы.',
   },
 ];
 

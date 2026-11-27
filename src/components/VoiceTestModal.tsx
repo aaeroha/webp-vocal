@@ -353,6 +353,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
   const [result, setResult] = useState<ReturnType<typeof classifyVoice> | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedSongRec, setSelectedSongRec] = useState<string | null>(null);
   const [animatedScore, setAnimatedScore] = useState(0);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -1145,6 +1146,65 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* Interactive Song-Recommendation Calculator Tailored to Detected Voice Type */}
+            <div className="rounded-2xl border border-[#B45309]/25 bg-[#F2EDE6]/90 p-3.5 sm:p-4 dark:border-[#E2A856]/25 dark:bg-[#0D0C10]/85">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
+                  <Music className="h-3.5 w-3.5" />
+                  Подбор песен для вашего голоса ({result.profile.name})
+                </p>
+                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                  Разберём на 1-м уроке
+                </span>
+              </div>
+
+              <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+                Эти треки идеально ложатся на ваш природный диапазон — выберите песню, с которой хочется начать:
+              </p>
+
+              <div className="mt-2.5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {result.profile.recommendedSongs.map((track) => {
+                  const key = `${track.artist} — ${track.title}`;
+                  const isPicked = selectedSongRec === key;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setSelectedSongRec(isPicked ? null : key)}
+                      className={`rounded-xl border p-2.5 text-left transition-all cursor-pointer ${
+                        isPicked
+                          ? 'border-[#B45309] bg-[#B45309]/12 shadow-sm dark:border-[#E2A856] dark:bg-[#E2A856]/18'
+                          : 'border-zinc-900/10 bg-[#FAF8F5]/90 hover:border-[#B45309]/40 dark:border-white/10 dark:bg-[#16151C]/90 dark:hover:border-[#E2A856]/40'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-xs sm:text-sm font-bold text-zinc-900 dark:text-[#F5F3EF]">
+                            {track.title}
+                          </p>
+                          <p className="truncate text-[11px] font-medium text-[#B45309] dark:text-[#E2A856]">
+                            {track.artist}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-zinc-900/8 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-white/10 dark:text-zinc-300">
+                          {track.mood}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                        {track.whyFits}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {selectedSongRec && (
+                <p className="mt-2 text-center text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  Выбрано для разбора: «{selectedSongRec}» — назовите её при записи!
+                </p>
+              )}
             </div>
 
             <div className="hidden sm:block rounded-2xl border-2 border-[#B45309]/45 bg-gradient-to-r from-[#B45309]/12 via-[#D97706]/14 to-[#B45309]/12 px-4 py-3 text-center shadow-sm dark:border-[#FACC15]/45 dark:from-[#E2A856]/18 dark:via-[#FACC15]/15 dark:to-[#E2A856]/18">

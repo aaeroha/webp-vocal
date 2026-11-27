@@ -32,6 +32,7 @@ const PRIMARY_LINKS = [
 ];
 
 const INFO_DROPDOWN_LINKS = [
+  { label: '3D-атлас резонаторов', href: '#vocal-atlas', icon: AudioWaveform },
   { label: 'Дипломы и база', href: '#certificates', icon: Award },
   { label: 'Отзывы учеников', href: '#reviews', icon: Star },
   { label: 'Частые вопросы', href: '#faq', icon: HelpCircle },

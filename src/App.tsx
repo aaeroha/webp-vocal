@@ -11,6 +11,7 @@ import { MusicAmbience } from './components/MusicAmbience';
 import { RetroMicCursor } from './components/RetroMicCursor';
 import { Reviews } from './components/Reviews';
 import { VinylPlayer } from './components/VinylPlayer';
+import { VocalAtlasSection } from './components/VocalAtlasSection';
 import { VocalPiano } from './components/VocalPiano';
 import { VoiceTestTrigger } from './components/VoiceTestTrigger';
 import { SITE_CONFIG } from './data/content';
@@ -109,6 +110,7 @@ export function App() {
         <About />
         <Formats onOpenBooking={openBooking} />
         <VocalPiano />
+        <VocalAtlasSection />
         <Certificates />
         <Reviews />
         <FaqAccordion />
