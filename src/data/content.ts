@@ -512,7 +512,7 @@ export const VOICE_TYPES: VoiceTypeProfile[] = [
   },
 ];
 
-export type ResonatorZoneId = 'chest' | 'larynx' | 'false-folds' | 'palate' | 'mask';
+export type ResonatorZoneId = 'chest' | 'larynx' | 'false-folds' | 'palate' | 'mask' | 'head';
 
 export interface VocalTechniqueInfo {
   id: 'chest-support' | 'subtone' | 'mix' | 'belt' | 'distortion' | 'head-register';
@@ -653,7 +653,7 @@ export const VOCAL_ATLAS_TECHNIQUES: VocalTechniqueInfo[] = [
     formantHz: 1380,
     airiness: 0.08,
     brightness: 0.58,
-    activeZones: ['mask', 'palate'],
+    activeZones: ['head', 'mask', 'palate'],
     zoneNames: ['Лобные и верхние пазухи', 'Высокий купол мягкого нёба'],
     accentColor: '#A78BFA',
     anchor3D: [0.0, 0.82, 0.36],

@@ -49,8 +49,8 @@ export function VocalAtlasSection() {
             <h2 className="mt-2 font-serif text-[1.75rem] font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF] sm:text-4xl lg:text-[2.6rem]">
               Интерактивный 3D-атлас резонаторов голоса
             </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-base">
-              Наведите на нижние цветные элементы или покрутите 3D-модель — линия укажет на активную зону, а при клике прозвучит вокальный приём.
+            <p className="mt-2 max-w-none text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 lg:text-[15.5px]">
+              Наведите на цветные элементы слева или покрутите 3D-модель — линия укажет на активную зону, а при клике прозвучит вокальный приём.
             </p>
           </div>
 
