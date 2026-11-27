@@ -11,10 +11,9 @@ const LIGHT_NOTES = [
 
 /**
  * High-performance ambient backdrop:
- * - Zero scroll-triggered React state re-renders (pure GPU translate3d via ref)
- * - Single large warm-gold singing vocal spectrum below Hero (#top) that travels
- *   down the page and settles ~half a viewport above #certificates so it never
- *   collides with the Hero video or Certificate graduation caps.
+ * - Thin, dense (152 bars), tall singing spectrum in warm studio gold/amber
+ * - Appears after Hero (#top) and settles right in the gap between
+ *   #formats ("Как проходят занятия") and #vocal-piano ("Интерактивный тренажёр").
  */
 export function MusicAmbience() {
   const waveTrackRef = useRef<HTMLDivElement | null>(null);
@@ -27,31 +26,35 @@ export function MusicAmbience() {
 
     let rafId = 0;
     let isDrawingActive = true;
-    let minDocY = 820;
-    let maxDocY = 2400;
+    let minDocY = 860;
+    let maxDocY = 2000;
 
     const recalcBounds = () => {
       const heroEl = document.getElementById('top');
-      const certEl = document.getElementById('certificates');
+      const formatsEl = document.getElementById('formats');
+      const pianoEl = document.getElementById('vocal-piano');
       const vh = window.innerHeight || 800;
 
       const heroBottom = heroEl ? heroEl.offsetTop + heroEl.offsetHeight : vh;
-      const certTop = certEl ? certEl.offsetTop : heroBottom + vh * 2;
-
-      // Start below Hero background video, freeze ~0.55 viewport above Certificates
       minDocY = Math.round(heroBottom + Math.max(40, vh * 0.08));
-      maxDocY = Math.max(minDocY, Math.round(certTop - vh * 0.52));
+
+      if (formatsEl && pianoEl) {
+        const formatsBottom = formatsEl.offsetTop + formatsEl.offsetHeight;
+        const pianoTop = pianoEl.offsetTop;
+        maxDocY = Math.max(minDocY, Math.round((formatsBottom + pianoTop) / 2));
+      } else {
+        maxDocY = Math.max(minDocY, Math.round(heroBottom + vh * 1.4));
+      }
     };
 
     const updateWavePosition = () => {
       recalcBounds();
-      const targetDocY = window.scrollY + window.innerHeight * 0.48;
+      const targetDocY = window.scrollY + window.innerHeight * 0.5;
       const clampedY = Math.max(minDocY, Math.min(maxDocY, targetDocY));
       waveEl.style.transform = `translate3d(0, ${clampedY}px, 0)`;
 
-      // Hide gracefully until user leaves Hero, and pause canvas drawing when far offscreen
       const distFromViewportCenter = Math.abs(clampedY - (window.scrollY + window.innerHeight * 0.5));
-      const inViewRange = distFromViewportCenter < window.innerHeight * 0.85;
+      const inViewRange = distFromViewportCenter < window.innerHeight * 0.9;
       waveEl.style.opacity = window.scrollY < 160 ? '0' : '1';
       isDrawingActive = inViewRange;
     };
@@ -73,13 +76,12 @@ export function MusicAmbience() {
     window.addEventListener('resize', onScrollOrResize, { passive: true });
 
     const ctx = canvas.getContext('2d');
-    const barCount = 84;
+    const barCount = 152;
     let t = 0;
     let lastDraw = 0;
 
     const drawSingingWave = (now: number) => {
       rafId = window.requestAnimationFrame(drawSingingWave);
-      // Throttle canvas animation gently (~30fps) for great performance & smooth organic singing feel
       if (!isDrawingActive || !ctx || now - lastDraw < 32) return;
       lastDraw = now;
 
@@ -89,24 +91,23 @@ export function MusicAmbience() {
       const isDark = document.documentElement.classList.contains('dark');
 
       ctx.clearRect(0, 0, width, height);
-      t += 0.055;
+      t += 0.062;
 
-      // Warm singing breath envelope (crescendo -> vibrato -> soft release)
-      const phraseBreath = 0.62 + 0.34 * Math.sin(t * 0.55) + 0.12 * Math.sin(t * 1.45);
-      const barGap = 4;
-      const barWidth = Math.max(3, (width - barCount * barGap) / barCount);
+      // Dynamic vocal phrase breath + vibrato envelope reaching taller vertical peaks
+      const phraseBreath = 0.72 + 0.34 * Math.sin(t * 0.58) + 0.14 * Math.sin(t * 1.6);
+      const step = width / barCount;
+      const barWidth = Math.max(1.8, step * 0.36);
 
-      // Horizontal glowing center axis
       const axisGrad = ctx.createLinearGradient(0, 0, width, 0);
       axisGrad.addColorStop(0, 'rgba(226, 168, 86, 0)');
       axisGrad.addColorStop(
         0.5,
-        isDark ? 'rgba(250, 204, 21, 0.55)' : 'rgba(180, 83, 9, 0.4)'
+        isDark ? 'rgba(250, 204, 21, 0.52)' : 'rgba(180, 83, 9, 0.38)'
       );
       axisGrad.addColorStop(1, 'rgba(226, 168, 86, 0)');
 
       ctx.strokeStyle = axisGrad;
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
       ctx.moveTo(0, midY);
       ctx.lineTo(width, midY);
@@ -115,27 +116,26 @@ export function MusicAmbience() {
       for (let i = 0; i < barCount; i++) {
         const norm = i / (barCount - 1);
         const distFromCenter = Math.abs(norm - 0.5) * 2;
-        // Vocal formant Gaussian bell + multi-harmonic traveling singing waves
-        const bell = Math.exp(-Math.pow(distFromCenter * 1.55, 2));
+        const bell = Math.exp(-Math.pow(distFromCenter * 1.28, 2));
         const vowelWave =
-          0.5 +
-          0.32 * Math.sin(i * 0.34 - t * 2.1) +
-          0.18 * Math.cos(i * 0.78 + t * 3.05);
-        const vibrato = 1 + 0.08 * Math.sin(t * 6.5 + i * 0.15);
+          0.54 +
+          0.34 * Math.sin(i * 0.24 - t * 2.2) +
+          0.22 * Math.cos(i * 0.62 + t * 3.15);
+        const vibrato = 1 + 0.12 * Math.sin(t * 6.8 + i * 0.11);
 
-        const amp = Math.max(0.05, bell * vowelWave * phraseBreath * vibrato);
-        const halfH = Math.max(3, amp * (height * 0.46));
-        const x = i * (barWidth + barGap) + barGap * 0.5;
+        const amp = Math.min(1, Math.max(0.04, bell * vowelWave * phraseBreath * vibrato));
+        const halfH = Math.max(3, amp * (height * 0.485));
+        const x = i * step + (step - barWidth) * 0.5;
 
         const barGrad = ctx.createLinearGradient(0, midY - halfH, 0, midY + halfH);
         if (isDark) {
-          barGrad.addColorStop(0, 'rgba(226, 168, 86, 0.06)');
-          barGrad.addColorStop(0.5, 'rgba(250, 204, 21, 0.85)');
-          barGrad.addColorStop(1, 'rgba(226, 168, 86, 0.06)');
+          barGrad.addColorStop(0, 'rgba(226, 168, 86, 0.04)');
+          barGrad.addColorStop(0.5, 'rgba(250, 204, 21, 0.88)');
+          barGrad.addColorStop(1, 'rgba(226, 168, 86, 0.04)');
         } else {
-          barGrad.addColorStop(0, 'rgba(180, 83, 9, 0.05)');
-          barGrad.addColorStop(0.5, 'rgba(217, 119, 6, 0.72)');
-          barGrad.addColorStop(1, 'rgba(180, 83, 9, 0.05)');
+          barGrad.addColorStop(0, 'rgba(180, 83, 9, 0.04)');
+          barGrad.addColorStop(0.5, 'rgba(217, 119, 6, 0.74)');
+          barGrad.addColorStop(1, 'rgba(180, 83, 9, 0.04)');
         }
 
         ctx.fillStyle = barGrad;
@@ -163,17 +163,17 @@ export function MusicAmbience() {
       <div className="fixed -top-32 right-[10%] h-[420px] w-[420px] rounded-full bg-[#C26D3A]/[0.05] blur-3xl dark:bg-[#E2A856]/[0.07]" />
       <div className="fixed top-[45%] -left-32 h-[380px] w-[380px] rounded-full bg-[#B45309]/[0.04] blur-3xl dark:bg-[#E2A856]/[0.05]" />
 
-      {/* Single Large Golden Singing Spectrum Wave (below Hero, settles half screen above Certificates) */}
+      {/* Single Large Dense Thin Singing Spectrum Wave (stops cleanly between Formats & VocalPiano) */}
       <div
         ref={waveTrackRef}
-        className="absolute left-0 right-0 top-0 -mt-32 flex items-center justify-center px-2 transition-opacity duration-500"
+        className="absolute left-0 right-0 top-0 -mt-44 flex items-center justify-center px-2 transition-opacity duration-500"
         style={{ willChange: 'transform', opacity: 0 }}
       >
         <canvas
           ref={canvasRef}
-          width={1200}
-          height={260}
-          className="h-52 w-full max-w-[1380px] opacity-35 dark:opacity-40 sm:h-68"
+          width={1400}
+          height={400}
+          className="h-72 w-full max-w-[1440px] opacity-38 dark:opacity-45 sm:h-96"
         />
       </div>
 

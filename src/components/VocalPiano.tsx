@@ -37,10 +37,10 @@ const INSTRUMENTS: { id: InstrumentType; label: string; shortLabel: string }[] =
 ];
 
 function InstrumentIcon({ id }: { id: InstrumentType }) {
-  if (id === 'piano') return <Piano className="h-4 w-4" />;
-  if (id === 'strings') return <AudioLines className="h-4 w-4" />;
-  if (id === 'harpsichord') return <Sparkles className="h-4 w-4" />;
-  return <Columns3 className="h-4 w-4" />;
+  if (id === 'piano') return <Piano className="h-5 w-5" />;
+  if (id === 'strings') return <AudioLines className="h-5 w-5" />;
+  if (id === 'harpsichord') return <Sparkles className="h-5 w-5" />;
+  return <Columns3 className="h-5 w-5" />;
 }
 
 const PIANO_KEYS_HIGH: PianoKey[] = [
@@ -309,40 +309,40 @@ export function VocalPiano() {
     <div className={inModal ? 'flex min-h-0 flex-1 flex-col gap-2' : 'space-y-4'}>
       {/* Stage Digital Piano Console Toolbar: Fixed OLED Screen + Dotted LED Voice Slider + Icon Voices */}
       <div
-        className={`flex flex-wrap items-center justify-between gap-2.5 rounded-2xl border border-zinc-800/20 bg-gradient-to-b from-[#1E1D25] to-[#131218] text-zinc-100 shadow-lg dark:border-white/12 ${
-          inModal ? 'mt-1.5 p-2 sm:p-2.5' : 'mt-5 p-3 sm:p-4'
+        className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-800/20 bg-gradient-to-b from-[#1E1D25] to-[#131218] text-zinc-100 shadow-lg dark:border-white/12 ${
+          inModal ? 'mt-2 p-2.5 sm:p-3.5' : 'mt-5 p-3.5 sm:p-5'
         }`}
       >
-        {/* Left: Fixed-Width Electric Piano OLED Display + Dotted LED Voice Switcher */}
-        <div className="flex flex-1 min-w-[260px] flex-wrap items-center gap-2.5 sm:gap-3">
+        {/* Left: Fixed-Width Larger Digital Piano OLED Display + Dotted LED Voice Switcher */}
+        <div className="flex flex-1 min-w-[280px] flex-wrap items-center gap-3 sm:gap-4">
           {/* Fixed-size Digital Piano OLED Display Window */}
-          <div className="w-[178px] sm:w-[206px] shrink-0 rounded-xl border border-[#E2A856]/40 bg-[#07080B] px-3 py-1.5 shadow-[inset_0_2px_10px_rgba(0,0,0,0.85)] font-mono">
-            <div className="flex items-center justify-between gap-1 text-[10px] leading-tight text-[#E2A856]/80">
+          <div className="w-[216px] sm:w-[252px] shrink-0 rounded-xl border border-[#E2A856]/45 bg-[#07080B] px-3.5 py-2 shadow-[inset_0_2px_12px_rgba(0,0,0,0.88)] font-mono">
+            <div className="flex items-center justify-between gap-1.5 text-[11px] leading-tight text-[#E2A856]/85">
               <span className="truncate font-bold uppercase tracking-wider text-[#FACC15]">
                 {activeInstrumentMeta.shortLabel}
               </span>
-              <span className="shrink-0 rounded bg-[#E2A856]/15 px-1.5 py-0.2 text-[9px] font-bold text-[#FDE047]">
+              <span className="shrink-0 rounded bg-[#E2A856]/18 px-2 py-0.5 text-[10px] font-bold text-[#FDE047]">
                 {registerMode === 'high' ? 'c1–c2' : 'F–a'}
               </span>
             </div>
-            <div className="mt-0.5 flex items-baseline justify-between gap-1.5 truncate">
-              <span className="truncate text-xs font-bold text-amber-100">
+            <div className="mt-1 flex items-baseline justify-between gap-2 truncate">
+              <span className="truncate text-sm font-bold text-amber-100">
                 {selectedProfile.name}
               </span>
-              <span className="shrink-0 text-[10px] text-emerald-400">
+              <span className="shrink-0 text-[11px] font-semibold text-emerald-400">
                 {selectedProfile.rangeLabel.split(' ')[0]}
               </span>
             </div>
           </div>
 
-          {/* Electric Piano Dotted Selector Track */}
-          <div className="flex items-center gap-1.5">
-            <div className="relative flex h-8 items-center rounded-full border border-white/12 bg-[#0A0B0F] px-2.5 shadow-inner">
+          {/* Larger Electric Piano Dotted Selector Track */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex h-10 sm:h-11 items-center rounded-full border border-white/14 bg-[#0A0B0F] px-3.5 shadow-inner">
               {/* 6 Interactive LED Voice Dots inside the track */}
-              <div className="relative flex items-center gap-2.5 sm:gap-3.5">
+              <div className="relative flex items-center gap-3 sm:gap-4">
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-1 right-1 top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-zinc-700"
+                  className="pointer-events-none absolute left-1.5 right-1.5 top-1/2 h-[2.5px] -translate-y-1/2 rounded-full bg-zinc-700"
                 />
                 {VOICE_TYPES.map((vt, idx) => {
                   const isActive = idx === selectedProfileIdx;
@@ -353,15 +353,15 @@ export function VocalPiano() {
                       title={`${vt.name} (${vt.rangeLabel})`}
                       aria-label={`Выбрать голос: ${vt.name}`}
                       onClick={() => handleProfileIndexChange(idx)}
-                      className={`relative z-10 flex h-4 w-4 items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${
+                      className={`relative z-10 flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-full transition-all duration-200 cursor-pointer ${
                         isActive
-                          ? 'scale-125 bg-gradient-to-br from-[#FDE047] to-[#D97706] shadow-[0_0_10px_rgba(250,204,21,0.9)] ring-2 ring-[#FACC15]/40'
+                          ? 'scale-120 bg-gradient-to-br from-[#FDE047] to-[#D97706] shadow-[0_0_12px_rgba(250,204,21,0.95)] ring-2 ring-[#FACC15]/45'
                           : 'bg-zinc-700 hover:bg-zinc-500'
                       }`}
                     >
                       <span
-                        className={`h-1.5 w-1.5 rounded-full ${
-                          isActive ? 'bg-[#0A0B0F]' : 'bg-zinc-400/70'
+                        className={`h-2 w-2 rounded-full ${
+                          isActive ? 'bg-[#0A0B0F]' : 'bg-zinc-400/75'
                         }`}
                       />
                     </button>
@@ -374,17 +374,17 @@ export function VocalPiano() {
               type="button"
               onClick={() => handleSwitchRegister(registerMode === 'high' ? 'low' : 'high')}
               title="Переключить регистр клавиатуры"
-              className="rounded-lg border border-white/15 bg-[#0A0B0F] px-2.5 py-1.5 text-[11px] font-mono font-bold text-[#E2A856] transition-colors hover:border-[#E2A856]/60 cursor-pointer"
+              className="h-10 sm:h-11 rounded-xl border border-white/15 bg-[#0A0B0F] px-3.5 text-xs sm:text-sm font-mono font-bold text-[#E2A856] transition-colors hover:border-[#E2A856]/60 cursor-pointer"
             >
               {registerMode === 'high' ? 'OCT+' : 'OCT-'}
             </button>
           </div>
         </div>
 
-        {/* Right: Synth Timbre Pad Icons + Warmup Controls */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+        {/* Right: Larger Synth Timbre Pad Icons + Warmup Controls */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
           <div
-            className="inline-flex items-center gap-1 rounded-xl border border-white/12 bg-[#0A0B0F] p-1"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/14 bg-[#0A0B0F] p-1"
             role="group"
             aria-label="Выбор тембра инструмента"
           >
@@ -397,9 +397,9 @@ export function VocalPiano() {
                   title={inst.label}
                   aria-label={inst.label}
                   onClick={() => setInstrument(inst.id)}
-                  className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg transition-all cursor-pointer ${
+                  className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg transition-all cursor-pointer ${
                     active
-                      ? 'bg-gradient-to-b from-[#F59E0B] to-[#B45309] text-white shadow-[0_0_10px_rgba(245,158,11,0.55)]'
+                      ? 'bg-gradient-to-b from-[#F59E0B] to-[#B45309] text-white shadow-[0_0_12px_rgba(245,158,11,0.6)]'
                       : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100'
                   }`}
                 >
@@ -416,9 +416,9 @@ export function VocalPiano() {
               disabled={phase === 'demo'}
               title="Повторить распевку"
               aria-label="Повторить распевку"
-              className="inline-flex h-8 sm:h-9 items-center gap-1 rounded-full border border-[#E2A856]/45 bg-[#0A0B0F] px-2.5 sm:px-3.5 text-xs font-semibold text-[#E2A856] transition-all hover:bg-[#E2A856]/15 disabled:opacity-60 cursor-pointer"
+              className="inline-flex h-10 sm:h-11 items-center gap-1.5 rounded-full border border-[#E2A856]/45 bg-[#0A0B0F] px-3.5 sm:px-4 text-xs sm:text-sm font-semibold text-[#E2A856] transition-all hover:bg-[#E2A856]/15 disabled:opacity-60 cursor-pointer"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
+              <RotateCcw className="h-4 w-4" />
               <span className="hidden sm:inline">Повторить</span>
             </button>
           )}
@@ -427,9 +427,9 @@ export function VocalPiano() {
             type="button"
             onClick={playWarmupChallenge}
             disabled={phase === 'demo'}
-            className="btn-sheen inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-gradient-to-r from-[#D97706] to-[#E2A856] px-3.5 sm:px-4 text-xs font-bold text-[#0D0C10] shadow-sm transition-all hover:brightness-110 disabled:opacity-70 cursor-pointer"
+            className="btn-sheen inline-flex h-10 sm:h-11 items-center gap-2 rounded-full bg-gradient-to-r from-[#D97706] to-[#E2A856] px-4 sm:px-5 text-xs sm:text-sm font-bold text-[#0D0C10] shadow-sm transition-all hover:brightness-110 disabled:opacity-70 cursor-pointer"
           >
-            <Play className="h-3.5 w-3.5 fill-current" />
+            <Play className="h-4 w-4 fill-current" />
             <span>
               {phase === 'demo'
                 ? 'Слушаем...'
@@ -445,9 +445,9 @@ export function VocalPiano() {
               onClick={() => setIsModalOpen(true)}
               title="Открыть пианино на весь экран"
               aria-label="Открыть пианино на весь экран"
-              className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full border border-white/15 bg-[#0A0B0F] px-3 text-xs font-semibold text-zinc-200 transition-colors hover:border-[#E2A856]/60 hover:text-[#E2A856] cursor-pointer"
+              className="inline-flex h-10 sm:h-11 items-center gap-2 rounded-full border border-white/15 bg-[#0A0B0F] px-4 text-xs sm:text-sm font-semibold text-zinc-200 transition-colors hover:border-[#E2A856]/60 hover:text-[#E2A856] cursor-pointer"
             >
-              <Maximize2 className="h-3.5 w-3.5" />
+              <Maximize2 className="h-4 w-4" />
               <span className="hidden lg:inline">На весь экран</span>
             </button>
           )}

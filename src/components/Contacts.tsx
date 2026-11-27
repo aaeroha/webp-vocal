@@ -70,17 +70,23 @@ export function Contacts({ isDark, onOpenBooking }: ContactsProps) {
               </div>
             </div>
 
-            {/* 2. Yandex Map edge-to-edge with zero padding (Middle on mobile, full right column on desktop) */}
+            {/* 2. Yandex Map mounted only when visible so heavy map scripts never slow initial page load */}
             <div className="lg:col-span-7 lg:col-start-6 lg:row-start-1 lg:row-span-2 flex flex-col bg-[#FAF8F5]/85 dark:bg-[#0D0C10]/80">
               <div className="relative min-h-[300px] flex-1 w-full sm:min-h-[360px] lg:min-h-[460px]">
-                <iframe
-                  key={isDark ? 'yandex-dark' : 'yandex-light'}
-                  title="Карта студии — г. Москва, Ватутинки"
-                  src={mapSrc}
-                  className="h-full w-full border-0"
-                  loading="lazy"
-                  allowFullScreen
-                />
+                {isVisible ? (
+                  <iframe
+                    key={isDark ? 'yandex-dark' : 'yandex-light'}
+                    title="Карта студии — г. Москва, Ватутинки"
+                    src={mapSrc}
+                    className="h-full w-full border-0"
+                    loading="lazy"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="flex h-full min-h-[300px] w-full items-center justify-center bg-[#E8E2D9] text-sm text-zinc-500 dark:bg-[#100F14] dark:text-zinc-400">
+                    Загрузка карты студии...
+                  </div>
+                )}
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-b lg:border-b-0 border-zinc-900/10 px-5 py-3.5 text-xs dark:border-white/10">
                 <span className="font-medium text-zinc-700 dark:text-zinc-300">

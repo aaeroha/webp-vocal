@@ -102,9 +102,21 @@ export function Hero({ onOpenBooking }: HeroProps) {
       setVideoReady(true);
       attemptPlay();
     };
-    attemptPlay();
-    vid.addEventListener('canplay', onReady);
-    return () => vid.removeEventListener('canplay', onReady);
+    // Slight delay lets initial paint & fonts settle before decoding WebM background video
+    const startTimer = window.setTimeout(() => {
+      if (vid.readyState >= 3) {
+        onReady();
+      } else {
+        vid.load();
+      }
+    }, 350);
+    vid.addEventListener('canplaythrough', onReady);
+    vid.addEventListener('playing', onReady);
+    return () => {
+      window.clearTimeout(startTimer);
+      vid.removeEventListener('canplaythrough', onReady);
+      vid.removeEventListener('playing', onReady);
+    };
   }, [isDesktop]);
 
   // H1 cycling typewriter
@@ -164,31 +176,35 @@ export function Hero({ onOpenBooking }: HeroProps) {
       ref={heroRef}
       className="relative z-10 overflow-hidden pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-20 lg:pb-24"
     >
-      {/* Instant LCP Poster Image + Progressive Ambient Video Overlay */}
+      {/* Instant LCP Poster Image + Progressive Ambient Video (never bleeds through video) */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-        <img
-          src={HERO_CONTENT.posterUrl}
-          alt=""
-          width={1920}
-          height={1080}
-          fetchPriority="high"
-          decoding="async"
-          className="h-full w-full object-cover object-[50%_14%] opacity-68 dark:opacity-75"
-        />
-        {isDesktop && (
-          <video
-            ref={videoRef}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            src={HERO_CONTENT.videoUrl}
-            className={`absolute inset-0 h-full w-full object-cover object-[50%_14%] transition-opacity duration-700 ${
-              videoReady ? 'opacity-68 dark:opacity-75' : 'opacity-0'
+        <div className="relative h-full w-full opacity-68 dark:opacity-75">
+          <img
+            src={HERO_CONTENT.posterUrl}
+            alt=""
+            width={1920}
+            height={1080}
+            fetchPriority="high"
+            decoding="async"
+            className={`h-full w-full object-cover object-[50%_14%] transition-opacity duration-500 ${
+              videoReady ? 'opacity-0' : 'opacity-100'
             }`}
           />
-        )}
+          {isDesktop && (
+            <video
+              ref={videoRef}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="none"
+              src={HERO_CONTENT.videoUrl}
+              className={`absolute inset-0 h-full w-full object-cover object-[50%_14%] transition-opacity duration-700 ${
+                videoReady ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          )}
+        </div>
         <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/62 via-[#FAF8F5]/42 to-[#FAF8F5]/95 dark:from-[#0D0C10]/60 dark:via-[#0D0C10]/38 dark:to-[#0D0C10]/95" />
       </div>
 

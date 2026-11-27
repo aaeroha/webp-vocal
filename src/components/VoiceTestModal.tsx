@@ -1147,7 +1147,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               </div>
             </div>
 
-            <div className="rounded-2xl border-2 border-[#B45309]/45 bg-gradient-to-r from-[#B45309]/12 via-[#D97706]/14 to-[#B45309]/12 px-4 py-3 text-center shadow-sm dark:border-[#FACC15]/45 dark:from-[#E2A856]/18 dark:via-[#FACC15]/15 dark:to-[#E2A856]/18">
+            <div className="hidden sm:block rounded-2xl border-2 border-[#B45309]/45 bg-gradient-to-r from-[#B45309]/12 via-[#D97706]/14 to-[#B45309]/12 px-4 py-3 text-center shadow-sm dark:border-[#FACC15]/45 dark:from-[#E2A856]/18 dark:via-[#FACC15]/15 dark:to-[#E2A856]/18">
               <p className="inline-flex items-center justify-center gap-2 font-serif text-lg sm:text-xl font-bold leading-snug text-[#9A4407] dark:text-[#FDE047]">
                 <Sparkles className="h-4.5 w-4.5 shrink-0 text-[#B45309] dark:text-[#FACC15]" />
                 <span>Вы в одном шаге от того, чтобы записаться на урок и раскрыть ваш потенциал!</span>

@@ -33,6 +33,16 @@ export function App() {
 
   const [bookingOpen, setBookingOpen] = useState(false);
   const [voiceTestOpen, setVoiceTestOpen] = useState(false);
+  const [bootPhase, setBootPhase] = useState<'visible' | 'fading' | 'gone'>('visible');
+
+  useEffect(() => {
+    const fadeTimer = window.setTimeout(() => setBootPhase('fading'), 650);
+    const removeTimer = window.setTimeout(() => setBootPhase('gone'), 1100);
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(removeTimer);
+    };
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -53,6 +63,21 @@ export function App() {
 
   return (
     <div className="relative min-h-screen bg-[#FAF8F5] text-[#18181B] transition-colors duration-300 dark:bg-[#0D0C10] dark:text-[#F5F3EF]">
+      {/* Graceful Studio Boot Curtain (~0.65s) lets fonts & DOM settle smoothly without flash */}
+      {bootPhase !== 'gone' && (
+        <div
+          aria-hidden="true"
+          className={`fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#FAF8F5] transition-opacity duration-500 dark:bg-[#0D0C10] ${
+            bootPhase === 'fading' ? 'pointer-events-none opacity-0' : 'opacity-100'
+          }`}
+        >
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#B45309]/40 bg-[#F2EDE6] font-serif text-3xl font-semibold text-[#B45309] shadow-lg dark:border-[#E2A856]/45 dark:bg-[#16151C] dark:text-[#E2A856]">
+            <span className="absolute inset-0 animate-ping rounded-full border border-[#B45309]/30 dark:border-[#E2A856]/30" />
+            ВЕ
+          </div>
+        </div>
+      )}
+
       <RetroMicCursor />
       <MusicAmbience />
       <VinylPlayer />

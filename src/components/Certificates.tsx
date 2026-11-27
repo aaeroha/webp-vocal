@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Award, ChevronLeft, ChevronRight, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { CERTIFICATES_CONTENT } from '../data/content';
@@ -34,6 +34,7 @@ export function Certificates() {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false });
   const { ref, isVisible } = useReveal({ threshold: 0.06 });
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
@@ -54,11 +55,13 @@ export function Certificates() {
       const dt = Math.min(50, now - lastTime);
       lastTime = now;
 
-      if (!isPaused && !isModalOpen && el.scrollWidth > el.clientWidth) {
+      if (!isPaused && !isModalOpen && !dragStateRef.current.active && el.scrollWidth > el.clientWidth) {
         el.scrollLeft += (dt / 1000) * 32;
         const half = el.scrollWidth / 2;
         if (el.scrollLeft >= half) {
           el.scrollLeft -= half;
+        } else if (el.scrollLeft <= 0) {
+          el.scrollLeft += half;
         }
       }
       rafId = window.requestAnimationFrame(step);
@@ -68,11 +71,50 @@ export function Certificates() {
     return () => window.cancelAnimationFrame(rafId);
   }, [isVisible, isPaused, isModalOpen]);
 
-  const scrollByCard = (dir: -1 | 1) => {
+  const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
     const el = scrollRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir * 280, behavior: 'smooth' });
+    e.preventDefault();
+    dragStateRef.current = {
+      active: true,
+      startX: e.clientX,
+      startScrollLeft: el.scrollLeft,
+      moved: false,
+    };
   };
+
+  useEffect(() => {
+    const onWinMouseMove = (e: globalThis.MouseEvent) => {
+      const el = scrollRef.current;
+      if (!el || !dragStateRef.current.active) return;
+      const dx = e.clientX - dragStateRef.current.startX;
+      if (Math.abs(dx) > 4) dragStateRef.current.moved = true;
+      let nextLeft = dragStateRef.current.startScrollLeft - dx;
+      const half = el.scrollWidth / 2;
+      if (half > 0) {
+        if (nextLeft >= half) {
+          nextLeft -= half;
+          dragStateRef.current.startScrollLeft -= half;
+        } else if (nextLeft <= 0) {
+          nextLeft += half;
+          dragStateRef.current.startScrollLeft += half;
+        }
+      }
+      el.scrollLeft = nextLeft;
+    };
+
+    const onWinMouseUp = () => {
+      dragStateRef.current.active = false;
+    };
+
+    window.addEventListener('mousemove', onWinMouseMove);
+    window.addEventListener('mouseup', onWinMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onWinMouseMove);
+      window.removeEventListener('mouseup', onWinMouseUp);
+    };
+  }, []);
 
   useEffect(() => {
     if (selectedIndex === null) return;
@@ -159,7 +201,7 @@ export function Certificates() {
           </p>
         </div>
 
-        {/* Touch-friendly swipeable & auto-scrolling carousel — pauses on hover, touch, or open modal */}
+        {/* Infinite auto-scrolling carousel with mouse drag-to-scroll & touch swipe (no arrow clutter) */}
         <div
           style={{ transitionDelay: '140ms' }}
           className={`reveal-scale relative mt-8 rounded-2xl sm:mt-10 ${
@@ -170,27 +212,27 @@ export function Certificates() {
           onTouchStart={() => setIsPaused(true)}
           onTouchEnd={() => window.setTimeout(() => setIsPaused(false), 1800)}
         >
-          <button
-            type="button"
-            onClick={() => scrollByCard(-1)}
-            aria-label="Предыдущие сертификаты"
-            className="absolute left-1 top-1/2 z-20 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 text-zinc-800 shadow-md backdrop-blur-xs transition hover:border-[#B45309] hover:text-[#B45309] dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-200 dark:hover:border-[#E2A856] dark:hover:text-[#E2A856] sm:left-2 sm:h-10 sm:w-10 cursor-pointer"
-          >
-            <ChevronLeft className="h-4.5 w-4.5" />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => scrollByCard(1)}
-            aria-label="Следующие сертификаты"
-            className="absolute right-1 top-1/2 z-20 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 text-zinc-800 shadow-md backdrop-blur-xs transition hover:border-[#B45309] hover:text-[#B45309] dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-200 dark:hover:border-[#E2A856] dark:hover:text-[#E2A856] sm:right-2 sm:h-10 sm:w-10 cursor-pointer"
-          >
-            <ChevronRight className="h-4.5 w-4.5" />
-          </button>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
+          />
 
           <div
             ref={scrollRef}
-            className="flex gap-4 overflow-x-auto px-2 py-2 sm:gap-5 sm:px-4"
+            onMouseDown={handleMouseDown}
+            onDragStart={(e) => e.preventDefault()}
+            onClickCapture={(e) => {
+              if (dragStateRef.current.moved) {
+                e.preventDefault();
+                e.stopPropagation();
+                dragStateRef.current.moved = false;
+              }
+            }}
+            className="flex cursor-grab active:cursor-grabbing select-none gap-4 overflow-x-auto px-2 py-2 sm:gap-5 sm:px-4"
             style={{ scrollbarWidth: 'none' }}
           >
             {trackItems.map((cert, idx) => {
@@ -199,6 +241,8 @@ export function Certificates() {
                 <button
                   key={`${cert.id}-${idx}`}
                   type="button"
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
                   onClick={() => setSelectedIndex(realIndex)}
                   className="group relative flex w-[220px] shrink-0 flex-col overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/95 p-2.5 text-left transition-all duration-300 hover:-translate-y-1 hover:border-[#B45309]/45 hover:shadow-lg dark:border-white/10 dark:bg-[#16151C]/95 dark:hover:border-[#E2A856]/50 dark:gold-glow-hover sm:w-[255px] lg:w-[275px] cursor-pointer"
                 >
@@ -206,6 +250,7 @@ export function Certificates() {
                     <img
                       src={cert.imageUrl}
                       alt={cert.title}
+                      draggable={false}
                       loading="lazy"
                       decoding="async"
                       width={275}

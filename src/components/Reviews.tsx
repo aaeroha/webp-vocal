@@ -99,27 +99,50 @@ export function Reviews() {
   }, [isVisible, isPaused]);
 
   const handleMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
     const el = scrollRef.current;
     if (!el) return;
+    // Prevent native browser anchor link dragging so horizontal drag-to-scroll works smoothly everywhere
+    e.preventDefault();
     dragStateRef.current = {
       active: true,
-      startX: e.pageX,
+      startX: e.clientX,
       startScrollLeft: el.scrollLeft,
       moved: false,
     };
   };
 
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    const el = scrollRef.current;
-    if (!el || !dragStateRef.current.active) return;
-    const dx = e.pageX - dragStateRef.current.startX;
-    if (Math.abs(dx) > 4) dragStateRef.current.moved = true;
-    el.scrollLeft = dragStateRef.current.startScrollLeft - dx;
-  };
+  useEffect(() => {
+    const onWinMouseMove = (e: globalThis.MouseEvent) => {
+      const el = scrollRef.current;
+      if (!el || !dragStateRef.current.active) return;
+      const dx = e.clientX - dragStateRef.current.startX;
+      if (Math.abs(dx) > 4) dragStateRef.current.moved = true;
+      let nextLeft = dragStateRef.current.startScrollLeft - dx;
+      const half = el.scrollWidth / 2;
+      if (half > 0) {
+        if (nextLeft >= half) {
+          nextLeft -= half;
+          dragStateRef.current.startScrollLeft -= half;
+        } else if (nextLeft <= 0) {
+          nextLeft += half;
+          dragStateRef.current.startScrollLeft += half;
+        }
+      }
+      el.scrollLeft = nextLeft;
+    };
 
-  const stopDragging = () => {
-    dragStateRef.current.active = false;
-  };
+    const onWinMouseUp = () => {
+      dragStateRef.current.active = false;
+    };
+
+    window.addEventListener('mousemove', onWinMouseMove);
+    window.addEventListener('mouseup', onWinMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onWinMouseMove);
+      window.removeEventListener('mouseup', onWinMouseUp);
+    };
+  }, []);
 
   return (
     <section id="reviews" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
@@ -227,10 +250,7 @@ export function Reviews() {
             isVisible ? 'is-visible' : ''
           }`}
           onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => {
-            setIsPaused(false);
-            stopDragging();
-          }}
+          onMouseLeave={() => setIsPaused(false)}
           onTouchStart={() => setIsPaused(true)}
           onTouchEnd={() => window.setTimeout(() => setIsPaused(false), 1800)}
         >
@@ -246,8 +266,7 @@ export function Reviews() {
           <div
             ref={scrollRef}
             onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={stopDragging}
+            onDragStart={(e) => e.preventDefault()}
             onClickCapture={(e) => {
               if (dragStateRef.current.moved) {
                 e.preventDefault();
@@ -263,6 +282,8 @@ export function Reviews() {
                 href={review.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
                 className={`group flex w-[290px] shrink-0 flex-col rounded-2xl border bg-[#F2EDE6]/92 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:bg-[#16151C]/95 dark:gold-glow-hover sm:w-[340px] sm:p-6 ${
                   review.platform === 'Авито'
                     ? 'border-[#04B44B]/30 hover:border-[#04B44B]/70 dark:border-[#04E061]/25 dark:hover:border-[#04E061]/65'
