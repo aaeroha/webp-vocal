@@ -74,12 +74,43 @@ function AnimatedStatCard({
 export function Hero({ onOpenBooking }: HeroProps) {
   const { ref: heroRef, isVisible: heroVisible } = useReveal({ threshold: 0.08 });
   const { ref: statsRef, isVisible: statsVisible } = useReveal({
-    threshold: 0.35,
-    rootMargin: '0px 0px -110px 0px',
+    threshold: 0.22,
+    rootMargin: '0px 0px -60px 0px',
   });
 
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mobileLiftRef = useRef<HTMLDivElement | null>(null);
+
+  // On mobile (< 768px), text starts below the video so the video stays unobstructed;
+  // as the user scrolls down, the text & stats block smoothly glides upward into place.
+  useEffect(() => {
+    let rafId = 0;
+    const updateLift = () => {
+      rafId = 0;
+      const el = mobileLiftRef.current;
+      if (!el) return;
+      if (window.innerWidth >= 768) {
+        el.style.transform = '';
+        return;
+      }
+      const lift = Math.min(200, Math.max(0, window.scrollY * 0.9));
+      el.style.transform = `translate3d(0, -${lift.toFixed(1)}px, 0)`;
+    };
+
+    const onScrollOrResize = () => {
+      if (!rafId) rafId = window.requestAnimationFrame(updateLift);
+    };
+
+    updateLift();
+    window.addEventListener('scroll', onScrollOrResize, { passive: true });
+    window.addEventListener('resize', onScrollOrResize, { passive: true });
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      window.removeEventListener('scroll', onScrollOrResize);
+      window.removeEventListener('resize', onScrollOrResize);
+    };
+  }, []);
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -168,14 +199,14 @@ export function Hero({ onOpenBooking }: HeroProps) {
     <section
       id="top"
       ref={heroRef}
-      className="relative z-10 overflow-hidden pt-10 pb-14 sm:pt-14 sm:pb-18 lg:pt-20 lg:pb-24"
+      className="relative z-10 overflow-hidden pt-[265px] pb-6 sm:pt-[330px] sm:pb-10 md:pt-14 md:pb-18 lg:pt-20 lg:pb-24"
     >
-      {/* Instant LCP Poster Image + Progressive Ambient Video (zoomed-out & centered on mobile, full-bleed on desktop) */}
+      {/* Instant LCP Poster Image + Progressive Ambient Video (unobstructed & centered on mobile, full-bleed on desktop) */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[310px] overflow-hidden sm:h-[380px] md:inset-0 md:h-full"
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[270px] overflow-hidden sm:h-[340px] md:inset-0 md:h-full"
       >
-        <div className="relative h-full w-full opacity-72 dark:opacity-78">
+        <div className="relative h-full w-full opacity-82 dark:opacity-85 md:opacity-72 md:dark:opacity-78">
           <img
             src={HERO_CONTENT.posterUrl}
             alt=""
@@ -200,10 +231,13 @@ export function Hero({ onOpenBooking }: HeroProps) {
             }`}
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/55 via-[#FAF8F5]/38 to-[#FAF8F5] dark:from-[#0D0C10]/55 dark:via-[#0D0C10]/35 dark:to-[#0D0C10]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#FAF8F5]/20 via-[#FAF8F5]/25 to-[#FAF8F5] dark:from-[#0D0C10]/25 dark:via-[#0D0C10]/25 dark:to-[#0D0C10] md:from-[#FAF8F5]/55 md:via-[#FAF8F5]/38 dark:md:from-[#0D0C10]/55 dark:md:via-[#0D0C10]/35" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div
+        ref={mobileLiftRef}
+        className="relative z-10 mx-auto max-w-7xl px-4 will-change-transform sm:px-6 lg:px-8"
+      >
         <div className="max-w-3xl">
           <h1 className="font-serif text-[2.4rem] leading-[1.08] font-semibold tracking-tight text-zinc-950 drop-shadow-[0_1px_10px_rgba(250,248,245,0.65)] dark:text-[#F5F3EF] dark:drop-shadow-[0_2px_14px_rgba(0,0,0,0.7)] min-h-[5.4rem] sm:min-h-[3.8rem] sm:text-5xl lg:min-h-[4.6rem] lg:text-[4rem]">
             <span>{typedText}</span>
