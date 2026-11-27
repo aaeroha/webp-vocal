@@ -41,16 +41,16 @@ export function VocalAtlasSection() {
             isVisible ? 'is-visible' : ''
           }`}
         >
-          <div className="max-w-3xl">
+          <div className="max-w-none">
             <p className="inline-flex items-center gap-1.5 text-[13px] font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
               <AudioWaveform className="h-3.5 w-3.5" />
               Вокальная механика и фонопедия в 3D
             </p>
-            <h2 className="mt-2 font-serif text-3xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF] sm:text-4xl lg:text-[2.85rem]">
+            <h2 className="mt-2 font-serif text-[1.75rem] font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF] sm:text-4xl lg:text-[2.6rem]">
               Интерактивный 3D-атлас резонаторов голоса
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-base">
-              Вместо непонятных советов «пой в голову» или «на опору» — посмотрите на 3D-модели, как работают складки и какие полости включаются при каждом приёме.
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-300 sm:text-base">
+              Наведите на нижние цветные элементы или покрутите 3D-модель — линия укажет на активную зону, а при клике прозвучит вокальный приём.
             </p>
           </div>
 
