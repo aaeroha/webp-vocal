@@ -284,7 +284,7 @@ export function Hero({ onOpenBooking }: HeroProps) {
         </div>
 
         {/* О моей работе в цифрах — restarts counting every time user returns */}
-        <div ref={statsRef} className="mt-12 lg:mt-16">
+        <div ref={statsRef} className="mt-12 md:mt-32 lg:mt-52 xl:mt-64">
           <p
             className={`reveal-item mb-5 text-center text-[13px] font-semibold uppercase tracking-[0.2em] text-[#B45309] dark:text-[#E2A856] ${
               statsVisible ? 'is-visible' : ''
