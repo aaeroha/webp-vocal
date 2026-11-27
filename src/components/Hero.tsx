@@ -179,12 +179,7 @@ export function Hero({ onOpenBooking }: HeroProps) {
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className={`reveal-item max-w-3xl ${heroVisible ? 'is-visible' : ''}`}>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#B45309]/30 bg-[#FAF8F5]/90 px-4 py-1.5 text-[13px] font-semibold text-[#B45309] backdrop-blur-md dark:border-[#E2A856]/35 dark:bg-[#0D0C10]/80 dark:text-[#E2A856]">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#B45309] dark:bg-[#E2A856]" />
-            <span>{HERO_CONTENT.eyebrow}</span>
-          </div>
-
-          <h1 className="mt-5 min-h-[2.8rem] font-serif text-[2.4rem] leading-[1.08] font-semibold tracking-tight text-zinc-950 drop-shadow-[0_1px_10px_rgba(250,248,245,0.65)] dark:text-[#F5F3EF] dark:drop-shadow-[0_2px_14px_rgba(0,0,0,0.7)] sm:min-h-[3.6rem] sm:text-5xl lg:min-h-[4.4rem] lg:text-[4rem]">
+          <h1 className="font-serif text-[2.4rem] leading-[1.08] font-semibold tracking-tight text-zinc-950 drop-shadow-[0_1px_10px_rgba(250,248,245,0.65)] dark:text-[#F5F3EF] dark:drop-shadow-[0_2px_14px_rgba(0,0,0,0.7)] min-h-[2.8rem] sm:min-h-[3.6rem] sm:text-5xl lg:min-h-[4.4rem] lg:text-[4rem]">
             <span>{typedText}</span>
             <span
               aria-hidden="true"

@@ -6,21 +6,21 @@ import { ImagePlaceholder } from './ImagePlaceholder';
 function PrincipleAnimatedIcon({ iconKey }: { iconKey: PrincipleCard['iconKey'] }) {
   if (iconKey === 'physiology') {
     return (
-      <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#B45309]/20 bg-[#FAF8F5] text-[#B45309] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:border-[#10B981]/50 group-hover:bg-[#10B981]/15 group-hover:text-[#059669] dark:border-[#E2A856]/25 dark:bg-[#0D0C10] dark:text-[#E2A856] dark:group-hover:border-[#34D399]/50 dark:group-hover:bg-[#10B981]/20 dark:group-hover:text-[#34D399]">
-        <HeartPulse className="h-6 w-6 transition-transform duration-300 group-hover:scale-110" />
+      <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#10B981]/35 bg-[#10B981]/10 text-[#059669] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#10B981]/20 dark:border-[#34D399]/35 dark:bg-[#10B981]/14 dark:text-[#34D399]">
+        <HeartPulse className="h-6 w-6 animate-icon-pulse transition-transform duration-300 group-hover:scale-110" />
       </div>
     );
   }
   if (iconKey === 'mechanics') {
     return (
-      <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#B45309]/20 bg-[#FAF8F5] text-[#B45309] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:border-[#3B82F6]/50 group-hover:bg-[#3B82F6]/15 group-hover:text-[#2563EB] dark:border-[#E2A856]/25 dark:bg-[#0D0C10] dark:text-[#E2A856] dark:group-hover:border-[#60A5FA]/50 dark:group-hover:bg-[#3B82F6]/20 dark:group-hover:text-[#60A5FA]">
-        <AudioWaveform className="h-6 w-6 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
+      <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#3B82F6]/35 bg-[#3B82F6]/10 text-[#2563EB] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#3B82F6]/20 dark:border-[#60A5FA]/35 dark:bg-[#3B82F6]/14 dark:text-[#60A5FA]">
+        <AudioWaveform className="h-6 w-6 animate-icon-breathe transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
       </div>
     );
   }
   return (
-    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#B45309]/20 bg-[#FAF8F5] text-[#B45309] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:border-[#F59E0B]/60 group-hover:bg-[#F59E0B]/15 group-hover:text-[#D97706] dark:border-[#E2A856]/25 dark:bg-[#0D0C10] dark:text-[#E2A856] dark:group-hover:border-[#FACC15]/60 dark:group-hover:bg-[#FACC15]/20 dark:group-hover:text-[#FACC15]">
-      <Mic2 className="h-6 w-6 transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
+    <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-[#F59E0B]/40 bg-[#F59E0B]/12 text-[#D97706] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#F59E0B]/20 dark:border-[#FACC15]/40 dark:bg-[#FACC15]/14 dark:text-[#FACC15]">
+      <Mic2 className="h-6 w-6 animate-icon-sway transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
     </div>
   );
 }

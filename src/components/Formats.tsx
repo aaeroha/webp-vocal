@@ -9,28 +9,28 @@ interface FormatsProps {
 function StepAnimatedIcon({ iconKey }: { iconKey: LessonStepItem['iconKey'] }) {
   if (iconKey === 'breath') {
     return (
-      <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B45309]/20 bg-[#FAF8F5] text-[#B45309] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:border-[#0EA5E9]/50 group-hover:bg-[#0EA5E9]/15 group-hover:text-[#0284C7] dark:border-[#E2A856]/25 dark:bg-[#0D0C10] dark:text-[#E2A856] dark:group-hover:border-[#38BDF8]/50 dark:group-hover:bg-[#38BDF8]/20 dark:group-hover:text-[#38BDF8]">
-        <Wind className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-rotate-6" />
+      <div className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#0EA5E9]/35 bg-[#0EA5E9]/10 text-[#0284C7] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#0EA5E9]/20 dark:border-[#38BDF8]/35 dark:bg-[#38BDF8]/12 dark:text-[#38BDF8]">
+        <Wind className="h-5 w-5 animate-icon-breathe transition-transform duration-300 group-hover:translate-x-0.5" />
       </div>
     );
   }
   if (iconKey === 'tuning') {
     return (
-      <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B45309]/20 bg-[#FAF8F5] text-[#B45309] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:border-[#8B5CF6]/50 group-hover:bg-[#8B5CF6]/15 group-hover:text-[#7C3AED] dark:border-[#E2A856]/25 dark:bg-[#0D0C10] dark:text-[#E2A856] dark:group-hover:border-[#A78BFA]/50 dark:group-hover:bg-[#A78BFA]/20 dark:group-hover:text-[#A78BFA]">
-        <SlidersHorizontal className="h-5 w-5 transition-transform duration-300 group-hover:rotate-12" />
+      <div className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#8B5CF6]/35 bg-[#8B5CF6]/10 text-[#7C3AED] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#8B5CF6]/20 dark:border-[#A78BFA]/35 dark:bg-[#A78BFA]/12 dark:text-[#A78BFA]">
+        <SlidersHorizontal className="h-5 w-5 animate-icon-sway transition-transform duration-300 group-hover:rotate-12" />
       </div>
     );
   }
   if (iconKey === 'music') {
     return (
-      <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B45309]/20 bg-[#FAF8F5] text-[#B45309] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:border-[#EC4899]/50 group-hover:bg-[#EC4899]/15 group-hover:text-[#DB2777] dark:border-[#E2A856]/25 dark:bg-[#0D0C10] dark:text-[#E2A856] dark:group-hover:border-[#F472B6]/50 dark:group-hover:bg-[#F472B6]/20 dark:group-hover:text-[#F472B6]">
-        <Music2 className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
+      <div className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#EC4899]/35 bg-[#EC4899]/10 text-[#DB2777] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#EC4899]/20 dark:border-[#F472B6]/35 dark:bg-[#F472B6]/12 dark:text-[#F472B6]">
+        <Music2 className="h-5 w-5 animate-icon-bounce transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />
       </div>
     );
   }
   return (
-    <div className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#B45309]/20 bg-[#FAF8F5] text-[#B45309] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:border-[#F59E0B]/60 group-hover:bg-[#F59E0B]/15 group-hover:text-[#D97706] dark:border-[#E2A856]/25 dark:bg-[#0D0C10] dark:text-[#E2A856] dark:group-hover:border-[#FACC15]/60 dark:group-hover:bg-[#FACC15]/20 dark:group-hover:text-[#FACC15]">
-      <Mic2 className="h-5 w-5 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
+    <div className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-[#F59E0B]/45 bg-[#F59E0B]/12 text-[#D97706] transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:bg-[#F59E0B]/20 dark:border-[#FACC15]/40 dark:bg-[#FACC15]/12 dark:text-[#FACC15]">
+      <Mic2 className="h-5 w-5 animate-icon-pulse transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110" />
     </div>
   );
 }

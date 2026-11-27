@@ -1,5 +1,5 @@
-import { useEffect, useState, type CSSProperties } from 'react';
-import { Award, ChevronLeft, ChevronRight, X, ZoomIn } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Award, ChevronLeft, ChevronRight, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { CERTIFICATES_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
@@ -30,10 +30,48 @@ function GraduationCapSvg({ size }: { size: number }) {
 export function Certificates() {
   const items = CERTIFICATES_CONTENT.items;
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [isPaused, setIsPaused] = useState(false);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const { ref, isVisible } = useReveal({ threshold: 0.06 });
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
   const isModalOpen = selectedIndex !== null;
+
+  useEffect(() => {
+    setZoomLevel(1);
+  }, [selectedIndex]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !isVisible) return;
+
+    let rafId = 0;
+    let lastTime = performance.now();
+
+    const step = (now: number) => {
+      const dt = Math.min(50, now - lastTime);
+      lastTime = now;
+
+      if (!isPaused && !isModalOpen && el.scrollWidth > el.clientWidth) {
+        el.scrollLeft += (dt / 1000) * 32;
+        const half = el.scrollWidth / 2;
+        if (el.scrollLeft >= half) {
+          el.scrollLeft -= half;
+        }
+      }
+      rafId = window.requestAnimationFrame(step);
+    };
+
+    rafId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isVisible, isPaused, isModalOpen]);
+
+  const scrollByCard = (dir: -1 | 1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * 280, behavior: 'smooth' });
+  };
 
   useEffect(() => {
     if (selectedIndex === null) return;
@@ -70,11 +108,16 @@ export function Certificates() {
 
   return (
     <section id="certificates" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
-      {/* Giant Background Graduation Caps soaring to the top & falling infinitely */}
+      {/* Giant Background Graduation Caps with soft top/bottom fade mask */}
       {isVisible && (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-0 overflow-hidden opacity-60 dark:opacity-55"
+          style={{
+            maskImage: 'linear-gradient(to bottom, transparent 0%, black 16%, black 76%, transparent 100%)',
+            WebkitMaskImage:
+              'linear-gradient(to bottom, transparent 0%, black 16%, black 76%, transparent 100%)',
+          }}
         >
           {GRADUATION_CAPS.map((cap, idx) => (
             <div
@@ -115,27 +158,39 @@ export function Certificates() {
           </p>
         </div>
 
-        {/* Infinite auto-scrolling carousel — pauses on hover AND when modal is open */}
+        {/* Touch-friendly swipeable & auto-scrolling carousel — pauses on hover, touch, or open modal */}
         <div
           style={{ transitionDelay: '140ms' }}
-          className={`reveal-scale cert-marquee-wrap relative mt-8 overflow-hidden rounded-2xl sm:mt-10 ${
+          className={`reveal-scale relative mt-8 rounded-2xl sm:mt-10 ${
             isVisible ? 'is-visible' : ''
           }`}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => window.setTimeout(() => setIsPaused(false), 1800)}
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
-          />
+          <button
+            type="button"
+            onClick={() => scrollByCard(-1)}
+            aria-label="Предыдущие сертификаты"
+            className="absolute left-1 top-1/2 z-20 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 text-zinc-800 shadow-md backdrop-blur-xs transition hover:border-[#B45309] hover:text-[#B45309] dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-200 dark:hover:border-[#E2A856] dark:hover:text-[#E2A856] sm:left-2 sm:h-10 sm:w-10 cursor-pointer"
+          >
+            <ChevronLeft className="h-4.5 w-4.5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => scrollByCard(1)}
+            aria-label="Следующие сертификаты"
+            className="absolute right-1 top-1/2 z-20 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 text-zinc-800 shadow-md backdrop-blur-xs transition hover:border-[#B45309] hover:text-[#B45309] dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-200 dark:hover:border-[#E2A856] dark:hover:text-[#E2A856] sm:right-2 sm:h-10 sm:w-10 cursor-pointer"
+          >
+            <ChevronRight className="h-4.5 w-4.5" />
+          </button>
 
           <div
-            className="animate-cert-marquee gap-4 py-2 sm:gap-5"
-            style={{
-              animationPlayState: isModalOpen ? 'paused' : undefined,
-            }}
+            ref={scrollRef}
+            className="flex gap-4 overflow-x-auto px-2 py-2 sm:gap-5 sm:px-4"
+            style={{ scrollbarWidth: 'none' }}
           >
             {trackItems.map((cert, idx) => {
               const realIndex = idx % items.length;
@@ -179,21 +234,21 @@ export function Certificates() {
         </div>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal with Zoom Controls */}
       {selected && selectedIndex !== null && (
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="cert-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6"
         >
           <div
             onClick={() => setSelectedIndex(null)}
             className="absolute inset-0 bg-black/80 backdrop-blur-sm"
           />
 
-          <div className="animate-modal-enter relative z-10 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl border border-white/15 bg-[#FAF8F5] p-4 shadow-2xl dark:bg-[#16151C] sm:p-6">
-            <div className="flex items-start justify-between gap-4 pb-3">
+          <div className="animate-modal-enter relative z-10 flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 bg-[#FAF8F5] p-3.5 shadow-2xl dark:bg-[#16151C] sm:p-6">
+            <div className="flex items-start justify-between gap-3 pb-3">
               <div>
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309]/10 px-3 py-1 text-xs font-semibold text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
                   <Award className="h-3.5 w-3.5" />
@@ -201,28 +256,70 @@ export function Certificates() {
                 </span>
                 <h3
                   id="cert-modal-title"
-                  className="mt-2 font-serif text-xl font-semibold text-zinc-900 dark:text-[#F5F3EF] sm:text-2xl"
+                  className="mt-2 font-serif text-lg font-semibold text-zinc-900 dark:text-[#F5F3EF] sm:text-2xl"
                 >
                   {selected.title}
                 </h3>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setSelectedIndex(null)}
-                aria-label="Закрыть окно просмотра"
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel((z) => Math.max(1, Number((z - 0.5).toFixed(2))))}
+                  disabled={zoomLevel <= 1}
+                  aria-label="Уменьшить"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </button>
+                <span className="min-w-[44px] text-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  {Math.round(zoomLevel * 100)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setZoomLevel((z) => Math.min(2.5, Number((z + 0.5).toFixed(2))))}
+                  disabled={zoomLevel >= 2.5}
+                  aria-label="Увеличить"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </button>
+                {zoomLevel > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel(1)}
+                    aria-label="Сбросить масштаб"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setSelectedIndex(null)}
+                  aria-label="Закрыть окно просмотра"
+                  className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                >
+                  <X className="h-4.5 w-4.5" />
+                </button>
+              </div>
             </div>
 
             <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-zinc-900/5 dark:bg-black/40">
-              <img
-                src={selected.imageUrl}
-                alt={selected.title}
-                className="max-h-[68vh] w-auto max-w-full rounded-xl object-contain"
-              />
+              <div className="custom-scrollbar flex h-full w-full items-center justify-center overflow-auto p-2">
+                <img
+                  src={selected.imageUrl}
+                  alt={selected.title}
+                  onClick={() => setZoomLevel((z) => (z > 1 ? 1 : 2))}
+                  style={{
+                    transform: `scale(${zoomLevel})`,
+                    transformOrigin: 'center center',
+                  }}
+                  className={`max-h-[66dvh] w-auto max-w-full rounded-xl object-contain transition-transform duration-200 ${
+                    zoomLevel > 1 ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                  }`}
+                />
+              </div>
 
               <button
                 type="button"

@@ -11,6 +11,8 @@
   html {
     scroll-behavior: smooth;
     scroll-padding-top: 5.5rem;
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   body {
@@ -18,7 +20,8 @@
     background-color: #FAF8F5;
     color: #18181B;
     transition: background-color 0.35s ease, color 0.35s ease;
-    overflow-x: hidden;
+    overflow-x: clip;
+    max-width: 100%;
   }
 
   .dark body {
@@ -105,21 +108,24 @@
   }
 }
 
-/* Graduation cap infinite continuous toss across full section height */
+/* Graduation cap infinite continuous toss with smooth fade out */
 @keyframes capToss {
   0% {
     opacity: 0;
     transform: translate3d(0, 60px, 0) rotate(var(--cap-r0, -25deg)) scale(0.85);
   }
-  12% {
+  15% {
     opacity: 0.72;
   }
   48% {
     opacity: 0.8;
     transform: translate3d(var(--cap-dx1, 24px), -720px, 0) rotate(var(--cap-r1, 165deg)) scale(1.06);
   }
-  88% {
-    opacity: 0.65;
+  78% {
+    opacity: 0.52;
+  }
+  94% {
+    opacity: 0.08;
   }
   100% {
     opacity: 0;
@@ -130,6 +136,65 @@
 .animate-cap-toss {
   opacity: 0;
   animation: capToss var(--cap-dur, 4.8s) cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite both;
+}
+
+/* Lively continuous icon animations for About & Formats */
+@keyframes iconBreathe {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2px, -2px, 0) scale(1.1);
+  }
+}
+
+@keyframes iconSway {
+  0%, 100% {
+    transform: rotate(-7deg) scale(1);
+  }
+  50% {
+    transform: rotate(8deg) scale(1.08);
+  }
+}
+
+@keyframes iconBounce {
+  0%, 100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(6deg) scale(1.08);
+  }
+}
+
+@keyframes iconPulseSoft {
+  0%, 100% {
+    transform: scale(1);
+  }
+  30% {
+    transform: scale(1.14);
+  }
+  55% {
+    transform: scale(0.98);
+  }
+  75% {
+    transform: scale(1.09);
+  }
+}
+
+.animate-icon-breathe {
+  animation: iconBreathe 3.2s ease-in-out infinite;
+}
+
+.animate-icon-sway {
+  animation: iconSway 3.6s ease-in-out infinite;
+}
+
+.animate-icon-bounce {
+  animation: iconBounce 2.8s ease-in-out infinite;
+}
+
+.animate-icon-pulse {
+  animation: iconPulseSoft 2.6s ease-in-out infinite;
 }
 
 /* Reviews section: infinite rising chat bubbles with 3 dots */
@@ -155,32 +220,66 @@
   animation: bubbleRise var(--bubble-dur, 10s) linear infinite both;
 }
 
-/* FAQ section: floating & mirror-flipping question marks */
+/* FAQ section: varied floating, scaling & mirror-flipping question marks */
 @keyframes questionMirrorFloat {
   0% {
-    opacity: 0.16;
-    transform: translate3d(0, 0px, 0) perspective(400px) rotateY(0deg) rotate(-6deg);
+    opacity: 0.14;
+    transform: translate3d(0, 0px, 0) perspective(450px) rotateY(0deg) rotate(-8deg) scale(0.95);
   }
   25% {
     opacity: 0.34;
-    transform: translate3d(8px, -18px, 0) perspective(400px) rotateY(90deg) rotate(4deg);
+    transform: translate3d(12px, -22px, 0) perspective(450px) rotateY(90deg) rotate(6deg) scale(1.08);
   }
   50% {
-    opacity: 0.28;
-    transform: translate3d(-6px, -28px, 0) perspective(400px) rotateY(180deg) rotate(8deg);
+    opacity: 0.26;
+    transform: translate3d(-10px, -36px, 0) perspective(450px) rotateY(180deg) rotate(12deg) scale(1);
   }
   75% {
     opacity: 0.34;
-    transform: translate3d(6px, -12px, 0) perspective(400px) rotateY(270deg) rotate(-2deg);
+    transform: translate3d(8px, -16px, 0) perspective(450px) rotateY(270deg) rotate(-4deg) scale(1.06);
   }
   100% {
+    opacity: 0.14;
+    transform: translate3d(0, 0px, 0) perspective(450px) rotateY(360deg) rotate(-8deg) scale(0.95);
+  }
+}
+
+@keyframes questionOrbit {
+  0%, 100% {
     opacity: 0.16;
-    transform: translate3d(0, 0px, 0) perspective(400px) rotateY(360deg) rotate(-6deg);
+    transform: translate3d(0, 0, 0) rotate(-14deg) scale(0.92);
+  }
+  33% {
+    opacity: 0.32;
+    transform: translate3d(-16px, -28px, 0) rotate(10deg) scale(1.12);
+  }
+  66% {
+    opacity: 0.24;
+    transform: translate3d(14px, -14px, 0) rotate(-6deg) scale(1.02);
+  }
+}
+
+@keyframes questionTilt {
+  0%, 100% {
+    opacity: 0.15;
+    transform: translate3d(0, 0, 0) perspective(450px) rotateX(0deg) rotate(8deg) scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: translate3d(10px, -26px, 0) perspective(450px) rotateX(22deg) rotate(-14deg) scale(1.14);
   }
 }
 
 .animate-question-mirror {
   animation: questionMirrorFloat var(--q-dur, 7s) ease-in-out infinite;
+}
+
+.animate-question-orbit {
+  animation: questionOrbit var(--q-dur, 8.5s) ease-in-out infinite;
+}
+
+.animate-question-tilt {
+  animation: questionTilt var(--q-dur, 6.4s) ease-in-out infinite;
 }
 
 /* Custom sleek thin scrollbar for song picker & modals */

@@ -60,7 +60,7 @@ export function VinylPlayer() {
   return (
     <aside
       aria-label="Виниловый Hi-Fi проигрыватель навигации"
-      className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 select-none flex flex-col items-center gap-1.5 transition-all duration-500 ease-out ${
+      className={`fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-40 select-none flex flex-col items-center gap-1 sm:gap-1.5 transition-all duration-500 ease-out ${
         isVisible
           ? 'translate-y-0 opacity-100 pointer-events-auto'
           : 'translate-y-8 opacity-0 pointer-events-none'
@@ -100,7 +100,7 @@ export function VinylPlayer() {
             : 'Нажмите, чтобы вернуться наверх'
         }
         aria-label={`Прокрутка наверх. Пройдено ${roundedPercent}%`}
-        className={`group relative block w-[144px] h-[116px] sm:w-[196px] sm:h-[158px] p-1.5 rounded-2xl cursor-pointer transition-all duration-300 transform-gpu active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
+        className={`group relative block w-[104px] h-[84px] sm:w-[196px] sm:h-[158px] p-1 sm:p-1.5 rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-300 transform-gpu active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 ${
           allLedsLit
             ? 'ring-2 ring-amber-500/95 shadow-2xl shadow-amber-500/40 scale-105 bg-[#121216] border border-amber-500/55 dark:bg-[#F5F0E6] dark:border-amber-600/65'
             : 'hover:scale-105 shadow-2xl bg-[#121216]/95 border border-white/15 hover:border-amber-500/60 dark:bg-[#F5F0E6]/95 dark:border-[#B45309]/30 dark:hover:border-[#B45309]/75'

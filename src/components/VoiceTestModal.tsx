@@ -640,7 +640,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
       role="dialog"
       aria-modal="true"
       aria-labelledby="voice-test-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-6"
     >
       {step === 'result' && result && <ConfettiFireworksCanvas />}
 
@@ -652,17 +652,17 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
         className="absolute inset-0 bg-black/75 backdrop-blur-sm"
       />
 
-      <div className="custom-scrollbar animate-modal-enter relative z-10 max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl border border-zinc-900/12 bg-[#FAF8F5] p-5 shadow-2xl dark:border-white/15 dark:bg-[#16151C] sm:p-7">
+      <div className="custom-scrollbar animate-modal-enter relative z-10 max-h-[90dvh] w-full max-w-xl overflow-y-auto overscroll-contain rounded-2xl border border-zinc-900/12 bg-[#FAF8F5] p-4 shadow-2xl dark:border-white/15 dark:bg-[#16151C] sm:rounded-3xl sm:p-7">
         {/* Header */}
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309]/10 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856] sm:px-3 sm:py-1 sm:text-[11px]">
               <AudioWaveform className="h-3.5 w-3.5" />
               Интерактивный тест голоса
             </span>
             <h3
               id="voice-test-title"
-              className="mt-2 font-serif text-2xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF] sm:text-3xl"
+              className="mt-1.5 font-serif text-xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF] sm:mt-2 sm:text-3xl"
             >
               {step === 'gender' && 'Узнайте ваш тип и тембр голоса'}
               {step === 'mode' && 'Выберите песню или распевку'}
@@ -847,8 +847,8 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
 
         {/* STEP 3: HARDWARE-CLOCK KARAOKE RECORDING */}
         {step === 'record' && (
-          <div className="mt-5 space-y-5">
-            <div className="rounded-2xl border border-[#B45309]/25 bg-[#F2EDE6]/95 p-4 dark:border-[#E2A856]/25 dark:bg-[#0D0C10]/85">
+          <div className="mt-3 space-y-3 sm:mt-5 sm:space-y-5">
+            <div className="rounded-2xl border border-[#B45309]/25 bg-[#F2EDE6]/95 p-3 sm:p-4 dark:border-[#E2A856]/25 dark:bg-[#0D0C10]/85">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:text-[#E2A856]">
                   {taskMode === 'song'
@@ -869,7 +869,7 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               </div>
 
               {taskMode === 'song' ? (
-                <div className="mt-3 font-serif text-xl sm:text-2xl font-semibold leading-relaxed">
+                <div className="custom-scrollbar mt-2 max-h-[24dvh] overflow-y-auto pr-1 font-serif text-lg sm:mt-3 sm:max-h-none sm:text-2xl font-semibold leading-relaxed">
                   {visibleSectionSyllables.map((syl) => {
                     const isCurrent = syl.id === activeVisualIdx;
                     const isPast = activeVisualIdx >= 0 && syl.id < activeVisualIdx;
@@ -900,12 +900,12 @@ export function VoiceTestModal({ isOpen, onClose, onOpenBooking }: VoiceTestModa
               )}
             </div>
 
-            <div className="relative overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#0D0C10] p-4 shadow-inner dark:border-white/10">
+            <div className="relative overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#0D0C10] p-3 sm:p-4 shadow-inner dark:border-white/10">
               <canvas
                 ref={canvasRef}
                 width={500}
                 height={130}
-                className="h-32 w-full"
+                className="h-20 sm:h-32 w-full"
               />
 
               <div className="mt-3 flex items-center justify-between text-xs text-zinc-300">

@@ -46,22 +46,15 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
         }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:h-18 sm:px-6 lg:px-8">
-          {/* Left: Brand */}
+          {/* Left: Clean Brand Logo only */}
           <a
             href="#top"
+            aria-label={`${SITE_CONFIG.brandName} — наверх`}
             className="group flex items-center gap-2.5 text-left focus:outline-none"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#B45309]/25 bg-[#F2EDE6] font-serif text-lg font-semibold text-[#B45309] transition-colors group-hover:border-[#B45309] dark:border-[#E2A856]/30 dark:bg-[#16151C] dark:text-[#E2A856]">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#B45309]/30 bg-[#F2EDE6] font-serif text-lg font-semibold text-[#B45309] transition-all duration-300 group-hover:scale-105 group-hover:border-[#B45309] dark:border-[#E2A856]/35 dark:bg-[#16151C] dark:text-[#E2A856]">
               ВЕ
             </span>
-            <div className="leading-tight">
-              <span className="block font-serif text-lg font-semibold tracking-tight text-zinc-900 dark:text-[#F5F3EF] sm:text-xl">
-                {SITE_CONFIG.brandName}
-              </span>
-              <span className="hidden text-[11px] font-medium text-zinc-500 dark:text-zinc-400 sm:block">
-                {SITE_CONFIG.brandSubtitle}
-              </span>
-            </div>
           </a>
 
           {/* Center: Desktop anchor links (> 1024px) */}
@@ -80,20 +73,19 @@ export function Header({ isDark, onToggleTheme, onOpenBooking, onOpenVoiceTest }
             ))}
           </nav>
 
-          {/* Right: Prominent Voice Test CTA + ThemeToggle + Booking CTA + Mobile Burger */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5">
+          {/* Right: Desktop Voice Test CTA (mobile uses burger menu) + ThemeToggle + Booking CTA + Mobile Burger */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <button
               type="button"
               onClick={onOpenVoiceTest}
-              className="group relative inline-flex h-10 items-center gap-1.5 rounded-full border border-[#B45309]/35 bg-[#F2EDE6]/95 px-3 text-xs font-semibold text-[#B45309] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309] hover:bg-[#FAF8F5] dark:border-[#E2A856]/40 dark:bg-[#16151C] dark:text-[#E2A856] dark:hover:border-[#E2A856] sm:px-3.5 sm:text-sm cursor-pointer"
+              className="group relative hidden xl:inline-flex h-10 items-center gap-1.5 rounded-full border border-[#B45309]/35 bg-[#F2EDE6]/95 px-3.5 text-sm font-semibold text-[#B45309] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309] hover:bg-[#FAF8F5] dark:border-[#E2A856]/40 dark:bg-[#16151C] dark:text-[#E2A856] dark:hover:border-[#E2A856] cursor-pointer"
             >
               <span className="relative flex h-2 w-2 shrink-0">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-500 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-[#B45309] dark:bg-[#E2A856]" />
               </span>
               <Mic className="h-3.5 w-3.5 shrink-0" />
-              <span className="hidden sm:inline">Тест голоса</span>
-              <span className="sm:hidden">Тест</span>
+              <span>Тест голоса</span>
             </button>
 
             <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />

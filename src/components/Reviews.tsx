@@ -1,5 +1,5 @@
-import { Star } from 'lucide-react';
-import { type CSSProperties } from 'react';
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { AVITO_REVIEWS_URL, REVIEWS_CONTENT, YANDEX_PROFILE_URL } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
@@ -67,6 +67,39 @@ function AvitoLogo() {
 export function Reviews() {
   const { ref: sectionRef, isVisible } = useReveal({ threshold: 0.08 });
   const trackItems = [...REVIEWS_CONTENT.items, ...REVIEWS_CONTENT.items];
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !isVisible) return;
+
+    let rafId = 0;
+    let lastTime = performance.now();
+
+    const step = (now: number) => {
+      const dt = Math.min(50, now - lastTime);
+      lastTime = now;
+
+      if (!isPaused && el.scrollWidth > el.clientWidth) {
+        el.scrollLeft += (dt / 1000) * 34;
+        const half = el.scrollWidth / 2;
+        if (el.scrollLeft >= half) {
+          el.scrollLeft -= half;
+        }
+      }
+      rafId = window.requestAnimationFrame(step);
+    };
+
+    rafId = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isVisible, isPaused]);
+
+  const scrollByCard = (dir: -1 | 1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * 310, behavior: 'smooth' });
+  };
 
   return (
     <section id="reviews" className="relative z-10 overflow-hidden py-14 sm:py-20 lg:py-24">
@@ -111,29 +144,29 @@ export function Reviews() {
             </p>
           </div>
 
-          {/* Twin 5.0 Profile Badges: Yandex & Avito (with green outline and yellow stars) */}
+          {/* Twin 5.0 Profile Badges: always side-by-side in 2 columns on mobile */}
           <div
             style={{ transitionDelay: '120ms' }}
-            className={`reveal-right flex flex-wrap items-stretch gap-3 ${isVisible ? 'is-visible' : ''}`}
+            className={`reveal-right grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-stretch sm:gap-3 ${isVisible ? 'is-visible' : ''}`}
           >
             <a
               href={YANDEX_PROFILE_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-w-[215px] items-center gap-3 rounded-2xl border border-[#B45309]/30 bg-[#F2EDE6]/95 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309]/60 hover:shadow-md dark:border-[#E2A856]/35 dark:bg-[#16151C] dark:hover:border-[#E2A856]/65 dark:gold-glow-hover"
+              className="inline-flex items-center gap-2 sm:gap-3 rounded-2xl border border-[#B45309]/30 bg-[#F2EDE6]/95 px-3 py-2.5 sm:min-w-[215px] sm:px-4 sm:py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#B45309]/60 hover:shadow-md dark:border-[#E2A856]/35 dark:bg-[#16151C] dark:hover:border-[#E2A856]/65 dark:gold-glow-hover"
             >
               <YandexLogo />
-              <span className="font-serif text-3xl font-semibold leading-none text-[#B45309] dark:text-[#E2A856]">
+              <span className="font-serif text-2xl sm:text-3xl font-semibold leading-none text-[#B45309] dark:text-[#E2A856]">
                 {REVIEWS_CONTENT.yandexRating}
               </span>
-              <div className="leading-tight">
+              <div className="min-w-0 leading-tight">
                 <div className="flex items-center gap-0.5 text-[#D97706] dark:text-[#E2A856]">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                    <Star key={i} className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current" />
                   ))}
                 </div>
-                <p className="mt-1 text-xs font-semibold text-zinc-800 dark:text-[#F5F3EF]">
-                  Оценка на Яндекс
+                <p className="mt-1 truncate text-[11px] sm:text-xs font-semibold text-zinc-800 dark:text-[#F5F3EF]">
+                  Яндекс 5.0
                 </p>
               </div>
             </a>
@@ -142,43 +175,60 @@ export function Reviews() {
               href={AVITO_REVIEWS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-w-[215px] items-center gap-3 rounded-2xl border-2 border-[#04B44B]/60 bg-[#F2EDE6]/95 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#04B44B] hover:shadow-md hover:shadow-[#04B44B]/15 dark:border-[#04E061]/55 dark:bg-[#16151C] dark:hover:border-[#04E061] dark:hover:shadow-[#04E061]/20"
+              className="inline-flex items-center gap-2 sm:gap-3 rounded-2xl border-2 border-[#04B44B]/60 bg-[#F2EDE6]/95 px-3 py-2.5 sm:min-w-[215px] sm:px-4 sm:py-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#04B44B] hover:shadow-md hover:shadow-[#04B44B]/15 dark:border-[#04E061]/55 dark:bg-[#16151C] dark:hover:border-[#04E061] dark:hover:shadow-[#04E061]/20"
             >
               <AvitoLogo />
-              <span className="font-serif text-3xl font-semibold leading-none text-[#049A40] dark:text-[#04E061]">
+              <span className="font-serif text-2xl sm:text-3xl font-semibold leading-none text-[#049A40] dark:text-[#04E061]">
                 {REVIEWS_CONTENT.avitoRating}
               </span>
-              <div className="leading-tight">
+              <div className="min-w-0 leading-tight">
                 <div className="flex items-center gap-0.5 text-[#F59E0B] dark:text-[#FACC15]">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-3.5 w-3.5 fill-current" />
+                    <Star key={i} className="h-3 w-3 sm:h-3.5 sm:w-3.5 fill-current" />
                   ))}
                 </div>
-                <p className="mt-1 text-xs font-semibold text-zinc-800 dark:text-[#F5F3EF]">
-                  Оценка на Авито
+                <p className="mt-1 truncate text-[11px] sm:text-xs font-semibold text-zinc-800 dark:text-[#F5F3EF]">
+                  Авито 5.0
                 </p>
               </div>
             </a>
           </div>
         </div>
 
-        {/* Infinite auto-scrolling carousel inside max-w-7xl */}
+        {/* Touch-friendly swipeable & auto-scrolling carousel */}
         <div
           style={{ transitionDelay: '180ms' }}
-          className={`reveal-scale cert-marquee-wrap relative mt-8 overflow-hidden rounded-2xl sm:mt-10 ${
+          className={`reveal-scale relative mt-8 rounded-2xl sm:mt-10 ${
             isVisible ? 'is-visible' : ''
           }`}
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={() => setIsPaused(true)}
+          onTouchEnd={() => window.setTimeout(() => setIsPaused(false), 1800)}
         >
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
-          />
+          <button
+            type="button"
+            onClick={() => scrollByCard(-1)}
+            aria-label="Прокрутить отзывы назад"
+            className="absolute left-1 top-1/2 z-20 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 text-zinc-800 shadow-md backdrop-blur-xs transition hover:border-[#B45309] hover:text-[#B45309] dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-200 dark:hover:border-[#E2A856] dark:hover:text-[#E2A856] sm:left-2 sm:h-10 sm:w-10 cursor-pointer"
+          >
+            <ChevronLeft className="h-4.5 w-4.5" />
+          </button>
 
-          <div className="animate-cert-marquee gap-4 py-2 sm:gap-5">
+          <button
+            type="button"
+            onClick={() => scrollByCard(1)}
+            aria-label="Прокрутить отзывы вперёд"
+            className="absolute right-1 top-1/2 z-20 -translate-y-1/2 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/15 bg-[#FAF8F5]/90 text-zinc-800 shadow-md backdrop-blur-xs transition hover:border-[#B45309] hover:text-[#B45309] dark:border-white/15 dark:bg-[#16151C]/90 dark:text-zinc-200 dark:hover:border-[#E2A856] dark:hover:text-[#E2A856] sm:right-2 sm:h-10 sm:w-10 cursor-pointer"
+          >
+            <ChevronRight className="h-4.5 w-4.5" />
+          </button>
+
+          <div
+            ref={scrollRef}
+            className="custom-scrollbar flex gap-4 overflow-x-auto px-2 py-2 sm:gap-5 sm:px-4"
+            style={{ scrollbarWidth: 'none' }}
+          >
             {trackItems.map((review, idx) => (
               <a
                 key={`${review.id}-${idx}`}

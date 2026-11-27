@@ -41,13 +41,13 @@ export function Contacts({ isDark, onOpenBooking }: ContactsProps) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div
           ref={ref}
-          className={`reveal-scale rounded-3xl border border-zinc-900/10 bg-[#F2EDE6]/90 p-6 dark:border-white/10 dark:bg-[#16151C]/95 sm:p-10 lg:p-12 ${
+          className={`reveal-scale overflow-hidden rounded-3xl border border-zinc-900/10 bg-[#F2EDE6]/90 dark:border-white/10 dark:bg-[#16151C]/95 ${
             isVisible ? 'is-visible' : ''
           }`}
         >
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:gap-12 items-stretch">
-            {/* Left: Heading, Unified CTA, Studio details & YouTube/Rutube Socials */}
-            <div className="flex flex-col justify-between">
+          <div className="grid grid-cols-1 lg:grid-cols-12 items-stretch">
+            {/* Heading + CTA + Studio Details (below map on mobile, left column on desktop) */}
+            <div className="order-2 lg:order-1 lg:col-span-5 flex flex-col justify-between p-6 sm:p-8 lg:p-10">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#B45309] dark:text-[#E2A856]">
                   {CONTACTS_CONTENT.eyebrow}
@@ -108,9 +108,9 @@ export function Contacts({ isDark, onOpenBooking }: ContactsProps) {
               </div>
             </div>
 
-            {/* Right: Yandex Map dynamically respecting Dark Theme */}
-            <div className="flex flex-col overflow-hidden rounded-2xl border border-zinc-900/10 bg-[#FAF8F5]/85 dark:border-white/10 dark:bg-[#0D0C10]/80">
-              <div className="relative min-h-[280px] flex-1 w-full sm:min-h-[340px]">
+            {/* Yandex Map edge-to-edge with zero outer padding (first on mobile, right column on desktop) */}
+            <div className="order-1 lg:order-2 lg:col-span-7 flex flex-col bg-[#FAF8F5]/85 dark:bg-[#0D0C10]/80">
+              <div className="relative min-h-[300px] flex-1 w-full sm:min-h-[360px] lg:min-h-[440px]">
                 <iframe
                   key={isDark ? 'yandex-dark' : 'yandex-light'}
                   title="Карта студии — г. Москва, Ватутинки"
@@ -120,7 +120,7 @@ export function Contacts({ isDark, onOpenBooking }: ContactsProps) {
                   allowFullScreen
                 />
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-900/10 px-4 py-3 text-xs dark:border-white/10">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-b lg:border-b-0 border-zinc-900/10 px-5 py-3.5 text-xs dark:border-white/10">
                 <span className="font-medium text-zinc-700 dark:text-zinc-300">
                   Москва, Ватутинки
                 </span>

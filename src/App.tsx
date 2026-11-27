@@ -85,7 +85,7 @@ export function App() {
         onOpenVoiceTest={openVoiceTest}
       />
 
-      <main>
+      <main className="overflow-x-clip">
         <Hero onOpenBooking={openBooking} />
         <Suspense fallback={null}>
           <About />

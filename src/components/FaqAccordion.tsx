@@ -4,13 +4,13 @@ import { FAQ_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
 const FLOATING_QUESTIONS = [
-  { top: '8%', left: '6%', size: 'text-5xl sm:text-6xl', dur: '6.2s', delay: '0s' },
-  { top: '16%', right: '7%', size: 'text-6xl sm:text-7xl', dur: '8.4s', delay: '1.2s' },
-  { top: '34%', left: '4%', size: 'text-4xl sm:text-5xl', dur: '7.1s', delay: '0.5s' },
-  { top: '48%', right: '5%', size: 'text-5xl sm:text-6xl', dur: '6.8s', delay: '2.1s' },
-  { top: '65%', left: '8%', size: 'text-6xl sm:text-7xl', dur: '9.0s', delay: '1.5s' },
-  { top: '76%', right: '8%', size: 'text-4xl sm:text-5xl', dur: '5.8s', delay: '0.8s' },
-  { top: '88%', left: '12%', size: 'text-5xl', dur: '7.6s', delay: '2.6s' },
+  { top: '6%', left: '4%', size: 'text-7xl sm:text-8xl', dur: '6.2s', delay: '0s', anim: 'animate-question-mirror' },
+  { top: '14%', right: '5%', size: 'text-8xl sm:text-9xl', dur: '8.4s', delay: '1.1s', anim: 'animate-question-orbit' },
+  { top: '32%', left: '3%', size: 'text-6xl sm:text-7xl', dur: '7.1s', delay: '0.5s', anim: 'animate-question-tilt' },
+  { top: '46%', right: '4%', size: 'text-7xl sm:text-8xl', dur: '6.8s', delay: '1.9s', anim: 'animate-question-mirror' },
+  { top: '63%', left: '6%', size: 'text-8xl sm:text-9xl', dur: '9.0s', delay: '1.4s', anim: 'animate-question-orbit' },
+  { top: '75%', right: '6%', size: 'text-6xl sm:text-7xl', dur: '5.8s', delay: '0.7s', anim: 'animate-question-tilt' },
+  { top: '86%', left: '10%', size: 'text-7xl sm:text-8xl', dur: '7.6s', delay: '2.4s', anim: 'animate-question-mirror' },
 ];
 
 export function FaqAccordion() {
@@ -32,7 +32,7 @@ export function FaqAccordion() {
         {FLOATING_QUESTIONS.map((q, idx) => (
           <span
             key={idx}
-            className={`animate-question-mirror absolute font-serif font-bold ${q.size}`}
+            className={`${q.anim} absolute font-serif font-bold ${q.size}`}
             style={
               {
                 top: q.top,
