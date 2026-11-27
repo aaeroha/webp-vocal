@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Award, ChevronLeft, ChevronRight, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { Award, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { CERTIFICATES_CONTENT } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
@@ -36,6 +36,7 @@ export function Certificates() {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const exactScrollRef = useRef(0);
   const dragStateRef = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false });
+  const modalSwipeRef = useRef({ active: false, startX: 0, startY: 0, swiped: false });
   const { ref, isVisible } = useReveal({ threshold: 0.02 });
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
@@ -300,94 +301,114 @@ export function Certificates() {
               />
 
               <div className="animate-modal-enter relative z-10 flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-white/15 bg-[#FAF8F5] p-3.5 shadow-2xl dark:bg-[#16151C] sm:p-6">
-                <div className="flex items-start justify-between gap-3 pb-3">
-                  <div>
+                {/* Clean Full-Width Header: Category + Close on top row, full-width title below */}
+                <div className="pb-3">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#B45309]/10 px-3 py-1 text-xs font-semibold text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
                       <Award className="h-3.5 w-3.5" />
                       {selected.category} • {selectedIndex + 1} / {items.length}
                     </span>
-                    <h3
-                      id="cert-modal-title"
-                      className="mt-2 font-serif text-lg font-semibold text-zinc-900 dark:text-[#F5F3EF] sm:text-2xl"
-                    >
-                      {selected.title}
-                    </h3>
-                  </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setZoomLevel((z) => Math.max(1, Number((z - 0.5).toFixed(2))))}
-                      disabled={zoomLevel <= 1}
-                      aria-label="Уменьшить"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
-                    >
-                      <ZoomOut className="h-4 w-4" />
-                    </button>
-                    <span className="min-w-[44px] text-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
-                      {Math.round(zoomLevel * 100)}%
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setZoomLevel((z) => Math.min(2.5, Number((z + 0.5).toFixed(2))))}
-                      disabled={zoomLevel >= 2.5}
-                      aria-label="Увеличить"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
-                    >
-                      <ZoomIn className="h-4 w-4" />
-                    </button>
-                    {zoomLevel > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => setZoomLevel(1)}
-                        aria-label="Сбросить масштаб"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </button>
-                    )}
                     <button
                       type="button"
                       onClick={() => setSelectedIndex(null)}
                       aria-label="Закрыть окно просмотра"
-                      className="ml-1 inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
                     >
                       <X className="h-4.5 w-4.5" />
                     </button>
                   </div>
+
+                  <h3
+                    id="cert-modal-title"
+                    className="mt-2.5 font-serif text-base font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF] sm:text-xl lg:text-2xl"
+                  >
+                    {selected.title}
+                  </h3>
                 </div>
 
-                <div className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-zinc-900/5 dark:bg-black/40">
-                  <div className="custom-scrollbar flex h-full w-full items-center justify-center overflow-auto p-2">
+                {/* Arrow-free Swipeable & Zoomable Document Viewport */}
+                <div
+                  className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-2xl bg-zinc-900/5 dark:bg-black/40"
+                  onPointerDown={(e) => {
+                    if (zoomLevel > 1) return;
+                    modalSwipeRef.current = {
+                      active: true,
+                      startX: e.clientX,
+                      startY: e.clientY,
+                      swiped: false,
+                    };
+                  }}
+                  onPointerUp={(e) => {
+                    if (!modalSwipeRef.current.active || zoomLevel > 1) return;
+                    const dx = e.clientX - modalSwipeRef.current.startX;
+                    const dy = e.clientY - modalSwipeRef.current.startY;
+                    modalSwipeRef.current.active = false;
+                    if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.15) {
+                      modalSwipeRef.current.swiped = true;
+                      if (dx < 0) goNext();
+                      else goPrev();
+                    }
+                  }}
+                >
+                  <div className="custom-scrollbar flex h-full w-full items-center justify-center overflow-auto p-2 touch-pan-x touch-pan-y">
                     <img
                       src={selected.imageUrl}
                       alt={selected.title}
-                      onClick={() => setZoomLevel((z) => (z > 1 ? 1 : 2))}
+                      draggable={false}
+                      onClick={() => {
+                        if (modalSwipeRef.current.swiped) {
+                          modalSwipeRef.current.swiped = false;
+                          return;
+                        }
+                        setZoomLevel((z) => (z > 1 ? 1 : 1.75));
+                      }}
                       style={{
                         transform: `scale(${zoomLevel})`,
                         transformOrigin: 'center center',
                       }}
-                      className={`max-h-[66dvh] w-auto max-w-full rounded-xl object-contain transition-transform duration-200 ${
+                      className={`max-h-[60dvh] w-auto max-w-full select-none rounded-xl object-contain transition-transform duration-200 ${
                         zoomLevel > 1 ? 'cursor-zoom-out' : 'cursor-zoom-in'
                       }`}
                     />
                   </div>
+                </div>
+
+                {/* Bottom Zoom & Reset Toolbar */}
+                <div className="mt-3 flex items-center justify-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setZoomLevel((z) => Math.max(1, Number((z - 0.5).toFixed(2))))}
+                    disabled={zoomLevel <= 1}
+                    aria-label="Уменьшить"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </button>
+
+                  <span className="min-w-[48px] text-center text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
 
                   <button
                     type="button"
-                    onClick={goPrev}
-                    aria-label="Предыдущий документ"
-                    className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur-xs transition hover:bg-black/75 sm:left-3 sm:h-11 sm:w-11 cursor-pointer"
+                    onClick={() => setZoomLevel((z) => Math.min(2.5, Number((z + 0.5).toFixed(2))))}
+                    disabled={zoomLevel >= 2.5}
+                    aria-label="Увеличить"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
                   >
-                    <ChevronLeft className="h-5 w-5" />
+                    <ZoomIn className="h-4 w-4" />
                   </button>
+
                   <button
                     type="button"
-                    onClick={goNext}
-                    aria-label="Следующий документ"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white backdrop-blur-xs transition hover:bg-black/75 sm:right-3 sm:h-11 sm:w-11 cursor-pointer"
+                    onClick={() => setZoomLevel(1)}
+                    disabled={zoomLevel <= 1}
+                    aria-label="Сбросить масштаб"
+                    title="Сбросить масштаб"
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-zinc-900/10 bg-[#F2EDE6] text-zinc-800 transition-colors hover:text-[#B45309] disabled:opacity-40 dark:border-white/10 dark:bg-[#0D0C10] dark:text-[#F5F3EF] dark:hover:text-[#E2A856] cursor-pointer"
                   >
-                    <ChevronRight className="h-5 w-5" />
+                    <RotateCcw className="h-4 w-4" />
                   </button>
                 </div>
               </div>
