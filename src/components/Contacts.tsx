@@ -125,18 +125,18 @@ export function Contacts({ isDark, onOpenBooking }: ContactsProps) {
                 <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                   Социальные сети и материалы
                 </p>
-                <div className="mt-3 flex flex-wrap gap-3">
+                <div className="mt-3 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
                   {CONTACTS_CONTENT.socialLinks.map((social) => (
                     <a
                       key={social.id}
                       href={social.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group inline-flex items-center gap-3 rounded-2xl border border-zinc-900/12 bg-[#FAF8F5] px-5 py-3 text-sm font-semibold text-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B45309]/45 hover:text-[#B45309] dark:border-white/12 dark:bg-[#0D0C10] dark:text-zinc-200 dark:hover:border-[#E2A856]/45 dark:hover:text-[#E2A856]"
+                      className="group flex flex-1 items-center justify-center gap-2.5 rounded-2xl border border-zinc-900/12 bg-[#FAF8F5] px-4 py-3 text-sm font-semibold text-zinc-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#B45309]/45 hover:text-[#B45309] dark:border-white/12 dark:bg-[#0D0C10] dark:text-zinc-200 dark:hover:border-[#E2A856]/45 dark:hover:text-[#E2A856] sm:flex-initial sm:px-5"
                     >
                       <SocialLogo id={social.id} />
-                      <span>{social.label}</span>
-                      <ExternalLink className="h-4 w-4 opacity-60 transition-opacity group-hover:opacity-100" />
+                      <span className="truncate">{social.label}</span>
+                      <ExternalLink className="h-4 w-4 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" />
                     </a>
                   ))}
                 </div>
