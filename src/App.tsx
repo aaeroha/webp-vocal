@@ -115,7 +115,10 @@ export function App() {
         <Contacts isDark={isDark} onOpenBooking={openBooking} />
       </main>
 
-      <footer className="relative z-10 border-t border-zinc-900/10 py-8 text-center text-sm text-zinc-500 dark:border-white/10 dark:text-zinc-400">
+      <footer
+        id="site-footer"
+        className="relative z-10 border-t border-zinc-900/10 py-8 text-center text-sm text-zinc-500 dark:border-white/10 dark:text-zinc-400"
+      >
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 sm:flex-row sm:px-6 lg:px-8">
           <p>
             © {new Date().getFullYear()} {SITE_CONFIG.brandName} — {SITE_CONFIG.brandSubtitle}

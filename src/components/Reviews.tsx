@@ -68,6 +68,7 @@ export function Reviews() {
   const { ref: sectionRef, isVisible } = useReveal({ threshold: 0.08 });
   const trackItems = [...REVIEWS_CONTENT.items, ...REVIEWS_CONTENT.items];
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const exactScrollRef = useRef(0);
   const [isPaused, setIsPaused] = useState(false);
   const dragStateRef = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false });
 
@@ -75,6 +76,7 @@ export function Reviews() {
     const el = scrollRef.current;
     if (!el || !isVisible) return;
 
+    exactScrollRef.current = el.scrollLeft;
     let rafId = 0;
     let lastTime = performance.now();
 
@@ -83,13 +85,14 @@ export function Reviews() {
       lastTime = now;
 
       if (!isPaused && !dragStateRef.current.active && el.scrollWidth > el.clientWidth) {
-        el.scrollLeft += (dt / 1000) * 34;
         const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half) {
-          el.scrollLeft -= half;
-        } else if (el.scrollLeft <= 0) {
-          el.scrollLeft += half;
+        exactScrollRef.current += (dt / 1000) * 32;
+        if (exactScrollRef.current >= half) {
+          exactScrollRef.current -= half;
         }
+        el.scrollLeft = exactScrollRef.current;
+      } else {
+        exactScrollRef.current = el.scrollLeft;
       }
       rafId = window.requestAnimationFrame(step);
     };
@@ -102,7 +105,6 @@ export function Reviews() {
     if (e.button !== 0) return;
     const el = scrollRef.current;
     if (!el) return;
-    // Prevent native browser anchor link dragging so horizontal drag-to-scroll works smoothly everywhere
     e.preventDefault();
     dragStateRef.current = {
       active: true,
@@ -124,16 +126,18 @@ export function Reviews() {
         if (nextLeft >= half) {
           nextLeft -= half;
           dragStateRef.current.startScrollLeft -= half;
-        } else if (nextLeft <= 0) {
+        } else if (nextLeft < 0) {
           nextLeft += half;
           dragStateRef.current.startScrollLeft += half;
         }
       }
       el.scrollLeft = nextLeft;
+      exactScrollRef.current = nextLeft;
     };
 
     const onWinMouseUp = () => {
       dragStateRef.current.active = false;
+      if (scrollRef.current) exactScrollRef.current = scrollRef.current.scrollLeft;
     };
 
     window.addEventListener('mousemove', onWinMouseMove);
@@ -256,11 +260,11 @@ export function Reviews() {
         >
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
+            className="hidden sm:block pointer-events-none absolute inset-y-0 left-0 z-10 w-14 bg-gradient-to-r from-[#FAF8F5] to-transparent dark:from-[#0D0C10]"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-[#FAF8F5] to-transparent dark:from-[#0D0C10] sm:w-14"
+            className="hidden sm:block pointer-events-none absolute inset-y-0 right-0 z-10 w-14 bg-gradient-to-l from-[#FAF8F5] to-transparent dark:from-[#0D0C10]"
           />
 
           <div
@@ -273,7 +277,7 @@ export function Reviews() {
                 dragStateRef.current.moved = false;
               }
             }}
-            className="flex cursor-grab active:cursor-grabbing select-none gap-4 overflow-x-auto px-2 py-2 sm:gap-5 sm:px-4"
+            className="flex cursor-grab active:cursor-grabbing select-none items-stretch gap-3.5 overflow-x-auto px-1 py-2 sm:gap-5 sm:px-4"
             style={{ scrollbarWidth: 'none' }}
           >
             {trackItems.map((review, idx) => (
@@ -284,7 +288,7 @@ export function Reviews() {
                 rel="noopener noreferrer"
                 draggable={false}
                 onDragStart={(e) => e.preventDefault()}
-                className={`group flex w-[290px] shrink-0 flex-col rounded-2xl border bg-[#F2EDE6]/92 p-5 transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:bg-[#16151C]/95 dark:gold-glow-hover sm:w-[340px] sm:p-6 ${
+                className={`group flex w-[272px] shrink-0 flex-col rounded-2xl border bg-[#F2EDE6]/92 p-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:bg-[#16151C]/95 dark:gold-glow-hover sm:w-[340px] sm:p-6 ${
                   review.platform === 'Авито'
                     ? 'border-[#04B44B]/30 hover:border-[#04B44B]/70 dark:border-[#04E061]/25 dark:hover:border-[#04E061]/65'
                     : 'border-zinc-900/10 hover:border-[#B45309]/40 dark:border-white/10 dark:hover:border-[#E2A856]/45'
@@ -292,10 +296,10 @@ export function Reviews() {
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-serif text-xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF]">
+                    <p className="font-serif text-lg sm:text-xl font-semibold leading-tight text-zinc-900 dark:text-[#F5F3EF]">
                       {review.author}
                     </p>
-                    <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    <p className="mt-0.5 text-[11px] sm:text-xs text-zinc-500 dark:text-zinc-400">
                       {review.date}
                     </p>
                   </div>
@@ -310,13 +314,13 @@ export function Reviews() {
                   </span>
                 </div>
 
-                <div className="mt-3 flex items-center gap-0.5 text-[#D97706] dark:text-[#E2A856]">
+                <div className="mt-2.5 flex items-center gap-0.5 text-[#D97706] dark:text-[#E2A856]">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" />
+                    <Star key={i} className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-current" />
                   ))}
                 </div>
 
-                <p className="mt-3 text-[14.5px] leading-[1.65] text-zinc-700 dark:text-zinc-300">
+                <p className="mt-2.5 line-clamp-5 sm:line-clamp-none text-[13.5px] sm:text-[14.5px] leading-[1.6] text-zinc-700 dark:text-zinc-300">
                   «{review.text}»
                 </p>
               </a>

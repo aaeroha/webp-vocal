@@ -34,8 +34,9 @@ export function Certificates() {
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const exactScrollRef = useRef(0);
   const dragStateRef = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false });
-  const { ref, isVisible } = useReveal({ threshold: 0.06 });
+  const { ref, isVisible } = useReveal({ threshold: 0.02 });
 
   const selected = selectedIndex !== null ? items[selectedIndex] : null;
   const isModalOpen = selectedIndex !== null;
@@ -48,6 +49,7 @@ export function Certificates() {
     const el = scrollRef.current;
     if (!el || !isVisible) return;
 
+    exactScrollRef.current = el.scrollLeft;
     let rafId = 0;
     let lastTime = performance.now();
 
@@ -56,13 +58,14 @@ export function Certificates() {
       lastTime = now;
 
       if (!isPaused && !isModalOpen && !dragStateRef.current.active && el.scrollWidth > el.clientWidth) {
-        el.scrollLeft += (dt / 1000) * 32;
         const half = el.scrollWidth / 2;
-        if (el.scrollLeft >= half) {
-          el.scrollLeft -= half;
-        } else if (el.scrollLeft <= 0) {
-          el.scrollLeft += half;
+        exactScrollRef.current += (dt / 1000) * 32;
+        if (exactScrollRef.current >= half) {
+          exactScrollRef.current -= half;
         }
+        el.scrollLeft = exactScrollRef.current;
+      } else {
+        exactScrollRef.current = el.scrollLeft;
       }
       rafId = window.requestAnimationFrame(step);
     };
@@ -96,16 +99,18 @@ export function Certificates() {
         if (nextLeft >= half) {
           nextLeft -= half;
           dragStateRef.current.startScrollLeft -= half;
-        } else if (nextLeft <= 0) {
+        } else if (nextLeft < 0) {
           nextLeft += half;
           dragStateRef.current.startScrollLeft += half;
         }
       }
       el.scrollLeft = nextLeft;
+      exactScrollRef.current = nextLeft;
     };
 
     const onWinMouseUp = () => {
       dragStateRef.current.active = false;
+      if (scrollRef.current) exactScrollRef.current = scrollRef.current.scrollLeft;
     };
 
     window.addEventListener('mousemove', onWinMouseMove);

@@ -1,4 +1,5 @@
-import { CalendarCheck, Check, Mic2, Music2, SlidersHorizontal, Wind } from 'lucide-react';
+import { useState } from 'react';
+import { CalendarCheck, Check, ChevronDown, Mic2, Music2, SlidersHorizontal, Wind } from 'lucide-react';
 import { LESSON_FLOW_CONTENT, type LessonStepItem } from '../data/content';
 import { useReveal } from '../hooks/useReveal';
 
@@ -38,6 +39,11 @@ function StepAnimatedIcon({ iconKey }: { iconKey: LessonStepItem['iconKey'] }) {
 export function Formats({ onOpenBooking }: FormatsProps) {
   const { ref: headerRef, isVisible: headerVisible } = useReveal({ threshold: 0.1 });
   const { ref, isVisible } = useReveal({ threshold: 0.08 });
+  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+
+  const toggleStep = (id: string) => {
+    setExpandedIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   return (
     <section id="formats" className="relative z-10 py-14 sm:py-20 lg:py-24">
@@ -57,49 +63,78 @@ export function Formats({ onOpenBooking }: FormatsProps) {
           </p>
         </div>
 
-        {/* 1 col mobile, 2 cols tablet, 4 cols desktop (with animated themed icons, no numbers) */}
+        {/* Collapsible accordions on mobile (icon + title), full 2/4-col cards on md+ */}
         <div
           ref={ref}
-          className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 lg:mt-10 lg:grid-cols-4"
+          className="mt-8 grid grid-cols-1 gap-3.5 md:gap-5 md:grid-cols-2 lg:mt-10 lg:grid-cols-4"
         >
-          {LESSON_FLOW_CONTENT.items.map((item, idx) => (
-            <article
-              key={item.id}
-              style={{ transitionDelay: `${idx * 95}ms` }}
-              className={`group reveal-item flex flex-col justify-between rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/90 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#B45309]/35 dark:border-white/10 dark:bg-[#16151C]/95 dark:hover:border-[#E2A856]/40 dark:gold-glow-hover ${
-                isVisible ? 'is-visible' : ''
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2.5">
-                  <StepAnimatedIcon iconKey={item.iconKey} />
-                  <span className="inline-flex rounded-full bg-[#B45309]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
-                    {item.badge}
-                  </span>
+          {LESSON_FLOW_CONTENT.items.map((item, idx) => {
+            const isExpanded = Boolean(expandedIds[item.id]);
+            return (
+              <article
+                key={item.id}
+                style={{ transitionDelay: `${idx * 85}ms` }}
+                className={`group reveal-item flex flex-col justify-between rounded-2xl border border-zinc-900/10 bg-[#F2EDE6]/90 p-4 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#B45309]/35 dark:border-white/10 dark:bg-[#16151C]/95 dark:hover:border-[#E2A856]/40 dark:gold-glow-hover ${
+                  isVisible ? 'is-visible' : ''
+                }`}
+              >
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => toggleStep(item.id)}
+                    aria-expanded={isExpanded}
+                    className="flex w-full items-center justify-between gap-3 text-left md:block cursor-pointer md:cursor-default"
+                  >
+                    <div className="flex items-center gap-3 md:block">
+                      <div className="flex items-center justify-between gap-2.5">
+                        <StepAnimatedIcon iconKey={item.iconKey} />
+                        <span className="hidden md:inline-flex rounded-full bg-[#B45309]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
+                          {item.badge}
+                        </span>
+                      </div>
+
+                      <h3 className="font-serif text-xl sm:text-2xl font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF] md:mt-4">
+                        {item.title}
+                      </h3>
+                    </div>
+
+                    <ChevronDown
+                      className={`h-5 w-5 shrink-0 text-[#B45309] transition-transform duration-300 dark:text-[#E2A856] md:hidden ${
+                        isExpanded ? 'rotate-180' : 'rotate-0'
+                      }`}
+                    />
+                  </button>
+
+                  <div
+                    className={`grid transition-[grid-template-rows,opacity] duration-300 ease-out md:grid-rows-[1fr] md:opacity-100 ${
+                      isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <span className="mt-3 inline-flex md:hidden rounded-full bg-[#B45309]/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#B45309] dark:bg-[#E2A856]/15 dark:text-[#E2A856]">
+                        {item.badge}
+                      </span>
+                      <p className="mt-2.5 md:mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                        {item.description}
+                      </p>
+
+                      <ul className="mt-4 md:mt-5 space-y-2 border-t border-zinc-900/8 pt-3.5 md:pt-4 dark:border-white/8">
+                        {item.highlights.map((feat) => (
+                          <li
+                            key={feat}
+                            className="flex items-start gap-2.5 text-xs leading-relaxed text-zinc-700 dark:text-zinc-300 sm:text-sm"
+                          >
+                            <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B45309] dark:text-[#E2A856]" />
+                            <span>{feat}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-
-                <h3 className="mt-4 font-serif text-2xl font-semibold leading-snug text-zinc-900 dark:text-[#F5F3EF]">
-                  {item.title}
-                </h3>
-
-                <p className="mt-3 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                  {item.description}
-                </p>
-
-                <ul className="mt-5 space-y-2.5 border-t border-zinc-900/8 pt-4 dark:border-white/8">
-                  {item.highlights.map((feat) => (
-                    <li
-                      key={feat}
-                      className="flex items-start gap-2.5 text-xs leading-relaxed text-zinc-700 dark:text-zinc-300 sm:text-sm"
-                    >
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#B45309] dark:text-[#E2A856]" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
 
         <div className="mt-8 flex justify-start sm:mt-10">

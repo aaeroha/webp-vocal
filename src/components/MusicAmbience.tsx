@@ -10,10 +10,12 @@ const LIGHT_NOTES = [
 ];
 
 /**
- * High-performance ambient backdrop:
- * - Thin, dense (152 bars), tall singing spectrum in warm studio gold/amber
- * - Appears after Hero (#top) and settles right in the gap between
- *   #formats ("Как проходят занятия") and #vocal-piano ("Интерактивный тренажёр").
+ * Natural human speech / vocal phrase waveform generator:
+ * - Produces sharp asymmetrical consonant transients, syllabic bursts, sustained
+ *   vibrato vowels, and brief breath pauses travelling naturally across the wave
+ *   (instead of a uniform artificial bell curve).
+ * - On mobile (< 768px): travels behind all content blocks from Hero down to #site-footer.
+ * - On tablet/desktop (>= 768px): travels after Hero and settles between #formats and #vocal-piano.
  */
 export function MusicAmbience() {
   const waveTrackRef = useRef<HTMLDivElement | null>(null);
@@ -33,12 +35,17 @@ export function MusicAmbience() {
       const heroEl = document.getElementById('top');
       const formatsEl = document.getElementById('formats');
       const pianoEl = document.getElementById('vocal-piano');
+      const footerEl = document.getElementById('site-footer');
       const vh = window.innerHeight || 800;
+      const isMobile = window.innerWidth < 768;
 
       const heroBottom = heroEl ? heroEl.offsetTop + heroEl.offsetHeight : vh;
-      minDocY = Math.round(heroBottom + Math.max(40, vh * 0.08));
+      minDocY = Math.round(heroBottom + (isMobile ? 20 : Math.max(40, vh * 0.08)));
 
-      if (formatsEl && pianoEl) {
+      if (isMobile) {
+        const footerTop = footerEl ? footerEl.offsetTop : document.documentElement.scrollHeight - 160;
+        maxDocY = Math.max(minDocY, Math.round(footerTop - vh * 0.45));
+      } else if (formatsEl && pianoEl) {
         const formatsBottom = formatsEl.offsetTop + formatsEl.offsetHeight;
         const pianoTop = pianoEl.offsetTop;
         maxDocY = Math.max(minDocY, Math.round((formatsBottom + pianoTop) / 2));
@@ -54,8 +61,8 @@ export function MusicAmbience() {
       waveEl.style.transform = `translate3d(0, ${clampedY}px, 0)`;
 
       const distFromViewportCenter = Math.abs(clampedY - (window.scrollY + window.innerHeight * 0.5));
-      const inViewRange = distFromViewportCenter < window.innerHeight * 0.9;
-      waveEl.style.opacity = window.scrollY < 160 ? '0' : '1';
+      const inViewRange = distFromViewportCenter < window.innerHeight * 0.95;
+      waveEl.style.opacity = window.scrollY < 140 ? '0' : '1';
       isDrawingActive = inViewRange;
     };
 
@@ -76,9 +83,28 @@ export function MusicAmbience() {
     window.addEventListener('resize', onScrollOrResize, { passive: true });
 
     const ctx = canvas.getContext('2d');
-    const barCount = 152;
+    const barCount = 196;
     let t = 0;
     let lastDraw = 0;
+
+    // Pseudo-random harmonic speech/vocal envelope at sample coordinate u (travelling vocal stream)
+    const sampleVocalEnvelope = (u: number, time: number): number => {
+      // Multi-phrase speech bursts + pauses
+      const phrase =
+        Math.max(0, Math.sin(u * 0.85 + 0.4) * 0.65 + Math.cos(u * 0.37 - 0.8) * 0.45) +
+        0.15;
+      // Sharp syllabic peaks (transient consonants + vowel sustain)
+      const sylA = Math.pow(Math.max(0, Math.sin(u * 2.9 + Math.sin(u * 1.1))), 2.2);
+      const sylB = Math.pow(Math.max(0, Math.cos(u * 4.7 - 0.5)), 3.0);
+      // High-frequency acoustic flutter inside syllables
+      const detail =
+        0.48 +
+        0.28 * Math.sin(u * 13.7 + time * 1.4) +
+        0.24 * Math.cos(u * 23.3 - time * 2.1);
+
+      // Gentle outer window so left & right ends taper into a clean hairline axis
+      return Math.min(1, phrase * (sylA * 0.68 + sylB * 0.55) * detail + 0.03);
+    };
 
     const drawSingingWave = (now: number) => {
       rafId = window.requestAnimationFrame(drawSingingWave);
@@ -91,19 +117,17 @@ export function MusicAmbience() {
       const isDark = document.documentElement.classList.contains('dark');
 
       ctx.clearRect(0, 0, width, height);
-      t += 0.062;
+      t += 0.032;
 
-      // Dynamic vocal phrase breath + vibrato envelope reaching taller vertical peaks
-      const phraseBreath = 0.72 + 0.34 * Math.sin(t * 0.58) + 0.14 * Math.sin(t * 1.6);
       const step = width / barCount;
-      const barWidth = Math.max(1.8, step * 0.36);
+      const barWidth = Math.max(1.5, step * 0.34);
 
+      // Thin glowing horizontal axis line (matching realistic DAW voice track)
       const axisGrad = ctx.createLinearGradient(0, 0, width, 0);
       axisGrad.addColorStop(0, 'rgba(226, 168, 86, 0)');
-      axisGrad.addColorStop(
-        0.5,
-        isDark ? 'rgba(250, 204, 21, 0.52)' : 'rgba(180, 83, 9, 0.38)'
-      );
+      axisGrad.addColorStop(0.15, isDark ? 'rgba(226, 168, 86, 0.38)' : 'rgba(180, 83, 9, 0.3)');
+      axisGrad.addColorStop(0.5, isDark ? 'rgba(250, 204, 21, 0.55)' : 'rgba(180, 83, 9, 0.42)');
+      axisGrad.addColorStop(0.85, isDark ? 'rgba(226, 168, 86, 0.38)' : 'rgba(180, 83, 9, 0.3)');
       axisGrad.addColorStop(1, 'rgba(226, 168, 86, 0)');
 
       ctx.strokeStyle = axisGrad;
@@ -115,33 +139,34 @@ export function MusicAmbience() {
 
       for (let i = 0; i < barCount; i++) {
         const norm = i / (barCount - 1);
-        const distFromCenter = Math.abs(norm - 0.5) * 2;
-        const bell = Math.exp(-Math.pow(distFromCenter * 1.28, 2));
-        const vowelWave =
-          0.54 +
-          0.34 * Math.sin(i * 0.24 - t * 2.2) +
-          0.22 * Math.cos(i * 0.62 + t * 3.15);
-        const vibrato = 1 + 0.12 * Math.sin(t * 6.8 + i * 0.11);
+        // Taper gracefully near 0% and 100% edges just like uploaded audio track references
+        const edgeFade = Math.sin(norm * Math.PI);
+        const taper = Math.pow(edgeFade, 0.72);
+        // Travelling stream coordinate so speech/singing phrases move naturally across the wave
+        const u = norm * 14.5 - t * 0.9;
+        const env = sampleVocalEnvelope(u, t);
+        // Micro asymmetrical jitter top/bottom like real human voice waveforms
+        const upBias = 0.86 + 0.24 * Math.sin(i * 1.9 + t * 3.8);
+        const downBias = 0.86 + 0.24 * Math.cos(i * 2.1 - t * 3.5);
 
-        const amp = Math.min(1, Math.max(0.04, bell * vowelWave * phraseBreath * vibrato));
-        const halfH = Math.max(3, amp * (height * 0.485));
+        const maxHalf = height * 0.485;
+        const topH = Math.max(1.5, env * taper * upBias * maxHalf);
+        const botH = Math.max(1.5, env * taper * downBias * maxHalf);
         const x = i * step + (step - barWidth) * 0.5;
 
-        const barGrad = ctx.createLinearGradient(0, midY - halfH, 0, midY + halfH);
+        const barGrad = ctx.createLinearGradient(0, midY - topH, 0, midY + botH);
         if (isDark) {
-          barGrad.addColorStop(0, 'rgba(226, 168, 86, 0.04)');
-          barGrad.addColorStop(0.5, 'rgba(250, 204, 21, 0.88)');
-          barGrad.addColorStop(1, 'rgba(226, 168, 86, 0.04)');
+          barGrad.addColorStop(0, 'rgba(226, 168, 86, 0.14)');
+          barGrad.addColorStop(0.5, 'rgba(250, 204, 21, 0.92)');
+          barGrad.addColorStop(1, 'rgba(226, 168, 86, 0.14)');
         } else {
-          barGrad.addColorStop(0, 'rgba(180, 83, 9, 0.04)');
-          barGrad.addColorStop(0.5, 'rgba(217, 119, 6, 0.74)');
-          barGrad.addColorStop(1, 'rgba(180, 83, 9, 0.04)');
+          barGrad.addColorStop(0, 'rgba(180, 83, 9, 0.12)');
+          barGrad.addColorStop(0.5, 'rgba(217, 119, 6, 0.78)');
+          barGrad.addColorStop(1, 'rgba(180, 83, 9, 0.12)');
         }
 
         ctx.fillStyle = barGrad;
-        ctx.beginPath();
-        ctx.roundRect(x, midY - halfH, barWidth, halfH * 2, barWidth / 2);
-        ctx.fill();
+        ctx.fillRect(x, midY - topH, barWidth, topH + botH);
       }
     };
 
@@ -163,17 +188,17 @@ export function MusicAmbience() {
       <div className="fixed -top-32 right-[10%] h-[420px] w-[420px] rounded-full bg-[#C26D3A]/[0.05] blur-3xl dark:bg-[#E2A856]/[0.07]" />
       <div className="fixed top-[45%] -left-32 h-[380px] w-[380px] rounded-full bg-[#B45309]/[0.04] blur-3xl dark:bg-[#E2A856]/[0.05]" />
 
-      {/* Single Large Dense Thin Singing Spectrum Wave (stops cleanly between Formats & VocalPiano) */}
+      {/* Single Large Realistic Speech/Singing Waveform */}
       <div
         ref={waveTrackRef}
-        className="absolute left-0 right-0 top-0 -mt-44 flex items-center justify-center px-2 transition-opacity duration-500"
+        className="absolute left-0 right-0 top-0 -mt-44 flex items-center justify-center px-1 sm:px-2 transition-opacity duration-500"
         style={{ willChange: 'transform', opacity: 0 }}
       >
         <canvas
           ref={canvasRef}
           width={1400}
           height={400}
-          className="h-72 w-full max-w-[1440px] opacity-38 dark:opacity-45 sm:h-96"
+          className="h-72 w-full max-w-[1440px] opacity-38 dark:opacity-46 sm:h-96"
         />
       </div>
 
